@@ -3,6 +3,7 @@ import {
   ChevronRight,
   Download,
   FolderOpen,
+  Library,
   Maximize2,
   Moon,
   PanelLeft,
@@ -43,6 +44,12 @@ export function ReaderToolbar(props: ReaderToolbarProps) {
   const themeIsDark = props.theme === 'dark'
     || (props.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   const setPage = (page: number) => props.onPageChange(Math.max(1, Math.min(props.pageCount, page)));
+  const openLibrary = () => {
+    const url = typeof chrome !== 'undefined' && chrome.runtime?.getURL
+      ? chrome.runtime.getURL('library.html')
+      : '/library.html';
+    window.open(url, '_blank', 'noopener');
+  };
   return <header className="reader-toolbar">
     <div className="reader-toolbar-group reader-document-tools">
       <button title="Toggle navigation" aria-label="Toggle navigation" data-active={props.sidebarOpen} onClick={props.onSidebarToggle}><PanelLeft /></button>
@@ -74,6 +81,7 @@ export function ReaderToolbar(props: ReaderToolbarProps) {
       <button title={themeIsDark ? 'Use light theme' : 'Use dark theme'} aria-label="Toggle theme" onClick={() => props.onThemeChange(themeIsDark ? 'light' : 'dark')}>{themeIsDark ? <Sun /> : <Moon />}</button>
       <button title="Download PDF" aria-label="Download PDF" onClick={props.onDownload}><Download /></button>
       <button title="Print" aria-label="Print" onClick={props.onPrint}><Printer /></button>
+      <button title="Open library" aria-label="Open library" onClick={openLibrary}><Library /></button>
       <button title="Toggle AI panel" aria-label="Toggle AI panel" data-active={props.assistantOpen} onClick={props.onAssistantToggle}><PanelRight /></button>
     </div>
   </header>;

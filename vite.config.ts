@@ -10,6 +10,7 @@ export default defineConfig({
       input: {
         sidepanel: 'index.html',
         reader: 'reader.html',
+        library: 'library.html',
       },
       output: {
         manualChunks(id) {

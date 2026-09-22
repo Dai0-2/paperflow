@@ -8,3 +8,5 @@ outputs/
 paperflow-ai.zip
 .DS_Store
 *.log
+test-results/
+playwright-report/
