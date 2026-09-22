@@ -1,0 +1,63 @@
+diff --git a/src/worker/browser/defaultOptions.js b/src/worker/browser/defaultOptions.js
+index 248c83900a26a2ae8a6d0a3068a6c4f5c553eada..ef11daa27f93a12c6bcf6671716e235f237bc8b9 100644
+--- a/src/worker/browser/defaultOptions.js
++++ b/src/worker/browser/defaultOptions.js
+@@ -1,6 +1,5 @@
+ 'use strict';
+
+-const version = require('../../../package.json').version;
+ const defaultOptions = require('../../constants/defaultOptions');
+
+ /*
+@@ -8,5 +7,5 @@ const defaultOptions = require('../../constants/defaultOptions');
+  */
+ module.exports = {
+   ...defaultOptions,
+-  workerPath: `https://cdn.jsdelivr.net/npm/tesseract.js@v${version}/dist/worker.min.js`,
++  workerPath: null,
+ };
+diff --git a/src/worker-script/browser/getCore.js b/src/worker-script/browser/getCore.js
+index 6cb7eb4022867ec2632a84b2ca16d156ba210bea..24bee5bf40b488560ec3ed91d289c3cdd060aeb1 100644
+--- a/src/worker-script/browser/getCore.js
++++ b/src/worker-script/browser/getCore.js
+@@ -1,7 +1,6 @@
+ 'use strict';
+
+ const { simd, relaxedSimd } = require('wasm-feature-detect');
+-const coreVersion = require('../../../package.json').dependencies['tesseract.js-core'];
+
+ module.exports = async (lstmOnly, corePath, res) => {
+   if (typeof global.TesseractCore === 'undefined') {
+@@ -9,9 +8,10 @@ module.exports = async (lstmOnly, corePath, res) => {
+
+     res.progress({ status: statusText, progress: 0 });
+
+-    // If the user specifies a core path, we use that
+-    // Otherwise, default to CDN
+-    const corePathImport = corePath || `https://cdn.jsdelivr.net/npm/tesseract.js-core@v${coreVersion.substring(1)}`;
++    if (!corePath) {
++      throw Error('A local Tesseract corePath is required.');
++    }
++    const corePathImport = corePath;
+
+     // If a user specifies a specific JavaScript file, load that file.
+     // Otherwise, assume a directory has been provided, and load either
+diff --git a/src/worker-script/index.js b/src/worker-script/index.js
+index 4321a8ff08a393d5b341a9cb4183511ace719b8c..ed07171bf7ade62e967d426b7dc49308e25bcd72 100644
+--- a/src/worker-script/index.js
++++ b/src/worker-script/index.js
+@@ -124,10 +124,10 @@ res) => {
+       if (typeof _lang === 'string') {
+         let path = null;
+
+-        // If `langPath` if not explicitly set by the user, the jsdelivr CDN is used.
+-        // Data supporting the Legacy model is only included if `lstmOnly` is not true.
+-        // This saves a significant amount of data for the majority of users that use LSTM only.
+-        const langPathDownload = langPath || (lstmOnly ? `https://cdn.jsdelivr.net/npm/@tesseract.js-data/${lang}/4.0.0_best_int` : `https://cdn.jsdelivr.net/npm/@tesseract.js-data/${lang}/4.0.0`);
++        if (!langPath) {
++          throw Error('A local Tesseract langPath is required.');
++        }
++        const langPathDownload = langPath;
+
+         // For Node.js, langPath may be a URL or local file path
+         // The is-url package is used to tell the difference

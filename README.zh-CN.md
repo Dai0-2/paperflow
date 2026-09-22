@@ -7,7 +7,9 @@
 </div>
 
 > [!IMPORTANT]
-> PaperFlow AI 0.7.0 是本地 Reader MVP，同时提供原有 Side Panel 和扩展内 PDF.js 阅读器，并打通论文级 AI 上下文与持久化。
+> PaperFlow AI 1.0.0 是本地优先的个人文献库、PDF 阅读与批注工作台和
+> AI 研究助手。可选的 Google Drive 端到端加密同步无需 PaperFlow 后端，
+> 即可在另一台电脑恢复同一资料库。
 
 ## 为什么做 PaperFlow
 
@@ -26,7 +28,17 @@ Paper
 
 即使几天后从另一个来源重新打开同一篇论文，只要身份可以识别，就能继续之前的思考。
 
-## Reader MVP
+## 个人文献库
+
+- 集合/子集合、标签、星标、阅读状态、回收站、批量操作与重复项确认
+- 面向大型资料库的虚拟化高密度表格与字段筛选语法
+- Markdown 笔记、批注摘要、PDF 附件和每篇论文独立的 AI 记忆
+- BibTeX/RIS 导入导出，以及 APA、MLA、Chicago、IEEE、BibTeX 复制
+- AI 整理建议必须由用户确认，确认前不会修改分类
+- IndexedDB + OPFS 本地优先存储；仅正式收藏的论文进入加密同步，
+  临时 Workspace 只保留在当前设备
+
+## 集成式 Reader
 
 - 提供 `reader.html?url=<encoded-pdf-url>` 远程 PDF 入口和本地 PDF 选择器
 - PDF.js 连续按需渲染，支持文字层、缩略图、目录、搜索跳页、缩放、适合宽度、下载和打印
@@ -83,7 +95,7 @@ Paper
 - 真实 Google Drive 双设备发布验收仍需要生产 OAuth Client ID；自动化测试使用内存双设备 Drive 适配器。
 - 暂不包含团队协作、向量数据库和账号付费系统。
 
-## 安装原型
+## 安装
 
 ### 环境要求
 
@@ -169,9 +181,15 @@ Google Drive 授权与 AI Provider 相互独立。OAuth Token 由 Chrome Identit
 - 不上传不必要的 PDF 内容
 - 发送前清楚显示并允许控制 Paper Context
 - 论文数据默认保存在本地
-- 后续支持按论文导出和删除数据
+- Google Drive 同步为可选功能，仅使用 `drive.file`，上传内容为加密不透明对象
+- 本地 OCR 不依赖运行时 CDN 或远程代码
+- 数据库升级失败时进入只读恢复导出流程
 
-接入 Provider 前请阅读 [SECURITY.md](SECURITY.md)。
+请阅读[隐私说明](docs/privacy.md)、[安全策略](SECURITY.md)、
+[保险库恢复指南](docs/vault-recovery.md)和
+[迁移与回滚指南](docs/migration-and-rollback.md)。发布验证结果见
+[v1.0.0 验收报告](docs/acceptance-report-v1.0.0.md)和
+[发布检查清单](docs/release-checklist.md)。
 
 ## 开发
 
@@ -179,7 +197,10 @@ Google Drive 授权与 AI Provider 相互独立。OAuth Token 由 Chrome Identit
 pnpm install
 pnpm dev
 pnpm typecheck
+pnpm test
 pnpm build
+pnpm audit:release
+pnpm test:e2e
 pnpm package
 ```
 
@@ -204,4 +225,6 @@ PaperFlow 的 Provider 与本地 Bridge 架构研究参考了开源项目 [AIdea
 
 ## License
 
-首次公开发布前确定开源许可证。
+PaperFlow AI 源代码采用 Apache License 2.0，见 [LICENSE](LICENSE)。
+打包的第三方依赖保留各自许可证，见
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

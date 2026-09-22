@@ -3,6 +3,7 @@ import type {
   Collection,
   CollectionItem,
   Message,
+  MigrationBackup,
   OcrPage,
   PaperAlias,
   PaperChunk,
@@ -48,6 +49,7 @@ export interface SchemaTables {
   syncConflicts: SyncConflict;
   syncCheckpoints: SyncCheckpoint;
   syncState: SyncState;
+  migrationBackups: MigrationBackup;
 }
 
 export const V1_STORES = {
@@ -75,10 +77,16 @@ export const V2_STORES = {
   ocrPages: '&id,[documentId+page],paperId,documentId,page,status,updatedAt',
   syncOps: '&id,[deviceId+seq],state,entityType,entityId,createdAt,batchId',
   syncState: '&key,deviceId',
+  migrationBackups: '&id,sourceVersion,createdAt,completedAt',
 } as const;
 
 export const V3_STORES = {
   ...V2_STORES,
   syncConflicts: '&id,entityType,entityId,paperId,createdAt,resolvedAt',
   syncCheckpoints: '&id,kind,stage,documentId,updatedAt',
+} as const;
+
+export const V4_STORES = {
+  ...V3_STORES,
+  migrationBackups: '&id,sourceVersion,createdAt,completedAt',
 } as const;

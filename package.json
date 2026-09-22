@@ -1,21 +1,23 @@
 {
   "name": "paperflow-ai",
   "private": true,
-  "version": "0.7.0",
+  "version": "1.0.0",
   "packageManager": "pnpm@10.34.5",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc -b && vite build",
+    "prepare:ocr": "node scripts/prepare-ocr-assets.mjs",
+    "build": "pnpm prepare:ocr && tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "audit:release": "node scripts/audit-release.mjs",
     "native:check": "cargo check --all-targets --manifest-path native-host/Cargo.toml",
     "native:test": "cargo test --manifest-path native-host/Cargo.toml",
     "native:build": "cargo build --release --manifest-path native-host/Cargo.toml",
-    "package": "pnpm build && cd dist && zip -qr ../paperflow-ai.zip ."
+    "package": "pnpm build && pnpm audit:release && rm -f paperflow-ai.zip paperflow-ai.zip.sha256 && cd dist && zip -qr ../paperflow-ai.zip . && cd .. && node scripts/write-sha256.mjs paperflow-ai.zip"
   },
   "dependencies": {
     "@citation-js/core": "^0.9.0",

@@ -1,0 +1,4 @@
+patchedDependencies:
+  regenerator-runtime@0.13.11: patches/regenerator-runtime@0.13.11.patch
+  tesseract.js@7.0.0: patches/tesseract.js@7.0.0.patch
+  zod@4.6.5: patches/zod@4.6.5.patch

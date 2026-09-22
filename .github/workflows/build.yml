@@ -3,6 +3,7 @@ name: Build extension
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
 
 permissions:
@@ -24,10 +25,47 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm audit:release
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - run: pnpm package
       - uses: actions/upload-artifact@v4
         with:
           name: paperflow-ai-extension
-          path: dist/
+          path: |
+            paperflow-ai.zip
+            paperflow-ai.zip.sha256
+          if-no-files-found: error
+
+  release-extension:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    env:
+      PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: test -n "$PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm prepare:ocr
+      - run: pnpm typecheck
+      - run: pnpm exec vite build --mode release
+      - run: pnpm audit:release
+      - run: cd dist && zip -qr ../paperflow-ai-${GITHUB_REF_NAME}.zip .
+      - run: node scripts/write-sha256.mjs "paperflow-ai-${GITHUB_REF_NAME}.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paperflow-ai-${{ github.ref_name }}
+          path: |
+            paperflow-ai-${{ github.ref_name }}.zip
+            paperflow-ai-${{ github.ref_name }}.zip.sha256
           if-no-files-found: error
 
   native-host:
@@ -55,8 +93,7 @@ jobs:
           components: rustfmt, clippy
       - if: matrix.platform == 'linux'
         run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config
-      - if: matrix.platform == 'linux'
-        run: cargo fmt -- --check
+      - run: cargo fmt -- --check
       - run: cargo test --locked
       - run: cargo clippy --all-targets --locked -- -D warnings
       - run: cargo build --release --locked
@@ -96,7 +133,8 @@ jobs:
           cp "install/install-${{ matrix.platform }}.sh" package/
           cp "install/uninstall-${{ matrix.platform }}.sh" package/
           cp "manifests/com.paperflow.ai.${{ matrix.platform }}.json" package/
-          shasum -a 256 package/paperflow-host > package/SHA256SUMS
+          cd package
+          shasum -a 256 paperflow-host install-* uninstall-* com.paperflow.ai.*.json > SHA256SUMS
       - if: matrix.platform == 'windows'
         shell: pwsh
         run: |
@@ -105,8 +143,17 @@ jobs:
           Copy-Item install/install-windows.ps1 package/
           Copy-Item install/uninstall-windows.ps1 package/
           Copy-Item manifests/com.paperflow.ai.windows.json package/
-          $hash = (Get-FileHash package/paperflow-host.exe -Algorithm SHA256).Hash.ToLower()
-          "$hash  paperflow-host.exe" | Set-Content package/SHA256SUMS -Encoding ascii
+          $files = @(
+            "paperflow-host.exe",
+            "install-windows.ps1",
+            "uninstall-windows.ps1",
+            "com.paperflow.ai.windows.json"
+          )
+          $lines = foreach ($file in $files) {
+            $hash = (Get-FileHash "package/$file" -Algorithm SHA256).Hash.ToLower()
+            "$hash  $file"
+          }
+          $lines | Set-Content package/SHA256SUMS -Encoding ascii
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}

@@ -81,6 +81,16 @@ describe('Dexie migrations', () => {
     expect(await db.collections.count()).toBe(0);
     expect(await db.syncConflicts.count()).toBe(0);
     expect(await db.syncCheckpoints.count()).toBe(0);
+    const backup = await db.migrationBackups.get('v1-pre-upgrade');
+    expect(backup).toMatchObject({ sourceVersion: 1, targetVersion: 2 });
+    expect(backup?.stores.papers).toEqual([
+      expect.objectContaining({ id: 'paper:legacy' }),
+    ]);
+    expect(backup?.stores.papers[0]).not.toHaveProperty('libraryState');
+    expect(backup?.stores.annotations).toEqual([
+      expect.objectContaining({ id: 'annotation:legacy' }),
+    ]);
+    expect(backup?.stores.annotations[0]).not.toHaveProperty('type');
     db.close();
   });
 });

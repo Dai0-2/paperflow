@@ -73,13 +73,24 @@ IndexedDB database `paperflow-ai` contains:
 | `selections` | User-selected page text |
 | `annotations` | Six annotation types with PDF geometry, text anchors, and comments |
 | `settings` | Extensible structured settings |
+| `collections` / `collectionItems` | Nested library organization and paper membership |
+| `tags` / `paperTags` | Normalized labels and paper relationships |
+| `documents` | PDF identity, OPFS availability, and encrypted remote state |
+| `notes` | Markdown notes and deterministic conflict copies |
+| `paperChunks` / `ocrPages` | Rebuildable page text and OCR records |
 | `syncOps` | Immutable local operation log keyed by device ID and sequence |
 | `syncState` | Lamport counter, Drive Changes cursor, retry, and last-success state |
 | `syncCheckpoints` | Recoverable sync-run and resumable-upload progress |
 | `syncConflicts` | Unresolved note conflict-copy notifications |
+| `migrationBackups` | Local raw v0.7 snapshot retained across the first v1 startup |
 
 Legacy `paperflow:messages:*` and `paperflow:notes:*` values migrate once after a
 paper workspace opens. Lightweight UI preferences remain in `localStorage`.
+The v1 IndexedDB upgrade copies every legacy store into
+`migrationBackups/v1-pre-upgrade` before modifying records in the same atomic
+upgrade transaction. If opening the final schema fails, all main surfaces stop
+and redirect to the read-only `recovery.html` exporter. Schemas are never
+automatically downgraded.
 
 ## Google Drive vault
 
@@ -181,10 +192,17 @@ access the extension's pages or internal state.
 
 ## Build and third-party code
 
-Vite builds `index.html`, `reader.html`, and `library.html` as separate entries
-with shared React and PDF.js chunks. It also emits the extension manifest from
-`manifest.base.json`. A release build fails closed when its Google OAuth client
-ID is missing. The `pdf-lib` exporter is loaded only when the user requests an
-annotated copy. MV3 CSP does not require a runtime CDN or `eval`.
+Vite builds `index.html`, `reader.html`, `library.html`, and `recovery.html` as
+separate entries with shared React and PDF.js chunks. It also emits the extension
+manifest from `manifest.base.json`. A release build fails closed when its Google
+OAuth client ID is missing. The `pdf-lib` exporter is loaded only when the user
+requests an annotated copy. MV3 CSP does not require a runtime CDN or `eval`.
 Mozilla PDF.js is bundled from `pdfjs-dist` under Apache License 2.0; its license
 is copied to `dist/pdfjs-LICENSE.txt`.
+
+Tesseract worker, WebAssembly core, and language data are packaged under
+`dist/ocr`. Locked pnpm patches remove upstream CDN defaults and dynamic
+`Function` compatibility probes from Tesseract.js, Zod, and Regenerator Runtime.
+`scripts/audit-release.mjs` fails the build when release files contain source
+maps, dynamic code, remote dependency hosts, credential patterns, logs, test
+data, or local absolute paths.

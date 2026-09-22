@@ -7,7 +7,10 @@
 </div>
 
 > [!IMPORTANT]
-> PaperFlow AI 0.7.0 is a local Reader MVP. It includes both the original Side Panel and an extension-hosted PDF.js reader with paper-scoped AI context and persistence.
+> PaperFlow AI 1.0.0 is a local-first personal research library, PDF reader,
+> annotation workspace, and AI companion. Optional encrypted Google Drive sync
+> lets the same library be restored on another computer without a PaperFlow
+> backend.
 
 ## Why PaperFlow
 
@@ -26,7 +29,19 @@ Paper
 
 Open the same paper days later—from a different source when identity can be resolved—and continue the same line of thought.
 
-## Reader MVP
+## Personal library
+
+- Nested collections, tags, favorites, reading status, trash, bulk actions, and
+  duplicate review
+- Virtualized dense table for large libraries and field-aware search filters
+- Markdown notes, annotation summaries, PDF attachments, and per-paper AI memory
+- BibTeX/RIS import and export; APA, MLA, Chicago, IEEE, and BibTeX copy
+- User-confirmed AI organization suggestions that never modify the library
+  before review
+- Local-first IndexedDB and OPFS storage with encrypted Google Drive sync for
+  saved papers; temporary workspaces remain device-only
+
+## Integrated Reader
 
 - Extension page at `reader.html?url=<encoded-pdf-url>` for remote PDFs, plus a local PDF picker
 - Continuous, lazy PDF.js rendering with text layers, thumbnails, document outline, search navigation, zoom, fit width, download, and print
@@ -82,7 +97,7 @@ Open the same paper days later—from a different source when identity can be re
 - Real Google Drive two-device release validation still requires a production OAuth client ID; automated tests use an in-memory two-device Drive adapter.
 - No collaboration, vector database, or account/payment system.
 
-## Install the prototype
+## Install
 
 ### Requirements
 
@@ -168,9 +183,16 @@ before upload; the vault password and recovery key are not sent to Google.
 - No unnecessary PDF uploads
 - Paper context will be visible and user-controllable before transmission
 - Paper data is designed to remain local by default
-- Per-paper export and deletion are part of the roadmap
+- Google Drive sync is opt-in, uses only `drive.file`, and uploads encrypted
+  opaque objects
+- Local OCR has no runtime CDN or remote code dependency
+- Database upgrade failure enters a read-only recovery export flow
 
-Please read [SECURITY.md](SECURITY.md) before adding a provider.
+Read the [privacy notice](docs/privacy.md), [security policy](SECURITY.md),
+[vault recovery guide](docs/vault-recovery.md), and
+[migration/rollback guide](docs/migration-and-rollback.md). Release validation
+is recorded in the [v1.0.0 acceptance report](docs/acceptance-report-v1.0.0.md)
+and [release checklist](docs/release-checklist.md).
 
 ## Development
 
@@ -178,7 +200,10 @@ Please read [SECURITY.md](SECURITY.md) before adding a provider.
 pnpm install
 pnpm dev
 pnpm typecheck
+pnpm test
 pnpm build
+pnpm audit:release
+pnpm test:e2e
 pnpm package
 ```
 
@@ -224,4 +249,6 @@ The integrated Reader uses Mozilla PDF.js (`pdfjs-dist`) under the Apache Licens
 
 ## License
 
-The open-source license will be selected before the first public release.
+PaperFlow AI source code is licensed under Apache License 2.0. See [LICENSE](LICENSE).
+Bundled dependencies retain their own licenses; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

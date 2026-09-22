@@ -24,6 +24,23 @@ PaperFlow does not use private ChatGPT web endpoints or simulate `chatgpt.com` s
 
 Paper metadata, conversations, memory, selections, annotations, and reading state are stored in the browser's local IndexedDB database. Lightweight display and provider preferences use `localStorage`. Saved-library data is synchronized only after the user explicitly connects and creates or unlocks a vault; temporary workspaces stay local. There is no telemetry.
 
+The v0.7-to-v1 database migration saves an unmodified copy of every legacy
+IndexedDB store in the atomic upgrade transaction. If the database cannot be
+opened, application surfaces redirect to a read-only recovery exporter instead
+of continuing to write. Recovery exports exclude OPFS files and credentials.
+
+## Local OCR and MV3 code integrity
+
+OCR runs only after an explicit user action. The Tesseract worker, WebAssembly
+core, and English/Simplified Chinese data are bundled in the extension. Locked
+dependency patches remove upstream CDN defaults and dynamic `Function`
+compatibility probes; missing local paths fail closed.
+
+Every packaged extension is scanned for source maps, runtime CDN references,
+`eval`/`Function` construction, credential patterns, logs, test data, and local
+absolute paths. Chrome optional host permissions are used only for user-opened
+PDFs and explicit metadata/API requests, not for loading executable code.
+
 ## Encrypted Google Drive vault
 
 - Google authorization uses Chrome Identity and only the `drive.file` scope. OAuth tokens remain under Chrome's control and are never written to IndexedDB, OPFS, `localStorage`, Drive, logs, or exports.

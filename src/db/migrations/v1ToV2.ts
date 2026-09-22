@@ -1,6 +1,7 @@
 import type { Transaction } from 'dexie';
 import type {
   Annotation,
+  MigrationBackup,
   PaperInfo,
   PaperMemory,
   PaperSelection,
@@ -8,6 +9,16 @@ import type {
 } from '../../types';
 
 const MIGRATION_DEVICE_ID = 'legacy-v1';
+const LEGACY_STORE_NAMES = [
+  'papers',
+  'paperAliases',
+  'threads',
+  'messages',
+  'paperMemory',
+  'selections',
+  'annotations',
+  'settings',
+] as const;
 
 function legacyVersion(updatedAt: number) {
   return { counter: Math.max(1, Math.floor(updatedAt)), deviceId: MIGRATION_DEVICE_ID };
@@ -15,6 +26,18 @@ function legacyVersion(updatedAt: number) {
 
 export async function migrateV1ToV2(transaction: Transaction): Promise<void> {
   const now = Date.now();
+  const entries = await Promise.all(LEGACY_STORE_NAMES.map(async (name) => [
+    name,
+    await transaction.table(name).toArray() as unknown[],
+  ] as const));
+  const backup: MigrationBackup = {
+    id: 'v1-pre-upgrade',
+    sourceVersion: 1,
+    targetVersion: 2,
+    createdAt: now,
+    stores: Object.fromEntries(entries),
+  };
+  await transaction.table<MigrationBackup>('migrationBackups').put(backup);
 
   await transaction.table<PaperInfo>('papers').toCollection().modify((paper) => {
     const updatedAt = paper.updatedAt || now;

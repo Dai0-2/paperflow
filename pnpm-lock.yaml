@@ -4,6 +4,17 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  regenerator-runtime@0.13.11:
+    hash: a8b49084f33658e256099411f64623ae6f0db71b66f5a7fa91bad5e66a080074
+    path: patches/regenerator-runtime@0.13.11.patch
+  tesseract.js@7.0.0:
+    hash: 5eae18c844f64cba06688ccd3f84a9c36a3590b69d325d800f5c308565e30442
+    path: patches/tesseract.js@7.0.0.patch
+  zod@4.6.5:
+    hash: 26cebc971d7166fc1c57032bca222de874f65e639f8d45f4518aa72c1c929bdf
+    path: patches/zod@4.6.5.patch
+
 importers:
 
   .:
@@ -61,7 +72,7 @@ importers:
         version: 4.0.1
       tesseract.js:
         specifier: ^7.0.0
-        version: 7.0.0
+        version: 7.0.0(patch_hash=5eae18c844f64cba06688ccd3f84a9c36a3590b69d325d800f5c308565e30442)
       typescript:
         specifier: latest
         version: 7.0.2
@@ -70,7 +81,7 @@ importers:
         version: 8.2.2(@types/node@26.6.2)
       zod:
         specifier: ^4.6.5
-        version: 4.6.5
+        version: 4.6.5(patch_hash=26cebc971d7166fc1c57032bca222de874f65e639f8d45f4518aa72c1c929bdf)
       zustand:
         specifier: latest
         version: 5.0.15(@types/react@19.3.0)(react@19.3.0)
@@ -2589,7 +2600,7 @@ snapshots:
       indent-string: 4.0.0
       strip-indent: 3.0.0
 
-  regenerator-runtime@0.13.11: {}
+  regenerator-runtime@0.13.11(patch_hash=a8b49084f33658e256099411f64623ae6f0db71b66f5a7fa91bad5e66a080074): {}
 
   remark-gfm@4.0.1:
     dependencies:
@@ -2687,14 +2698,14 @@ snapshots:
 
   tesseract.js-core@7.0.0: {}
 
-  tesseract.js@7.0.0:
+  tesseract.js@7.0.0(patch_hash=5eae18c844f64cba06688ccd3f84a9c36a3590b69d325d800f5c308565e30442):
     dependencies:
       bmp-js: 0.1.0
       idb-keyval: 6.3.0
       is-url: 1.2.4
       node-fetch: 2.7.0
       opencollective-postinstall: 2.0.3
-      regenerator-runtime: 0.13.11
+      regenerator-runtime: 0.13.11(patch_hash=a8b49084f33658e256099411f64623ae6f0db71b66f5a7fa91bad5e66a080074)
       tesseract.js-core: 7.0.0
       wasm-feature-detect: 1.9.0
       zlibjs: 0.3.1
@@ -2879,7 +2890,7 @@ snapshots:
 
   zlibjs@0.3.1: {}
 
-  zod@4.6.5: {}
+  zod@4.6.5(patch_hash=26cebc971d7166fc1c57032bca222de874f65e639f8d45f4518aa72c1c929bdf): {}
 
   zustand@5.0.15(@types/react@19.3.0)(react@19.3.0):
     optionalDependencies:

@@ -1,0 +1,12 @@
+diff --git a/runtime.js b/runtime.js
+index 1ea704e901a643daad5e824d3441cf91e6a77622..6d04b0e0dcebfbbb30d91035c3992177b5c0c8a6 100644
+--- a/runtime.js
++++ b/runtime.js
+@@ -756,6 +756,6 @@ try {
+   if (typeof globalThis === "object") {
+     globalThis.regeneratorRuntime = runtime;
+   } else {
+-    Function("r", "regeneratorRuntime = r")(runtime);
++    throw new Error("regenerator-runtime requires globalThis");
+   }
+ }

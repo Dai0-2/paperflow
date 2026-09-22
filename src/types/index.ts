@@ -309,6 +309,15 @@ export interface SyncCheckpoint {
   updatedAt: number;
 }
 
+export interface MigrationBackup {
+  id: string;
+  sourceVersion: number;
+  targetVersion: number;
+  createdAt: number;
+  completedAt?: number;
+  stores: Record<string, unknown[]>;
+}
+
 export interface SettingRecord {
   key: string;
   value: unknown;

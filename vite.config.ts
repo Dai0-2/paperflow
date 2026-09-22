@@ -15,7 +15,10 @@ function manifestPlugin(clientId: string): Plugin {
   return {
     name: 'paperflow-manifest',
     async generateBundle() {
-      const source = await readFile(resolve('manifest.base.json'), 'utf8');
+      const [source, thirdPartyNotices] = await Promise.all([
+        readFile(resolve('manifest.base.json'), 'utf8'),
+        readFile(resolve('THIRD_PARTY_NOTICES.md'), 'utf8'),
+      ]);
       const manifest = JSON.parse(source) as ExtensionManifest;
       if (clientId) {
         manifest.oauth2 = {
@@ -27,6 +30,11 @@ function manifestPlugin(clientId: string): Plugin {
         type: 'asset',
         fileName: 'manifest.json',
         source: `${JSON.stringify(manifest, null, 2)}\n`,
+      });
+      this.emitFile({
+        type: 'asset',
+        fileName: 'THIRD_PARTY_NOTICES.md',
+        source: thirdPartyNotices,
       });
     },
   };
@@ -53,6 +61,7 @@ export default defineConfig(({ mode }) => {
           sidepanel: 'index.html',
           reader: 'reader.html',
           library: 'library.html',
+          recovery: 'recovery.html',
           background: 'src/background.ts',
         },
         output: {
