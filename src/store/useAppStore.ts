@@ -78,7 +78,14 @@ export const useAppStore = create<AppState>((set) => ({
   setBridge: (bridgeState, bridgeDetail = '') => set({ bridgeState, bridgeDetail }),
   setProviderMode: (providerMode) => { localStorage.setItem('paperflow:provider', providerMode); const model = providerMode === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-5.6-luna') : 'ChatGPT via Codex'; set({ providerMode, model }); },
   setApiState: (apiState, apiDetail = '') => set({ apiState, apiDetail }),
-  setUiLanguage: (uiLanguage) => { localStorage.setItem('paperflow:ui-language', uiLanguage); set({ uiLanguage }); },
+  setUiLanguage: (uiLanguage) => {
+    localStorage.setItem('paperflow:ui-language', uiLanguage);
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      void chrome.storage.local.set({ uiLanguage });
+      void chrome.runtime?.sendMessage?.({ type: 'paperflow:refresh-menus' }).catch(() => undefined);
+    }
+    set({ uiLanguage });
+  },
   setPromptLanguage: (promptLanguage) => { localStorage.setItem('paperflow:prompt-language', promptLanguage); set({ promptLanguage }); },
   setApiBaseUrl: (apiBaseUrl) => { localStorage.setItem('paperflow:api-base-url', apiBaseUrl); set({ apiBaseUrl }); },
   setApiProtocol: (apiProtocol) => { localStorage.setItem('paperflow:api-protocol', apiProtocol); set({ apiProtocol }); },

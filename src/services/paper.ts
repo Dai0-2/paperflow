@@ -1,27 +1,40 @@
 import type { PaperAlias, PaperInfo } from '../types';
 
 export const SCHOLAR_READER_EXTENSION_ID = 'dahenjhkoodjbpjheillcadbppiidmhp';
+const SCHOLAR_READER_ORIGIN = `chrome-extension://${SCHOLAR_READER_EXTENSION_ID}`;
+const VIEWER_URL_PARAMETERS = ['file', 'url', 'pdf'] as const;
 
 function cleanTitle(raw: string) {
   return raw.replace(/\.pdf\s*$/i, '').replace(/\s+[|·-]\s+(Google Scholar PDF Reader|Google Drive|Chrome)$/i, '').replace(/\s+/g, ' ').trim();
 }
 
+function decodeViewerParameter(raw: string): string {
+  let decoded = raw;
+  for (let attempt = 0; attempt < 1; attempt += 1) {
+    try {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) break;
+      decoded = next;
+    } catch {
+      break;
+    }
+  }
+  return decoded;
+}
+
 export function unwrapViewerUrl(raw: string) {
   try {
     const url = new URL(raw);
-    const embedded = url.searchParams.get('file') || url.searchParams.get('url') || url.searchParams.get('pdf');
-    if (!embedded) return raw;
-    let decoded = embedded;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        const next = decodeURIComponent(decoded);
-        if (next === decoded) break;
-        decoded = next;
-      } catch {
-        break;
-      }
+    if (url.protocol !== 'chrome-extension:' || url.hostname !== SCHOLAR_READER_EXTENSION_ID) {
+      return raw;
     }
-    return /^https?:|^file:|^blob:/i.test(decoded) ? decoded : raw;
+    const embedded = VIEWER_URL_PARAMETERS
+      .map((parameter) => url.searchParams.get(parameter))
+      .find((value): value is string => Boolean(value));
+    if (!embedded) return raw;
+    const decoded = decodeViewerParameter(embedded);
+    const target = new URL(decoded);
+    return /^https?:$/.test(target.protocol) ? target.toString() : raw;
   } catch { return raw; }
 }
 
@@ -94,7 +107,7 @@ export async function contentHash(data: ArrayBuffer) {
 
 export function paperFromUrl(rawUrl: string, rawTitle?: string): PaperInfo {
   const resolvedUrl = unwrapViewerUrl(rawUrl);
-  const scholarReader = rawUrl.includes(`chrome-extension://${SCHOLAR_READER_EXTENSION_ID}/`);
+  const scholarReader = rawUrl.startsWith(`${SCHOLAR_READER_ORIGIN}/`);
   const title = cleanTitle(rawTitle || decodeURIComponent(resolvedUrl.split('/').pop() || 'Untitled paper'));
   const identifiers = extractIdentifiers(resolvedUrl, title);
   const arxivPrefix = identifiers.arxivId?.slice(0, 2);

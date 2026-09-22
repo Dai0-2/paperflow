@@ -12,7 +12,7 @@ html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; }
 body { background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 button, textarea, input { font: inherit; color: inherit; }
 button { border: 0; background: none; cursor: pointer; }
-button:focus-visible, textarea:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent), transparent 45%); outline-offset: 2px; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent), transparent 45%); outline-offset: 2px; }
 .panel-shell, .view { height: 100%; display: flex; flex-direction: column; background: var(--bg); }
 .app-header, .view-header { flex: 0 0 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 15px; background: var(--surface); border-bottom: 1px solid var(--border); }
 .brand { display: flex; align-items: center; gap: 9px; font-weight: 610; letter-spacing: -.015em; padding: 5px 0; }

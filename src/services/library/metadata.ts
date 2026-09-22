@@ -60,6 +60,7 @@ async function refreshCrossref(doi: string, fetcher: typeof fetch): Promise<Meta
 }
 
 async function refreshArxiv(arxivId: string, fetcher: typeof fetch): Promise<MetadataPatch> {
+  await requestPermission('https://export.arxiv.org/*');
   const response = await fetcher(`https://export.arxiv.org/api/query?id_list=${encodeURIComponent(arxivId)}`);
   if (!response.ok) throw new Error(`arXiv returned ${response.status}.`);
   const xml = new DOMParser().parseFromString(await response.text(), 'application/xml');

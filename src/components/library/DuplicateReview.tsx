@@ -1,15 +1,17 @@
 import { GitMerge, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { text } from '../../i18n';
 import { isPossibleDuplicate } from '../../services/library/paperIdentity';
-import type { PaperInfo } from '../../types';
+import type { Language, PaperInfo } from '../../types';
 
 interface DuplicateReviewProps {
+  language: Language;
   papers: PaperInfo[];
   onClose: () => void;
   onMerge: (canonicalId: string, duplicateId: string) => Promise<void>;
 }
 
-export function DuplicateReview({ papers, onClose, onMerge }: DuplicateReviewProps) {
+export function DuplicateReview({ language, papers, onClose, onMerge }: DuplicateReviewProps) {
   const [busy, setBusy] = useState('');
   const pairs = useMemo(() => {
     const result: Array<[PaperInfo, PaperInfo]> = [];
@@ -35,13 +37,13 @@ export function DuplicateReview({ papers, onClose, onMerge }: DuplicateReviewPro
   };
   return <div className="dialog-backdrop" role="presentation">
     <section className="library-dialog duplicate-dialog" role="dialog" aria-modal="true" aria-labelledby="duplicate-title">
-      <header><div><h2 id="duplicate-title">Review duplicates</h2><p>Choose which record keeps the shared library history and attachments.</p></div><button title="Close" onClick={onClose}><X /></button></header>
+      <header><div><h2 id="duplicate-title">{text(language, 'Review duplicates', '检查重复项')}</h2><p>{text(language, 'Choose which record keeps the shared library history and attachments.', '选择保留共享资料库历史和附件的记录。')}</p></div><button title={text(language, 'Close', '关闭')} onClick={onClose}><X /></button></header>
       <div className="duplicate-list">
-        {!pairs.length && <div className="dialog-empty">No duplicate pairs remain.</div>}
+        {!pairs.length && <div className="dialog-empty">{text(language, 'No duplicate pairs remain.', '没有待处理的重复论文。')}</div>}
         {pairs.map(([left, right]) => <article key={`${left.id}:${right.id}`}>
-          <div><strong>{left.title}</strong><span>{left.authors || 'Unknown author'} · {left.year || 'No year'}</span><small>{left.doi || left.url || 'No identifier'}</small><button disabled={Boolean(busy)} onClick={() => void merge(left.id, right.id)}><GitMerge /> Keep this record</button></div>
-          <i>or</i>
-          <div><strong>{right.title}</strong><span>{right.authors || 'Unknown author'} · {right.year || 'No year'}</span><small>{right.doi || right.url || 'No identifier'}</small><button disabled={Boolean(busy)} onClick={() => void merge(right.id, left.id)}><GitMerge /> Keep this record</button></div>
+          <div><strong>{left.title}</strong><span>{left.authors || text(language, 'Unknown author', '未知作者')} · {left.year || text(language, 'No year', '无年份')}</span><small>{left.doi || left.url || text(language, 'No identifier', '无标识符')}</small><button disabled={Boolean(busy)} onClick={() => void merge(left.id, right.id)}><GitMerge /> {text(language, 'Keep this record', '保留此记录')}</button></div>
+          <i>{text(language, 'or', '或')}</i>
+          <div><strong>{right.title}</strong><span>{right.authors || text(language, 'Unknown author', '未知作者')} · {right.year || text(language, 'No year', '无年份')}</span><small>{right.doi || right.url || text(language, 'No identifier', '无标识符')}</small><button disabled={Boolean(busy)} onClick={() => void merge(right.id, left.id)}><GitMerge /> {text(language, 'Keep this record', '保留此记录')}</button></div>
         </article>)}
       </div>
     </section>

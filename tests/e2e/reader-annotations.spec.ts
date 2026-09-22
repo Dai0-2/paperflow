@@ -89,7 +89,7 @@ test('creates persistent annotations and exports a readable PDF copy', async ({ 
   await page.goto('/reader.html');
   await page.locator('input[type="file"]').setInputFiles(fixture);
   await expect(page.locator('.textLayer span').first()).toBeVisible();
-  await page.getByTitle('Save paper and PDF offline').click();
+  await page.getByTitle('Save PDF offline').click();
   await expect(page.getByTitle('PDF available offline')).toBeVisible();
 
   await selectText(page, 'Highlight');

@@ -25,6 +25,7 @@ async function createFixture(path: string): Promise<void> {
 
 async function databaseState(page: Page): Promise<{
   paperId?: string;
+  libraryState?: string;
   documentState?: string;
   ocrStatus?: string;
   ocrText?: string;
@@ -46,13 +47,14 @@ async function databaseState(page: Page): Promise<{
       request.onerror = () => reject(request.error);
     });
     const [papers, documents, ocrPages] = await Promise.all([
-      readAll<{ id: string }>('papers'),
+      readAll<{ id: string; libraryState?: string }>('papers'),
       readAll<{ localState: string }>('documents'),
       readAll<{ status: string; text: string }>('ocrPages'),
     ]);
     database.close();
     return {
       paperId: papers[0]?.id,
+      libraryState: papers[0]?.libraryState,
       documentState: documents[0]?.localState,
       ocrStatus: ocrPages[0]?.status,
       ocrText: ocrPages[0]?.text,
@@ -70,7 +72,10 @@ test('stores a PDF offline and runs cancellable local OCR', async ({ page }, tes
   await expect(page.getByLabel('Page number')).toHaveValue('1');
   await expect.poll(async () => (await databaseState(page)).paperId).toBeTruthy();
 
-  await page.getByTitle('Save paper and PDF offline').click();
+  await page.getByTitle('Save to PaperFlow').click();
+  await expect(page.getByTitle('Saved to PaperFlow')).toBeVisible();
+  await expect.poll(async () => (await databaseState(page)).libraryState).toBe('saved');
+  await page.getByTitle('Save PDF offline').click();
   await expect(page.getByTitle('PDF available offline')).toBeVisible();
   await expect.poll(async () => (await databaseState(page)).documentState).toBe('available');
 

@@ -4,6 +4,7 @@ import workerUrl from '../pdf-worker.ts?worker&url';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FlatOutlineItem } from '../components/reader/ReaderPanels';
 import { openPaperFlowDatabase } from '../db/PaperFlowDatabase';
+import { text } from '../i18n';
 import { contentHash, paperFromUrl } from '../services/paper';
 import { chunksFromPages } from '../services/paperContext';
 import { indexPaper } from '../services/search/searchIndexer';
@@ -12,7 +13,7 @@ import {
   storePdfDocument,
 } from '../services/storage/documentStore';
 import { useAppStore } from '../store/useAppStore';
-import type { OcrPage, PaperDocument, PaperInfo } from '../types';
+import type { Language, OcrPage, PaperDocument, PaperInfo } from '../types';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -37,11 +38,17 @@ function flattenOutline(items: OutlineItem[], depth = 0): FlatOutlineItem[] {
   ]);
 }
 
-function errorMessage(reason: unknown) {
-  if (!(reason instanceof Error)) return 'The PDF could not be opened.';
-  if (/password/i.test(reason.name) || /password/i.test(reason.message)) return 'This PDF is encrypted. Password-protected documents are not supported in this MVP.';
-  if (/missing|404/i.test(reason.message)) return 'The PDF could not be found. Check the URL or download it and open the local file.';
-  if (/cors|fetch|network|response/i.test(reason.message)) return 'The PDF host blocked access or requires a signed-in browser session. Download the file and open it locally.';
+function errorMessage(reason: unknown, language: Language) {
+  if (!(reason instanceof Error)) return text(language, 'The PDF could not be opened.', '无法打开此 PDF。');
+  if (/password/i.test(reason.name) || /password/i.test(reason.message)) {
+    return text(language, 'This PDF is encrypted. Password-protected documents are not supported.', '此 PDF 已加密，暂不支持受密码保护的文档。');
+  }
+  if (/missing|404/i.test(reason.message)) {
+    return text(language, 'The PDF could not be found. Check the URL or download it and open the local file.', '找不到此 PDF。请检查链接，或下载后从本地打开。');
+  }
+  if (/cors|fetch|network|response/i.test(reason.message)) {
+    return text(language, 'The PDF host blocked access or requires a signed-in browser session. Download the file and open it locally.', 'PDF 来源阻止了访问或需要登录。请下载文件后从本地打开。');
+  }
   return reason.message;
 }
 
@@ -74,6 +81,7 @@ export function usePdfDocument() {
   const [outline, setOutline] = useState<FlatOutlineItem[]>([]);
   const [pageTexts, setPageTexts] = useState<string[]>([]);
   const {
+    uiLanguage,
     setPaper,
     setPaperText,
     setPaperChunks,
@@ -170,23 +178,25 @@ export function usePdfDocument() {
       setPaperChunks(persistedChunks);
       await indexPaper(nextPaper.id).catch(() => undefined);
       if (mergedPages.every((value) => !value.trim())) {
-        setError('The PDF has no readable text layer. You can read the pages, but selection and AI page context are unavailable.');
+        setError(text(uiLanguage, 'The PDF has no readable text layer. You can read the pages, but selection and AI page context are unavailable.', '此 PDF 没有可读文字层。你仍可阅读页面，但无法使用划词和 AI 页面上下文。'));
       }
     } catch (reason) {
       if (generation !== loadGeneration.current) return;
       setPdfDocument(undefined);
       setPageCount(0);
-      setError(errorMessage(reason));
+      setError(errorMessage(reason, uiLanguage));
     } finally {
       if (generation === loadGeneration.current) {
         setLoading(false);
         setReadingPaper(false);
       }
     }
-  }, [setPaper, setPaperChunks, setPaperText, setReadingPaper]);
+  }, [setPaper, setPaperChunks, setPaperText, setReadingPaper, uiLanguage]);
 
   const saveOffline = useCallback(async (paper: PaperInfo) => {
-    if (!documentData) throw new Error('The PDF bytes are not available yet.');
+    if (!documentData) {
+      throw new Error(text(uiLanguage, 'The PDF bytes are not available yet.', 'PDF 数据尚未准备好。'));
+    }
     const document = await storePdfDocument({
       paper,
       data: documentData,
@@ -195,7 +205,7 @@ export function usePdfDocument() {
     });
     setActiveDocument(document);
     return document;
-  }, [documentData, pageCount, source?.name]);
+  }, [documentData, pageCount, source?.name, uiLanguage]);
 
   const applyOcrPage = useCallback(async (record: OcrPage) => {
     const db = await openPaperFlowDatabase();
@@ -214,11 +224,13 @@ export function usePdfDocument() {
     if (!value) return;
     try {
       const url = new URL(value);
-      if (!/^https?:$/.test(url.protocol)) throw new Error('Only HTTP and HTTPS PDF URLs are supported. Use the file picker for local PDFs.');
+      if (!/^https?:$/.test(url.protocol)) {
+        throw new Error(text(uiLanguage, 'Only HTTP and HTTPS PDF URLs are supported. Use the file picker for local PDFs.', '仅支持 HTTP 和 HTTPS PDF 链接。本地 PDF 请使用文件选择器。'));
+      }
       setUrlDraft(value);
       if (!await hasOriginPermission(value)) {
         setPendingUrl(value);
-        setError('PaperFlow needs access to this PDF host before it can load the document.');
+        setError(text(uiLanguage, 'PaperFlow needs access to this PDF host before it can load the document.', 'PaperFlow 需要获得此 PDF 来源的访问权限才能加载文档。'));
         return;
       }
       setPendingUrl('');
@@ -227,18 +239,18 @@ export function usePdfDocument() {
         name: title || decodeURIComponent(url.pathname.split('/').pop() || 'paper.pdf'),
       });
     } catch (reason) {
-      setError(errorMessage(reason));
+      setError(errorMessage(reason, uiLanguage));
     }
-  }, [loadSource]);
+  }, [loadSource, uiLanguage]);
 
   const selectFile = useCallback(async (file?: File) => {
     if (!file) return;
     if (file.type !== 'application/pdf' && !file.name.toLocaleLowerCase().endsWith('.pdf')) {
-      setError('Choose a PDF file.');
+      setError(text(uiLanguage, 'Choose a PDF file.', '请选择 PDF 文件。'));
       return;
     }
     await loadSource({ data: new Uint8Array(await file.arrayBuffer()), name: file.name });
-  }, [loadSource]);
+  }, [loadSource, uiLanguage]);
 
   const grantAccess = useCallback(async () => {
     if (!pendingUrl) return;
@@ -247,17 +259,28 @@ export function usePdfDocument() {
       setPendingUrl('');
       await prepareUrl(url);
     } else {
-      setError('Access was not granted. Download the PDF and open it as a local file instead.');
+      setError(text(uiLanguage, 'Access was not granted. Download the PDF and open it as a local file instead.', '未授予访问权限。请下载 PDF 后从本地打开。'));
     }
-  }, [pendingUrl, prepareUrl]);
+  }, [pendingUrl, prepareUrl, uiLanguage]);
 
   useEffect(() => {
     const parameters = new URLSearchParams(location.search);
     const url = parameters.get('url');
     const paperId = parameters.get('paperId');
     const title = parameters.get('title') || undefined;
+    const warning = parameters.get('warning');
+    const autoLoad = parameters.get('autoLoad') !== 'false';
     let active = true;
     void (async () => {
+      if (url) setUrlDraft(url);
+      if (warning === 'pdf-handler-conflict') {
+        setError(text(
+          uiLanguage,
+          'PaperFlow stopped a possible PDF-handler redirect loop. Disable one default PDF handler, then use the Side Panel or open this URL manually.',
+          'PaperFlow 已停止可能的 PDF 接管循环。请关闭其中一个默认 PDF 接管器，然后使用 Side Panel，或手动打开此链接。',
+        ));
+        return;
+      }
       if (paperId) {
         const stored = await loadStoredDocumentForPaper(paperId);
         if (!active) return;
@@ -271,15 +294,17 @@ export function usePdfDocument() {
           return;
         }
       }
-      if (url) await prepareUrl(url, title);
-      else if (paperId) setError('The offline PDF is unavailable and this paper has no source URL to restore it.');
+      if (url && autoLoad) await prepareUrl(url, title);
+      else if (paperId) {
+        setError(text(uiLanguage, 'The offline PDF is unavailable and this paper has no source URL to restore it.', '离线 PDF 不可用，且此论文没有可恢复的来源链接。'));
+      }
     })().catch((reason: unknown) => {
-      if (active) setError(errorMessage(reason));
+      if (active) setError(errorMessage(reason, uiLanguage));
     });
     return () => {
       active = false;
     };
-  }, [loadSource, prepareUrl]);
+  }, [loadSource, prepareUrl, uiLanguage]);
 
   useEffect(() => () => {
     loadGeneration.current += 1;

@@ -1,14 +1,16 @@
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { PaperNote } from '../../types';
+import { text } from '../../i18n';
+import type { Language, PaperNote } from '../../types';
 
 interface NoteEditorProps {
+  language: Language;
   notes: PaperNote[];
   onSave: (input: { id?: string; title: string; content: string }) => Promise<void>;
   onDelete: (noteId: string) => Promise<void>;
 }
 
-export function NoteEditor({ notes, onSave, onDelete }: NoteEditorProps) {
+export function NoteEditor({ language, notes, onSave, onDelete }: NoteEditorProps) {
   const [activeId, setActiveId] = useState<string | null>(notes[0]?.id || null);
   const active = notes.find((note) => note.id === activeId);
   const [title, setTitle] = useState(active?.title || '');
@@ -40,14 +42,14 @@ export function NoteEditor({ notes, onSave, onDelete }: NoteEditorProps) {
         setActiveId(null);
         setTitle('');
         setContent('');
-      }}><Plus /> New note</button>
+      }}><Plus /> {text(language, 'New note', '新建笔记')}</button>
     </div>
     <div className="note-fields">
-      <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Note title" aria-label="Note title" />
-      <textarea value={content} onChange={(event) => setContent(event.target.value)} placeholder="Write in Markdown…" aria-label="Note content" />
+      <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={text(language, 'Note title', '笔记标题')} aria-label={text(language, 'Note title', '笔记标题')} />
+      <textarea value={content} onChange={(event) => setContent(event.target.value)} placeholder={text(language, 'Write in Markdown…', '使用 Markdown 记录…')} aria-label={text(language, 'Note content', '笔记内容')} />
       <div>
-        {activeId && <button className="danger-text" onClick={() => void onDelete(activeId)}><Trash2 /> Delete</button>}
-        <button className="primary-button" disabled={saving || (!title.trim() && !content.trim())} onClick={() => void save()}><Save /> Save note</button>
+        {activeId && <button className="danger-text" onClick={() => void onDelete(activeId)}><Trash2 /> {text(language, 'Delete', '删除')}</button>}
+        <button className="primary-button" disabled={saving || (!title.trim() && !content.trim())} onClick={() => void save()}><Save /> {text(language, 'Save note', '保存笔记')}</button>
       </div>
     </div>
   </div>;

@@ -4,17 +4,18 @@ import { BrandMark } from '../common/BrandMark';
 import { useAppStore } from '../../store/useAppStore';
 import { detectActivePaper } from '../../services/paper';
 import { loginWithChatGPT, saveApiKey } from '../../services/bridge';
+import { text } from '../../i18n';
 
 export function OnboardingView() {
   const [apiKey, setApiKey] = useState('');
-  const { paper, detecting, providerMode, bridgeState, bridgeDetail, apiState, apiDetail, setPaper, setDetecting, setBridge, setApiState, setProviderMode, setInitialized } = useAppStore();
+  const { paper, detecting, providerMode, bridgeState, bridgeDetail, apiState, apiDetail, uiLanguage, setPaper, setDetecting, setBridge, setApiState, setProviderMode, setInitialized } = useAppStore();
 
   const detect = async () => {
     setDetecting(true);
     try { setPaper(await detectActivePaper()); } finally { setDetecting(false); }
   };
   const connectApi = async () => {
-    setApiState('checking', 'Saving to the operating-system credential store…');
+    setApiState('checking', text(uiLanguage, 'Saving to the operating-system credential store…', '正在保存到操作系统凭据库…'));
     const result = await saveApiKey(apiKey.trim());
     setApiState(result.ok && result.authenticated ? 'connected' : 'unavailable', result.detail || result.error || '');
     if (result.ok) { setApiKey(''); setProviderMode('api'); }
@@ -22,31 +23,31 @@ export function OnboardingView() {
   const ready = providerMode === 'api' ? apiState === 'connected' : bridgeState === 'connected';
 
   const connect = async () => {
-    setBridge('checking', 'Checking Codex sign-in…');
+    setBridge('checking', text(uiLanguage, 'Checking Codex sign-in…', '正在检查 Codex 登录…'));
     const result = await loginWithChatGPT();
     setBridge(result.ok && result.authenticated ? 'connected' : result.ok ? 'signed-out' : 'unavailable', result.detail || result.error || '');
   };
 
   return <main className="onboarding">
     <div className="onboarding-brand"><BrandMark /><span>PaperFlow AI</span></div>
-    <div className="onboarding-copy"><p className="eyebrow">GET STARTED</p><h1>Your paper, understood.</h1><p>Connect ChatGPT and let PaperFlow identify the PDF beside this panel.</p></div>
+    <div className="onboarding-copy"><p className="eyebrow">{text(uiLanguage, 'GET STARTED', '开始使用')}</p><h1>{text(uiLanguage, 'Your paper, understood.', '读懂你的每一篇论文。')}</h1><p>{text(uiLanguage, 'Connect an AI provider and let PaperFlow identify the paper beside this panel.', '连接 AI 服务，让 PaperFlow 识别此面板旁的论文。')}</p></div>
     <div className="setup-steps">
       <section className="setup-card">
         <span className="setup-icon">{detecting ? <LoaderCircle className="spin" size={18} /> : paper ? <Check size={18} /> : <FileSearch size={18} />}</span>
-        <div><strong>{paper ? 'Paper detected' : 'Open a research paper'}</strong><p>{paper ? paper.title : 'Open an arXiv, OpenReview, or direct PDF tab, then detect it.'}</p></div>
-        <button onClick={detect} aria-label="Detect paper"><RefreshCw size={15} /></button>
+        <div><strong>{paper ? text(uiLanguage, 'Paper detected', '已识别论文') : text(uiLanguage, 'Open a research paper', '打开研究论文')}</strong><p>{paper ? paper.title : text(uiLanguage, 'Open an arXiv, OpenReview, or direct PDF tab, then detect it.', '打开 arXiv、OpenReview 或直接 PDF 标签页，然后开始识别。')}</p></div>
+        <button onClick={detect} aria-label={text(uiLanguage, 'Detect paper', '识别论文')}><RefreshCw size={15} /></button>
       </section>
-      <div className="provider-choice" role="group" aria-label="Choose an AI provider">
-        <button data-active={providerMode === 'chatgpt'} onClick={() => setProviderMode('chatgpt')}><LogIn size={16} /><span><strong>ChatGPT subscription</strong><small>Use your existing plan through Codex</small></span>{providerMode === 'chatgpt' && <Check size={14} />}</button>
-        <button data-active={providerMode === 'api'} onClick={() => setProviderMode('api')}><KeyRound size={16} /><span><strong>OpenAI API key</strong><small>Pay only for API usage</small></span>{providerMode === 'api' && <Check size={14} />}</button>
+      <div className="provider-choice" role="group" aria-label={text(uiLanguage, 'Choose an AI provider', '选择 AI 服务')}>
+        <button data-active={providerMode === 'chatgpt'} onClick={() => setProviderMode('chatgpt')}><LogIn size={16} /><span><strong>{text(uiLanguage, 'ChatGPT subscription', 'ChatGPT 订阅')}</strong><small>{text(uiLanguage, 'Use your existing plan through Codex', '通过 Codex 使用现有订阅')}</small></span>{providerMode === 'chatgpt' && <Check size={14} />}</button>
+        <button data-active={providerMode === 'api'} onClick={() => setProviderMode('api')}><KeyRound size={16} /><span><strong>{text(uiLanguage, 'OpenAI API key', 'OpenAI API 密钥')}</strong><small>{text(uiLanguage, 'Pay only for API usage', '仅按 API 用量付费')}</small></span>{providerMode === 'api' && <Check size={14} />}</button>
       </div>
       {providerMode === 'chatgpt' ? <section className="setup-card">
           <span className="setup-icon">{bridgeState === 'checking' ? <LoaderCircle className="spin" size={18} /> : bridgeState === 'connected' ? <Check size={18} /> : <LogIn size={18} />}</span>
-          <div><strong>{bridgeState === 'connected' ? 'ChatGPT connected' : 'Check Codex sign-in'}</strong><p>{bridgeState === 'connected' ? 'Using your official Codex sign-in.' : bridgeDetail || 'Install Codex, run `codex login` in a terminal, then check again.'}</p></div>
-          {bridgeState !== 'connected' && <button className="setup-action" onClick={connect}>Check</button>}
-        </section> : <section className="api-setup-card"><div><strong>{apiState === 'connected' ? 'API key connected' : 'Add OpenAI API key'}</strong><p>{apiState === 'connected' ? apiDetail : apiDetail || 'Saved in the operating-system credential store, never in extension storage.'}</p></div>{apiState !== 'connected' && <div className="api-key-row"><input type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="sk-…" /><button disabled={!apiKey.trim()} onClick={() => void connectApi()}>Save</button></div>}</section>}
+          <div><strong>{bridgeState === 'connected' ? text(uiLanguage, 'ChatGPT connected', 'ChatGPT 已连接') : text(uiLanguage, 'Check Codex sign-in', '检查 Codex 登录')}</strong><p>{bridgeState === 'connected' ? text(uiLanguage, 'Using your official Codex sign-in.', '正在使用官方 Codex 登录。') : bridgeDetail || text(uiLanguage, 'Install Codex, run `codex login` in a terminal, then check again.', '安装 Codex，在终端运行 `codex login`，然后重新检查。')}</p></div>
+          {bridgeState !== 'connected' && <button className="setup-action" onClick={connect}>{text(uiLanguage, 'Check', '检查')}</button>}
+        </section> : <section className="api-setup-card"><div><strong>{apiState === 'connected' ? text(uiLanguage, 'API key connected', 'API 密钥已连接') : text(uiLanguage, 'Add OpenAI API key', '添加 OpenAI API 密钥')}</strong><p>{apiState === 'connected' ? apiDetail : apiDetail || text(uiLanguage, 'Saved in the operating-system credential store, never in extension storage.', '密钥保存在操作系统凭据库中，不会进入扩展存储。')}</p></div>{apiState !== 'connected' && <div className="api-key-row"><input type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="sk-…" /><button disabled={!apiKey.trim()} onClick={() => void connectApi()}>{text(uiLanguage, 'Save', '保存')}</button></div>}</section>}
     </div>
-    <div className="privacy-note"><ShieldCheck size={15} /><span>PaperFlow never reads ChatGPT cookies or exposes your access token.</span></div>
-    <button className="continue-button" disabled={!ready} onClick={() => setInitialized(true)}>Open workspace <ArrowRight size={16} /></button>
+    <div className="privacy-note"><ShieldCheck size={15} /><span>{text(uiLanguage, 'PaperFlow never reads ChatGPT cookies or exposes your access token.', 'PaperFlow 不会读取 ChatGPT Cookie，也不会暴露访问令牌。')}</span></div>
+    <button className="continue-button" disabled={!ready} onClick={() => setInitialized(true)}>{text(uiLanguage, 'Open workspace', '打开工作区')} <ArrowRight size={16} /></button>
   </main>;
 }

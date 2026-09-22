@@ -14,16 +14,9 @@
     "identity",
     "alarms"
   ],
-  "host_permissions": [
-    "https://arxiv.org/*",
-    "https://export.arxiv.org/*",
-    "https://openreview.net/*"
-  ],
   "optional_host_permissions": [
     "https://*/*",
-    "http://*/*",
-    "https://api.crossref.org/*",
-    "https://api2.openreview.net/*"
+    "http://*/*"
   ],
   "icons": {
     "16": "icons/paperflow-16.png",

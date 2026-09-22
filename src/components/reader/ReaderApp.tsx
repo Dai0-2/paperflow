@@ -8,6 +8,7 @@ import { useAnnotationTool } from '../../hooks/useAnnotationTool';
 import { usePdfDocument } from '../../hooks/usePdfDocument';
 import { useReaderNavigation } from '../../hooks/useReaderNavigation';
 import { useWorkspaceBootstrap } from '../../hooks/useWorkspaceBootstrap';
+import { text } from '../../i18n';
 import { savePaperToLibrary } from '../../repositories/libraryRepository';
 import {
   createTextAnchor,
@@ -46,6 +47,7 @@ export function ReaderApp() {
     anchor: TextAnchor;
   }>();
   const [renderAll, setRenderAll] = useState(false);
+  const [savingLibrary, setSavingLibrary] = useState(false);
   const [savingOffline, setSavingOffline] = useState(false);
   const [operationError, setOperationError] = useState('');
   const [ocrProgress, setOcrProgress] = useState<OcrProgress>();
@@ -228,7 +230,11 @@ export function ReaderApp() {
         new Blob([exporter.annotationsAsMarkdown(annotationState.annotations)], { type: 'text/markdown' }),
         `${baseName}-paperflow-annotations.md`,
       );
-      setOperationError(`${reason instanceof Error ? reason.message : 'PDF export failed.'} JSON and Markdown backups were downloaded instead.`);
+      setOperationError(text(
+        uiLanguage,
+        `${reason instanceof Error ? reason.message : 'PDF export failed.'} JSON and Markdown backups were downloaded instead.`,
+        `${reason instanceof Error ? reason.message : 'PDF 导出失败。'} 已改为下载 JSON 和 Markdown 备份。`,
+      ));
     }
   };
 
@@ -264,22 +270,42 @@ export function ReaderApp() {
     window.setTimeout(() => window.print(), 900);
   };
 
+  const persistToLibrary = async () => {
+    if (!paper || paper.libraryState === 'saved' || savingLibrary) return paper;
+    setSavingLibrary(true);
+    setOperationError('');
+    try {
+      const savedPaper = await savePaperToLibrary(paper.id);
+      setPaper(savedPaper);
+      return savedPaper;
+    } catch (reason) {
+      setOperationError(reason instanceof Error
+        ? reason.message
+        : text(uiLanguage, 'The paper could not be saved to PaperFlow.', '无法将论文保存到 PaperFlow。'));
+      return undefined;
+    } finally {
+      setSavingLibrary(false);
+    }
+  };
+
   const persistOffline = async () => {
     if (!paper || !documentData || savingOffline) return activeDocument;
     setSavingOffline(true);
     setOperationError('');
     try {
-      const savedPaper = paper.libraryState === 'saved'
-        ? paper
-        : await savePaperToLibrary(paper.id);
+      setSavingLibrary(paper.libraryState !== 'saved');
+      const savedPaper = paper.libraryState === 'saved' ? paper : await savePaperToLibrary(paper.id);
       if (savedPaper !== paper) setPaper(savedPaper);
       const document = await saveOffline(savedPaper);
       await queueStoredDocumentsForSync(savedPaper.id);
       return document;
     } catch (reason) {
-      setOperationError(reason instanceof Error ? reason.message : 'The PDF could not be saved offline.');
+      setOperationError(reason instanceof Error
+        ? reason.message
+        : text(uiLanguage, 'The PDF could not be saved offline.', '无法保存离线 PDF。'));
       return undefined;
     } finally {
+      setSavingLibrary(false);
       setSavingOffline(false);
     }
   };
@@ -287,7 +313,7 @@ export function ReaderApp() {
   const runOcr = async (fromPage: number, toPage: number, language: OcrLanguage) => {
     if (!pdfDocument || !paper) return;
     if (toPage - fromPage + 1 > 50) {
-      setOperationError('Run OCR on at most 50 pages at a time.');
+      setOperationError(text(uiLanguage, 'Run OCR on at most 50 pages at a time.', '每次最多对 50 页运行 OCR。'));
       return;
     }
     setOperationError('');
@@ -297,7 +323,9 @@ export function ReaderApp() {
       try {
         document = await saveOffline(paper);
       } catch (reason) {
-        setOperationError(reason instanceof Error ? reason.message : 'The PDF could not be prepared for OCR.');
+        setOperationError(reason instanceof Error
+          ? reason.message
+          : text(uiLanguage, 'The PDF could not be prepared for OCR.', '无法为 OCR 准备 PDF。'));
         return;
       } finally {
         setSavingOffline(false);
@@ -317,7 +345,7 @@ export function ReaderApp() {
       await job.promise;
     } catch (reason) {
       if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
-        setOperationError(reason instanceof Error ? reason.message : 'OCR failed.');
+        setOperationError(reason instanceof Error ? reason.message : text(uiLanguage, 'OCR failed.', 'OCR 失败。'));
       }
     } finally {
       if (ocrJob.current === job) {
@@ -355,10 +383,12 @@ export function ReaderApp() {
       pageCount={pageCount}
       scale={scale}
       theme={theme}
+      language={uiLanguage}
       sidebarOpen={sidebarOpen}
       assistantOpen={assistantOpen}
       searchQuery={searchQuery}
       searchPages={searchPages}
+      libraryState={savingLibrary ? 'saving' : paper?.libraryState === 'saved' ? 'saved' : 'temporary'}
       offlineState={activeDocument ? 'available' : savingOffline ? 'saving' : 'unavailable'}
       ocrProgress={ocrProgress}
       onPageChange={goToPage}
@@ -371,17 +401,19 @@ export function ReaderApp() {
       onOpenFile={() => fileInput.current?.click()}
       onDownload={download}
       onPrint={print}
+      onSaveToLibrary={() => void persistToLibrary()}
       onSaveOffline={() => void persistOffline()}
       onStartOcr={(fromPage, toPage, language) => void runOcr(fromPage, toPage, language)}
       onCancelOcr={() => ocrJob.current?.cancel()}
     />
     <div className="reader-workspace">
-      {sidebarOpen && pdfDocument && <ReaderSidebarPanel document={pdfDocument} pageCount={pageCount} page={page} view={sidebarView} outline={outline} onViewChange={setSidebarView} onPageChange={goToPage} onOutlineClick={(item) => void resolveOutline(item)} />}
+      {sidebarOpen && pdfDocument && <ReaderSidebarPanel document={pdfDocument} language={uiLanguage} pageCount={pageCount} page={page} view={sidebarView} outline={outline} onViewChange={setSidebarView} onPageChange={goToPage} onOutlineClick={(item) => void resolveOutline(item)} />}
       <section className="reader-document">
-        {!pdfDocument && <ReaderOpenState url={urlDraft} loading={loading} progress={loadProgress} error={error} accessRequired={Boolean(pendingUrl)} onUrlChange={setUrlDraft} onSubmit={() => void prepareUrl(urlDraft)} onOpenFile={() => fileInput.current?.click()} onGrantAccess={() => void grantAccess()} />}
+        {!pdfDocument && <ReaderOpenState url={urlDraft} language={uiLanguage} loading={loading} progress={loadProgress} error={error} accessRequired={Boolean(pendingUrl)} onUrlChange={setUrlDraft} onSubmit={() => void prepareUrl(urlDraft)} onOpenFile={() => fileInput.current?.click()} onGrantAccess={() => void grantAccess()} />}
         {pdfDocument && <>
           <AnnotationToolbar
             tool={annotationState.tool}
+            language={uiLanguage}
             color={annotationState.color}
             annotationCount={annotationState.annotations.length}
             onToolChange={(tool) => {
@@ -416,6 +448,7 @@ export function ReaderApp() {
           </div>
           <AnnotationInspector
             annotation={annotationState.selected}
+            language={uiLanguage}
             onClose={() => annotationState.select(undefined)}
             onUpdate={(patch) => annotationState.update(annotationState.selected!.id, patch)}
             onDelete={() => annotationState.remove(annotationState.selected!.id)}
