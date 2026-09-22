@@ -14,7 +14,7 @@ export function OnboardingView() {
     try { setPaper(await detectActivePaper()); } finally { setDetecting(false); }
   };
   const connectApi = async () => {
-    setApiState('checking', 'Saving to macOS Keychain…');
+    setApiState('checking', 'Saving to the operating-system credential store…');
     const result = await saveApiKey(apiKey.trim());
     setApiState(result.ok && result.authenticated ? 'connected' : 'unavailable', result.detail || result.error || '');
     if (result.ok) { setApiKey(''); setProviderMode('api'); }
@@ -22,7 +22,7 @@ export function OnboardingView() {
   const ready = providerMode === 'api' ? apiState === 'connected' : bridgeState === 'connected';
 
   const connect = async () => {
-    setBridge('checking', 'Opening secure ChatGPT sign-in…');
+    setBridge('checking', 'Checking Codex sign-in…');
     const result = await loginWithChatGPT();
     setBridge(result.ok && result.authenticated ? 'connected' : result.ok ? 'signed-out' : 'unavailable', result.detail || result.error || '');
   };
@@ -42,9 +42,9 @@ export function OnboardingView() {
       </div>
       {providerMode === 'chatgpt' ? <section className="setup-card">
           <span className="setup-icon">{bridgeState === 'checking' ? <LoaderCircle className="spin" size={18} /> : bridgeState === 'connected' ? <Check size={18} /> : <LogIn size={18} />}</span>
-          <div><strong>{bridgeState === 'connected' ? 'ChatGPT connected' : 'Connect ChatGPT'}</strong><p>{bridgeState === 'connected' ? 'Using your official Codex sign-in.' : bridgeDetail || 'Secure browser sign-in through the official Codex CLI.'}</p></div>
-          {bridgeState !== 'connected' && <button className="setup-action" onClick={connect}>Connect</button>}
-        </section> : <section className="api-setup-card"><div><strong>{apiState === 'connected' ? 'API key connected' : 'Add OpenAI API key'}</strong><p>{apiState === 'connected' ? apiDetail : apiDetail || 'Saved locally in macOS Keychain, never in extension storage.'}</p></div>{apiState !== 'connected' && <div className="api-key-row"><input type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="sk-…" /><button disabled={!apiKey.trim()} onClick={() => void connectApi()}>Save</button></div>}</section>}
+          <div><strong>{bridgeState === 'connected' ? 'ChatGPT connected' : 'Check Codex sign-in'}</strong><p>{bridgeState === 'connected' ? 'Using your official Codex sign-in.' : bridgeDetail || 'Install Codex, run `codex login` in a terminal, then check again.'}</p></div>
+          {bridgeState !== 'connected' && <button className="setup-action" onClick={connect}>Check</button>}
+        </section> : <section className="api-setup-card"><div><strong>{apiState === 'connected' ? 'API key connected' : 'Add OpenAI API key'}</strong><p>{apiState === 'connected' ? apiDetail : apiDetail || 'Saved in the operating-system credential store, never in extension storage.'}</p></div>{apiState !== 'connected' && <div className="api-key-row"><input type="password" autoComplete="off" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="sk-…" /><button disabled={!apiKey.trim()} onClick={() => void connectApi()}>Save</button></div>}</section>}
     </div>
     <div className="privacy-note"><ShieldCheck size={15} /><span>PaperFlow never reads ChatGPT cookies or exposes your access token.</span></div>
     <button className="continue-button" disabled={!ready} onClick={() => setInitialized(true)}>Open workspace <ArrowRight size={16} /></button>

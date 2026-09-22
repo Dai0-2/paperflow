@@ -10,3 +10,4 @@ paperflow-ai.zip
 *.log
 test-results/
 playwright-report/
+native-host/target/

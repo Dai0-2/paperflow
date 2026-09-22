@@ -49,7 +49,7 @@ Paper
 - 对可访问的 arXiv/OpenReview PDF 自动提取正文
 - 在 ChatGPT 风格的 Composer 菜单中上传 PDF、TXT、Markdown 和图片
 - 两种 Provider：通过官方 Codex CLI 使用 ChatGPT 订阅，或通过 Responses API 使用 OpenAI API Key
-- API Key 存入 macOS 钥匙串，不进入 Chrome 扩展存储
+- API Key 存入操作系统凭据库，不进入 Chrome 扩展存储
 - 可自定义 API Base URL、模型 ID，并切换 Responses / Chat Completions 格式
 - 界面语言与回答提示词语言可以分别切换中文或英文
 - 用户消息支持气泡边界、复制和编辑后重新发送；回答支持复制、重新生成、保存到记忆、标签与本地反馈
@@ -87,10 +87,11 @@ Paper
 
 ### 环境要求
 
-- Chrome 114 或更高版本（macOS）
+- Chrome 114 或更高版本（macOS、Windows 或 Linux）
 - 订阅模式需要 ChatGPT 桌面应用或 Codex CLI；API 模式需要 OpenAI Platform API Key
 - Node.js 20 或更高版本
 - pnpm 10 或更高版本
+- 从源码构建 Native Host 时需要 Rust stable
 
 ### 加载扩展
 
@@ -99,7 +100,13 @@ git clone https://github.com/YOUR_GITHUB_USERNAME/paperflow-ai.git
 cd paperflow-ai
 pnpm install
 pnpm build
-bash bridge/install.sh
+cargo build --release --locked --manifest-path native-host/Cargo.toml
+# macOS
+bash native-host/install/install-macos.sh
+# Linux
+sh native-host/install/install-linux.sh
+# Windows PowerShell
+.\native-host\install\install-windows.ps1
 ```
 
 Google Drive 开发构建需要 Chrome Extension OAuth Client ID：
@@ -122,9 +129,9 @@ pnpm build
 5. 固定 PaperFlow AI，点击工具栏图标打开 Side Panel
 6. 右键 PDF 链接或 PDF 页面，选择“使用 PaperFlow 打开”进入集成式 Reader
 
-安装脚本会把白名单 Native Messaging Host 复制到 `~/Library/Application Support/PaperFlow AI/` 并为固定扩展 ID 注册。订阅模式调用官方 Codex CLI，API 模式把密钥存入 macOS 钥匙串。它不会读取 ChatGPT Cookie 或 Codex 认证文件。
+安装脚本会为固定扩展 ID 注册 Rust Native Messaging Host。订阅模式仅使用固定参数调用官方 Codex CLI；API 密钥存入 macOS 钥匙串、Windows 凭据管理器或 Linux Secret Service。它不会读取 ChatGPT Cookie 或 Codex 认证文件。使用订阅模式前，请先在终端执行 `codex login`。
 
-重新构建或安装后，请在 `chrome://extensions` 中点击 PaperFlow AI 的“重新加载”。如果看到 `Native host has exited`，再次运行 `bash bridge/install.sh`，重新加载扩展，并查看 `~/Library/Logs/PaperFlow AI/bridge.log`。
+重新构建或安装后，请在 `chrome://extensions` 中点击 PaperFlow AI 的“重新加载”。如果 Chrome 找不到 Host，请重新运行对应平台安装器并重新加载扩展。安装路径、卸载命令和保留一个版本的 Python 回退说明见 [Native Host 文档](docs/native-host.md)。
 
 开发预览：
 
@@ -142,11 +149,11 @@ PaperFlow 不会读取 ChatGPT Cookie、把 OAuth Token 交给扩展，也不会
 Chrome Extension
        │ Chrome Native Messaging
        ▼
-PaperFlow Bridge
+PaperFlow Rust Native Host
        │
-       ├── codex login
        ├── codex login status
-       └── codex exec --json
+       ├── codex exec --json
+       └── 系统凭据存储 → OpenAI 兼容 API
 ```
 
 独立安装的本地 Bridge 将调用官方 Codex CLI，凭据由 Codex CLI 或操作系统凭据存储管理。详见[架构文档](docs/architecture.md)。

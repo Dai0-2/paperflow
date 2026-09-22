@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+echo "DEPRECATED: this installs the v0.7 Python compatibility host."
+echo "New installations should use native-host/install/install-macos.sh."
+
 bridge_dir="$(cd "$(dirname "$0")" && pwd)"
 host_dir="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"
 host_manifest="$host_dir/com.paperflow.ai.json"

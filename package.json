@@ -12,6 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "native:check": "cargo check --all-targets --manifest-path native-host/Cargo.toml",
+    "native:test": "cargo test --manifest-path native-host/Cargo.toml",
+    "native:build": "cargo build --release --manifest-path native-host/Cargo.toml",
     "package": "pnpm build && cd dist && zip -qr ../paperflow-ai.zip ."
   },
   "dependencies": {

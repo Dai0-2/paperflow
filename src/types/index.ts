@@ -337,5 +337,11 @@ export interface BridgeResponse {
   detail?: string;
   answer?: string;
   vaultKey?: string;
+  protocolVersion?: number;
+  hostVersion?: string;
+  platform?: string;
+  codexAvailable?: boolean;
+  credentialStoreAvailable?: boolean;
+  apiKeyConfigured?: boolean;
   error?: string;
 }

@@ -29,3 +29,86 @@ jobs:
           name: paperflow-ai-extension
           path: dist/
           if-no-files-found: error
+
+  native-host:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            artifact: paperflow-native-host-macos
+            platform: macos
+          - os: windows-latest
+            artifact: paperflow-native-host-windows
+            platform: windows
+          - os: ubuntu-latest
+            artifact: paperflow-native-host-linux
+            platform: linux
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: native-host
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - if: matrix.platform == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config
+      - if: matrix.platform == 'linux'
+        run: cargo fmt -- --check
+      - run: cargo test --locked
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo build --release --locked
+      - if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          test_home="$RUNNER_TEMP/paperflow-home"
+          mkdir -p "$test_home"
+          HOME="$test_home" bash install/install-macos.sh "$PWD/target/release/paperflow-host"
+          test -x "$test_home/Library/Application Support/PaperFlow AI/paperflow-host"
+          HOME="$test_home" bash install/uninstall-macos.sh
+          test ! -e "$test_home/Library/Application Support/PaperFlow AI/paperflow-host"
+      - if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          test_home="$RUNNER_TEMP/paperflow-home"
+          mkdir -p "$test_home"
+          HOME="$test_home" XDG_DATA_HOME="$test_home/data" XDG_CONFIG_HOME="$test_home/config" \
+            sh install/install-linux.sh "$PWD/target/release/paperflow-host"
+          test -x "$test_home/data/paperflow-ai/paperflow-host"
+          HOME="$test_home" XDG_DATA_HOME="$test_home/data" XDG_CONFIG_HOME="$test_home/config" \
+            sh install/uninstall-linux.sh
+          test ! -e "$test_home/data/paperflow-ai/paperflow-host"
+      - if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP "PaperFlowHome"
+          ./install/install-windows.ps1 -BinaryPath "$PWD/target/release/paperflow-host.exe"
+          if (-not (Test-Path "$env:LOCALAPPDATA/PaperFlow AI/paperflow-host.exe")) { throw "Install failed" }
+          ./install/uninstall-windows.ps1
+          if (Test-Path "$env:LOCALAPPDATA/PaperFlow AI/paperflow-host.exe") { throw "Uninstall failed" }
+      - if: matrix.platform != 'windows'
+        shell: bash
+        run: |
+          mkdir -p package
+          cp target/release/paperflow-host package/
+          cp "install/install-${{ matrix.platform }}.sh" package/
+          cp "install/uninstall-${{ matrix.platform }}.sh" package/
+          cp "manifests/com.paperflow.ai.${{ matrix.platform }}.json" package/
+          shasum -a 256 package/paperflow-host > package/SHA256SUMS
+      - if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path package -Force | Out-Null
+          Copy-Item target/release/paperflow-host.exe package/
+          Copy-Item install/install-windows.ps1 package/
+          Copy-Item install/uninstall-windows.ps1 package/
+          Copy-Item manifests/com.paperflow.ai.windows.json package/
+          $hash = (Get-FileHash package/paperflow-host.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  paperflow-host.exe" | Set-Content package/SHA256SUMS -Encoding ascii
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: native-host/package/
+          if-no-files-found: error

@@ -1,0 +1,9 @@
+{
+  "name": "com.paperflow.ai",
+  "description": "PaperFlow AI secure native host",
+  "path": "/home/USER/.local/share/paperflow-ai/paperflow-host",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://baddhdmpdljpcmnbpfgiegmgkmdbodie/"
+  ]
+}

@@ -10,7 +10,7 @@ Do not commit or share:
 - Chrome profile data or ChatGPT cookies
 - private paper content or exported PaperFlow databases
 
-PaperFlow does not use private ChatGPT web endpoints or simulate `chatgpt.com` sessions. ChatGPT subscription access uses the official Codex CLI through a local Native Messaging bridge; credentials remain outside the extension. API keys are stored in macOS Keychain and are never returned to extension storage.
+PaperFlow does not use private ChatGPT web endpoints or simulate `chatgpt.com` sessions. ChatGPT subscription access uses the official Codex CLI through a local Native Messaging host; credentials remain outside the extension. API keys are stored in macOS Keychain, Windows Credential Manager, or Linux Secret Service and are never returned to extension storage.
 
 ## PDF and extension permissions
 
@@ -39,7 +39,9 @@ Paper metadata, conversations, memory, selections, annotations, and reading stat
 
 ## Native bridge
 
-The bridge accepts only fixed, schema-validated actions and constructs fixed Codex/API requests. Vault credential actions accept only a UUID vault ID and an exact 256-bit Base64 key. It must not accept shell strings or arbitrary commands. Logs must exclude API keys, vault keys, recovery keys, authentication tokens, private document text, and unredacted local paths.
+The Rust host accepts only fixed actions validated independently by Zod and Serde and constructs fixed Codex/API requests. Vault credential actions accept only a UUID vault ID and an exact 256-bit Base64 key. It does not accept shell strings, arbitrary commands, executable paths, file paths, argument arrays, or environment variables from the extension. Native messages are limited to 1 MiB. Unknown actions, extra fields, malformed frames, and invalid values fail closed. Logs must exclude API keys, vault keys, recovery keys, authentication tokens, private document text, and unredacted local paths.
+
+Linux credential persistence is disabled when Secret Service is unavailable; PaperFlow never falls back to a plaintext credential file. Native Host uninstallers preserve credentials by default so removing program files cannot silently destroy a user's vault unlock material.
 
 ## Reporting a vulnerability
 

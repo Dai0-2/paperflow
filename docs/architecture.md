@@ -140,12 +140,12 @@ vault keys are never checkpointed. HTTP 401 requires user reauthorization,
 
 A Chrome extension cannot safely launch arbitrary local executables. It also must not read ChatGPT cookies or store Codex OAuth access tokens. The supported design is a separately installed, open-source native host:
 
-1. The extension connects to PaperFlow Bridge using Chrome Native Messaging.
-2. The bridge checks authentication with `codex login status`.
-3. On explicit user action, the bridge launches `codex login` or `codex login --device-auth`.
-4. Codex CLI opens the browser login flow and manages credentials.
-5. PaperFlow sends bounded paper context to the bridge.
-6. The bridge invokes `codex exec --json --ephemeral --sandbox read-only` and forwards sanitized JSONL events.
+1. The extension connects to the Rust PaperFlow Native Host using Chrome Native Messaging.
+2. The extension probes protocol version 1 and validates requests and responses with Zod; the host validates them again with Serde.
+3. The host checks authentication with `codex login status`. Interactive login is run explicitly by the user as `codex login` in a terminal.
+4. Codex CLI manages its own credentials.
+5. PaperFlow sends bounded paper context to the host.
+6. The host invokes `codex exec --json --ephemeral --sandbox read-only` with a fixed argument list and forwards sanitized JSONL events.
 
 The extension never receives or persists the Codex access token. The bridge must never read or return `~/.codex/auth.json`.
 
@@ -160,6 +160,11 @@ The extension never receives or persists the Codex access token. The bridge must
 - Show the exact paper context before transmission.
 - Support cancellation and timeouts.
 - Keep credentials in the OS credential store whenever possible.
+- Use macOS Keychain, Windows Credential Manager, or Linux Secret Service. If Secret Service is unavailable, disable persistence instead of writing plaintext.
+
+The Rust host uses protocol version 1 and the fixed host name `com.paperflow.ai`.
+The previous Python host remains a one-release compatibility fallback; new
+installations use the Rust binary. See [Native Host](native-host.md).
 
 ## Paper identity
 

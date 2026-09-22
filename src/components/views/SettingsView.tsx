@@ -12,12 +12,12 @@ export function SettingsView() {
   const [apiKey, setApiKey] = useState('');
   const { theme, model, providerMode, bridgeState, bridgeDetail, apiState, apiDetail, uiLanguage, promptLanguage, apiBaseUrl, apiProtocol, defaultOpenReader, setTheme, setModel, setView, setBridge, setApiState, setProviderMode, setUiLanguage, setPromptLanguage, setApiBaseUrl, setApiProtocol, setDefaultOpenReader } = useAppStore();
   const connect = async () => {
-    setBridge('checking', 'Opening secure sign-in…');
+    setBridge('checking', 'Checking Codex sign-in…');
     const result = await loginWithChatGPT();
     setBridge(result.ok && result.authenticated ? 'connected' : result.ok ? 'signed-out' : 'unavailable', result.detail || result.error || '');
   };
   const saveKey = async () => {
-    setApiState('checking', 'Saving to macOS Keychain…');
+    setApiState('checking', 'Saving to the operating-system credential store…');
     const result = await saveApiKey(apiKey.trim());
     setApiState(result.ok && result.authenticated ? 'connected' : 'unavailable', result.detail || result.error || '');
     if (result.ok) { setApiKey(''); setProviderMode('api'); }
@@ -30,8 +30,8 @@ export function SettingsView() {
   return <main className="view"><div className="view-header"><button className="back" onClick={() => setView('chat')}><ArrowLeft size={16} />{text(uiLanguage, 'Settings', '设置')}</button></div>
     <div className="view-content settings"><section><h3>{text(uiLanguage, 'AI provider', 'AI 服务')}</h3><div className="provider-list">
       <button data-active={providerMode === 'chatgpt'} onClick={() => setProviderMode('chatgpt')}><LogIn size={17} /><span><strong>{text(uiLanguage, 'ChatGPT subscription', 'ChatGPT 订阅')}</strong><small className={bridgeState === 'connected' ? 'connected' : ''}>{bridgeState === 'connected' ? text(uiLanguage, 'Connected through official Codex', '已通过官方 Codex 连接') : bridgeState === 'checking' ? text(uiLanguage, 'Checking…', '正在检查…') : bridgeDetail || text(uiLanguage, 'Not connected', '未连接')}</small></span>{providerMode === 'chatgpt' && <Check size={15} />}</button>
-      {bridgeState !== 'connected' && <button className="provider-action" onClick={() => void connect()}>{text(uiLanguage, 'Connect ChatGPT', '连接 ChatGPT')}</button>}
-      <button data-active={providerMode === 'api'} onClick={() => setProviderMode('api')}><KeyRound size={17} /><span><strong>{text(uiLanguage, 'API key', 'API 密钥')}</strong><small className={apiState === 'connected' ? 'connected' : ''}>{apiState === 'connected' ? text(uiLanguage, 'Stored in macOS Keychain', '已存入 macOS 钥匙串') : apiState === 'checking' ? text(uiLanguage, 'Checking…', '正在检查…') : apiDetail || text(uiLanguage, 'OpenAI or compatible relay', 'OpenAI 或兼容中转站')}</small></span>{providerMode === 'api' && <Check size={15} />}</button>
+      {bridgeState !== 'connected' && <button className="provider-action" onClick={() => void connect()}>{text(uiLanguage, 'Check Codex sign-in', '检查 Codex 登录')}</button>}
+      <button data-active={providerMode === 'api'} onClick={() => setProviderMode('api')}><KeyRound size={17} /><span><strong>{text(uiLanguage, 'API key', 'API 密钥')}</strong><small className={apiState === 'connected' ? 'connected' : ''}>{apiState === 'connected' ? text(uiLanguage, 'Stored in system credential store', '已存入系统凭据存储') : apiState === 'checking' ? text(uiLanguage, 'Checking…', '正在检查…') : apiDetail || text(uiLanguage, 'OpenAI or compatible relay', 'OpenAI 或兼容中转站')}</small></span>{providerMode === 'api' && <Check size={15} />}</button>
       {apiState === 'connected' ? <button className="provider-action danger" onClick={() => void removeKey()}><Trash2 size={14} />{text(uiLanguage, 'Remove API key', '删除 API 密钥')}</button> : <div className="api-key-row"><input type="password" autoComplete="off" spellCheck={false} value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="API key" /><button disabled={!apiKey.trim()} onClick={() => void saveKey()}>{text(uiLanguage, 'Save key', '保存')}</button></div>}
       {providerMode === 'api' && <div className="endpoint-settings"><label><span><Server size={14} />Base URL</span><input value={apiBaseUrl} onChange={(event) => setApiBaseUrl(event.target.value)} placeholder="https://api.openai.com/v1" /></label><label><span>{text(uiLanguage, 'Model ID', '模型 ID')}</span><input value={model === 'ChatGPT via Codex' ? '' : model} onChange={(event) => setModel(event.target.value)} placeholder="gpt-5.6-luna" /></label><label><span>{text(uiLanguage, 'API format', '接口格式')}</span><select value={apiProtocol} onChange={(event) => setApiProtocol(event.target.value as typeof apiProtocol)}><option value="responses">Responses API</option><option value="chat-completions">Chat Completions</option></select></label><small>{text(uiLanguage, 'You can enter a domain, /v1 base, or a complete endpoint URL.', '可填写域名、/v1 地址或完整接口地址。')}</small></div>}
     </div></section>

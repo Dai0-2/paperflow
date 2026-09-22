@@ -49,7 +49,7 @@ Open the same paper days later—from a different source when identity can be re
 - Automatic text extraction for accessible arXiv/OpenReview PDFs
 - PDF, TXT, Markdown, and image attachments from a ChatGPT-style composer menu
 - Two provider modes: ChatGPT subscription through the official Codex CLI, or an OpenAI API key through the Responses API
-- API keys stored in macOS Keychain rather than Chrome extension storage
+- API keys stored in the operating-system credential store rather than Chrome extension storage
 - Custom API base URL, model ID, and Responses/Chat Completions compatibility mode
 - Independent English/Chinese switches for the interface and model prompts
 - User-message bubbles with copy and edit-to-resend; answer copy, regenerate, save-to-memory, tags, and local feedback
@@ -86,10 +86,11 @@ Open the same paper days later—from a different source when identity can be re
 
 ### Requirements
 
-- Chrome 114 or newer on macOS
+- Chrome 114 or newer on macOS, Windows, or Linux
 - ChatGPT desktop app or Codex CLI for subscription mode; an OpenAI Platform API key for API mode
 - Node.js 20 or newer
 - pnpm 10 or newer
+- Rust stable when building the Native Host from source
 
 ### Load the extension
 
@@ -98,7 +99,13 @@ git clone https://github.com/YOUR_GITHUB_USERNAME/paperflow-ai.git
 cd paperflow-ai
 pnpm install
 pnpm build
-bash bridge/install.sh
+cargo build --release --locked --manifest-path native-host/Cargo.toml
+# macOS
+bash native-host/install/install-macos.sh
+# Linux
+sh native-host/install/install-linux.sh
+# Windows PowerShell
+.\native-host\install\install-windows.ps1
 ```
 
 Google Drive development builds require a Chrome Extension OAuth client ID:
@@ -121,9 +128,9 @@ Then:
 5. Pin PaperFlow AI and click its toolbar icon for the Side Panel.
 6. Right-click a PDF link or page and choose **Open with PaperFlow** for the integrated Reader.
 
-The installer copies a small allow-listed Native Messaging host to `~/Library/Application Support/PaperFlow AI/` and registers it for PaperFlow's fixed extension ID. It invokes the official Codex CLI for subscription mode and stores an optional API key in macOS Keychain for API mode. It never reads ChatGPT cookies or Codex authentication files.
+The installer registers the Rust Native Messaging host for PaperFlow's fixed extension ID. It invokes the official Codex CLI with fixed arguments for subscription mode and stores an optional API key in macOS Keychain, Windows Credential Manager, or Linux Secret Service. It never reads ChatGPT cookies or Codex authentication files. Run `codex login` in a terminal before using subscription mode.
 
-After rebuilding or reinstalling, click **Reload** for PaperFlow AI on `chrome://extensions`. If Chrome shows `Native host has exited`, run `bash bridge/install.sh` again, reload the extension, and inspect `~/Library/Logs/PaperFlow AI/bridge.log`.
+After rebuilding or reinstalling, click **Reload** for PaperFlow AI on `chrome://extensions`. If Chrome cannot find the host, rerun the platform installer and reload the extension. See [Native Host setup](docs/native-host.md) for paths, uninstall commands, and the one-release Python fallback.
 
 ### Development preview
 
@@ -143,8 +150,8 @@ Chrome Extension
        ▼
 PaperFlow Bridge
        │
-       ├── ChatGPT subscription → official Codex login/status/exec
-       └── API key → macOS Keychain → official OpenAI Responses API
+       ├── ChatGPT subscription → official Codex status/exec
+       └── API key → OS credential store → OpenAI-compatible API
 ```
 
 The local bridge invokes the official Codex CLI for subscription access. API keys remain in the operating-system credential store and are never returned to the extension. See [the architecture document](docs/architecture.md).
