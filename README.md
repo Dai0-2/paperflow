@@ -1,0 +1,198 @@
+<div align="center">
+  <img src="public/icons/paperflow-128.png" width="72" height="72" alt="PaperFlow AI logo">
+  <h1>PaperFlow AI</h1>
+  <p><strong>A persistent AI research companion beside every paper.</strong></p>
+  <p>Keep your browser's PDF reader. Add understanding, reasoning, and memory.</p>
+  <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
+</div>
+
+> [!IMPORTANT]
+> PaperFlow AI 0.7.0 is a local Reader MVP. It includes both the original Side Panel and an extension-hosted PDF.js reader with paper-scoped AI context and persistence.
+
+## Why PaperFlow
+
+PaperFlow is not a generic ChatPDF clone. It can live in Chrome's Side Panel beside an existing viewer, or open a PDF in its own integrated Reader so page position, text selection, citations, and AI context can work together.
+
+Every paper is designed to have its own long-lived workspace:
+
+```text
+Paper
+├── metadata and identity
+├── conversations
+├── selections and notes
+├── paper memory
+└── reading state
+```
+
+Open the same paper days later—from a different source when identity can be resolved—and continue the same line of thought.
+
+## Reader MVP
+
+- Extension page at `reader.html?url=<encoded-pdf-url>` for remote PDFs, plus a local PDF picker
+- Continuous, lazy PDF.js rendering with text layers, thumbnails, document outline, search navigation, zoom, fit width, download, and print
+- Current-page tracking, keyboard navigation, responsive narrow-window fit, and light/dark reading surfaces without recoloring PDF pages
+- Reusable PaperFlow AI workspace embedded in a resizable right panel
+- Text-selection actions for asking, explaining, translating, summarizing, and saving
+- Page-aware chunked context; selected text is preferred over the current page and relevant paper chunks
+- Structured citations with page, label, and excerpt; citation clicks navigate the Reader
+- Explicit errors for missing, blocked, encrypted, or textless PDFs
+- Context-menu action **Open with PaperFlow**, plus an opt-in direct-PDF redirect setting
+
+## Side Panel and AI
+
+- Minimal Chrome Manifest V3 Side Panel
+- Active-tab detection for arXiv, OpenReview, direct PDFs, and compatible PDF viewers
+- Automatic text extraction for accessible arXiv/OpenReview PDFs
+- PDF, TXT, Markdown, and image attachments from a ChatGPT-style composer menu
+- Two provider modes: ChatGPT subscription through the official Codex CLI, or an OpenAI API key through the Responses API
+- API keys stored in macOS Keychain rather than Chrome extension storage
+- Custom API base URL, model ID, and Responses/Chat Completions compatibility mode
+- Independent English/Chinese switches for the interface and model prompts
+- User-message bubbles with copy and edit-to-resend; answer copy, regenerate, save-to-memory, tags, and local feedback
+- Live answer progress for ChatGPT subscription mode and token streaming for API mode
+- Low-latency reasoning configuration and bounded conversation history to prevent progressive slowdowns
+- Per-paper IndexedDB storage for papers, aliases, threads, messages, memory, selections, annotations, settings, and reading state
+- One-time migration of legacy `localStorage` conversations and notes
+- First-run setup and connection diagnostics
+- Research conversation with Markdown and tables
+- Page-citation interaction prototype
+- Selected-text context preview
+- Prompt shortcuts: Translate, Summarize, Key Points, Methodology, and Limitations
+- Conversation history and multiple-thread UI
+- Paper Memory view
+- Provider connection status and model selector UI
+- Light, dark, and system themes
+- Responsive layout for 360–440 px panels
+- Keyboard navigation, focus states, and reduced-motion support
+
+## Known limits
+
+- Subscription requests still invoke `codex exec`; a persistent official Codex app server should be evaluated later.
+- Generation cancellation is not yet reliable.
+- Search navigates matching pages but does not yet provide a full match list or in-page match stepping.
+- Saved selections and annotations are persisted, but annotation overlays and citation-range highlighting are not yet rendered.
+- Scanned PDFs are readable as pages, but OCR is not included.
+- Remote PDFs behind login walls or restrictive CORS must be downloaded and opened locally.
+- No cloud sync, collaboration, vector database, or account/payment system.
+
+## Install the prototype
+
+### Requirements
+
+- Chrome 114 or newer on macOS
+- ChatGPT desktop app or Codex CLI for subscription mode; an OpenAI Platform API key for API mode
+- Node.js 20 or newer
+- pnpm 10 or newer
+
+### Load the extension
+
+```bash
+git clone https://github.com/YOUR_GITHUB_USERNAME/paperflow-ai.git
+cd paperflow-ai
+pnpm install
+pnpm build
+bash bridge/install.sh
+```
+
+Then:
+
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Select **Load unpacked**.
+4. Choose the generated `dist/` folder.
+5. Pin PaperFlow AI and click its toolbar icon for the Side Panel.
+6. Right-click a PDF link or page and choose **Open with PaperFlow** for the integrated Reader.
+
+The installer copies a small allow-listed Native Messaging host to `~/Library/Application Support/PaperFlow AI/` and registers it for PaperFlow's fixed extension ID. It invokes the official Codex CLI for subscription mode and stores an optional API key in macOS Keychain for API mode. It never reads ChatGPT cookies or Codex authentication files.
+
+After rebuilding or reinstalling, click **Reload** for PaperFlow AI on `chrome://extensions`. If Chrome shows `Native host has exited`, run `bash bridge/install.sh` again, reload the extension, and inspect `~/Library/Logs/PaperFlow AI/bridge.log`.
+
+### Development preview
+
+```bash
+pnpm dev
+```
+
+Open the printed localhost URL for the Side Panel, or `/reader.html` for the Reader open screen. Resize to 360–440 px to verify narrow layouts.
+
+## Provider architecture
+
+PaperFlow will not read ChatGPT cookies, expose OAuth tokens to the extension, or call private ChatGPT web endpoints.
+
+```text
+Chrome Extension
+       │ Chrome Native Messaging
+       ▼
+PaperFlow Bridge
+       │
+       ├── ChatGPT subscription → official Codex login/status/exec
+       └── API key → macOS Keychain → official OpenAI Responses API
+```
+
+The local bridge invokes the official Codex CLI for subscription access. API keys remain in the operating-system credential store and are never returned to the extension. See [the architecture document](docs/architecture.md).
+
+## Privacy and security
+
+- No analytics or telemetry in the prototype
+- No API keys or OAuth tokens in the repository
+- No ChatGPT cookie scraping
+- No unnecessary PDF uploads
+- Paper context will be visible and user-controllable before transmission
+- Paper data is designed to remain local by default
+- Per-paper export and deletion are part of the roadmap
+
+Please read [SECURITY.md](SECURITY.md) before adding a provider.
+
+## Development
+
+```bash
+pnpm install
+pnpm dev
+pnpm typecheck
+pnpm build
+pnpm package
+```
+
+Project structure:
+
+```text
+src/
+├── components/
+│   ├── chat/
+│   ├── common/
+│   ├── composer/
+│   ├── layout/
+│   ├── paper/
+│   ├── reader/
+│   └── views/
+├── data/
+├── hooks/
+├── services/
+├── store/
+├── styles/
+└── types/
+```
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Roadmap
+
+- [x] Phase 1 — production-quality UI prototype
+- [x] Phase 2 alpha — active-paper detection, local persistence, and PDF attachments
+- [x] Phase 3 alpha — Codex CLI bridge and ChatGPT sign-in
+- [x] Phase 3.1 — OpenAI API-key provider adapter
+- [x] Phase 3.2 — streaming progress, bilingual prompts, and provider compatibility controls
+- [x] Phase 4 MVP — selection, current page, and structured paper context
+- [x] Phase 5 MVP — IndexedDB memory, citations, and page navigation
+- [x] Phase 6 alpha — Native Messaging bridge and Codex CLI sign-in
+- [x] Phase 7 MVP — integrated PDF.js Reader
+
+## Acknowledgements
+
+PaperFlow's provider and local-bridge research was informed by the open-source [AIdea for Zotero](https://github.com/Visterainer/aidea-zotero) project. PaperFlow is an independent implementation for Chrome and does not copy AIdea's source code.
+
+The integrated Reader uses Mozilla PDF.js (`pdfjs-dist`) under the Apache License 2.0. The license is shipped as `pdfjs-LICENSE.txt` in the extension package. Google Scholar PDF Reader is an interaction reference only; no Google extension code or assets are included.
+
+## License
+
+The open-source license will be selected before the first public release.

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+work/
+outputs/
+.env
+.env.*
+!.env.example
+paperflow-ai.zip
+.DS_Store
+*.log
