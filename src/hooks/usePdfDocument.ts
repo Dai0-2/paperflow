@@ -3,9 +3,16 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import workerUrl from '../pdf-worker.ts?worker&url';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FlatOutlineItem } from '../components/reader/ReaderPanels';
+import { openPaperFlowDatabase } from '../db/PaperFlowDatabase';
 import { contentHash, paperFromUrl } from '../services/paper';
 import { chunksFromPages } from '../services/paperContext';
+import { indexPaper } from '../services/search/searchIndexer';
+import {
+  loadStoredDocumentForPaper,
+  storePdfDocument,
+} from '../services/storage/documentStore';
 import { useAppStore } from '../store/useAppStore';
+import type { OcrPage, PaperDocument, PaperInfo } from '../types';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -13,6 +20,8 @@ export interface ReaderSource {
   url?: string;
   data?: Uint8Array;
   name: string;
+  paperId?: string;
+  documentId?: string;
 }
 
 interface OutlineItem {
@@ -53,6 +62,8 @@ export function usePdfDocument() {
   const loadGeneration = useRef(0);
   const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy>();
   const [source, setSource] = useState<ReaderSource>();
+  const [documentData, setDocumentData] = useState<Uint8Array>();
+  const [activeDocument, setActiveDocument] = useState<PaperDocument>();
   const [pendingUrl, setPendingUrl] = useState('');
   const [urlDraft, setUrlDraft] = useState('');
   const [loading, setLoading] = useState(false);
@@ -75,6 +86,8 @@ export function usePdfDocument() {
     setError('');
     setLoadProgress(0);
     setPageTexts([]);
+    setDocumentData(undefined);
+    setActiveDocument(undefined);
     setPaperChunks([]);
     setReadingPaper(true);
     try {
@@ -96,22 +109,31 @@ export function usePdfDocument() {
       const metadataTitle = typeof info?.Title === 'string' ? info.Title.trim() : '';
       const metadataAuthor = typeof info?.Author === 'string' ? info.Author.trim() : '';
       const title = metadataTitle || nextSource.name.replace(/\.pdf$/i, '') || 'Untitled paper';
-      const basePaper = paperFromUrl(nextSource.url || `local:${nextSource.name}`, title);
-      const documentData = nextSource.data || await nextDocument.getData();
-      const hash = await contentHash(Uint8Array.from(documentData).buffer);
-      const nextPaper = {
+      const bytes = Uint8Array.from(nextSource.data || await nextDocument.getData());
+      const hash = await contentHash(bytes.slice().buffer);
+      const db = await openPaperFlowDatabase();
+      const storedPaper = nextSource.paperId ? await db.papers.get(nextSource.paperId) : undefined;
+      const detectedPaper = paperFromUrl(nextSource.url || storedPaper?.url || `local:${nextSource.name}`, title);
+      const basePaper = storedPaper ? { ...detectedPaper, ...storedPaper } : detectedPaper;
+      const hashAlias = await db.paperAliases.get(`content-hash:${hash}`);
+      const nextPaper: PaperInfo = {
         ...basePaper,
-        id: nextSource.data ? `content:${hash}` : basePaper.id,
+        id: nextSource.paperId || hashAlias?.paperId || (nextSource.data ? `content:${hash}` : basePaper.id),
         authors: metadataAuthor || basePaper.authors,
         contentHash: hash,
-        source: nextSource.data ? 'Local PDF' : basePaper.source,
+        source: nextSource.documentId || nextSource.data ? 'Local PDF' : basePaper.source,
         pageCount: nextDocument.numPages,
         currentPage: 1,
       };
       setPdfDocument(nextDocument);
       setSource(nextSource);
+      setDocumentData(bytes);
       setPageCount(nextDocument.numPages);
       setPaper(nextPaper);
+      if (nextSource.documentId) {
+        const stored = await db.documents.get(nextSource.documentId);
+        if (stored) setActiveDocument(stored);
+      }
       const rawOutline = await nextDocument.getOutline().catch(() => null);
       setOutline(flattenOutline((rawOutline || []) as OutlineItem[]));
       setLoading(false);
@@ -124,10 +146,30 @@ export function usePdfDocument() {
         pages.push(textContent.items.map((item) => ('str' in item ? item.str : '')).join(' '));
         if (pageNumber % 5 === 0) await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
-      setPageTexts(pages);
-      setPaperText(pages.map((value, index) => `[Page ${index + 1}]\n${value}`).join('\n\n'));
-      setPaperChunks(chunksFromPages(nextPaper.id, pages));
-      if (pages.every((value) => !value.trim())) {
+      const textChunks = chunksFromPages(nextPaper.id, pages).map((chunk) => ({
+        ...chunk,
+        source: 'text-layer' as const,
+        updatedAt: Date.now(),
+      }));
+      const ocrPages = (await db.ocrPages.where('paperId').equals(nextPaper.id).toArray())
+        .filter((record) => record.status === 'complete');
+      const mergedPages = [...pages];
+      for (const record of ocrPages) {
+        if (!mergedPages[record.page - 1]?.trim()) mergedPages[record.page - 1] = record.text;
+      }
+      await db.transaction('rw', db.paperChunks, async () => {
+        const oldTextChunks = await db.paperChunks.where('paperId').equals(nextPaper.id)
+          .filter((chunk) => chunk.source !== 'ocr')
+          .toArray();
+        await db.paperChunks.bulkDelete(oldTextChunks.map((chunk) => chunk.id));
+        await db.paperChunks.bulkPut(textChunks);
+      });
+      const persistedChunks = await db.paperChunks.where('paperId').equals(nextPaper.id).toArray();
+      setPageTexts(mergedPages);
+      setPaperText(mergedPages.map((value, index) => `[Page ${index + 1}]\n${value}`).join('\n\n'));
+      setPaperChunks(persistedChunks);
+      await indexPaper(nextPaper.id).catch(() => undefined);
+      if (mergedPages.every((value) => !value.trim())) {
         setError('The PDF has no readable text layer. You can read the pages, but selection and AI page context are unavailable.');
       }
     } catch (reason) {
@@ -142,6 +184,30 @@ export function usePdfDocument() {
       }
     }
   }, [setPaper, setPaperChunks, setPaperText, setReadingPaper]);
+
+  const saveOffline = useCallback(async (paper: PaperInfo) => {
+    if (!documentData) throw new Error('The PDF bytes are not available yet.');
+    const document = await storePdfDocument({
+      paper,
+      data: documentData,
+      name: source?.name || 'paper.pdf',
+      pageCount,
+    });
+    setActiveDocument(document);
+    return document;
+  }, [documentData, pageCount, source?.name]);
+
+  const applyOcrPage = useCallback(async (record: OcrPage) => {
+    const db = await openPaperFlowDatabase();
+    const chunks = await db.paperChunks.where('paperId').equals(record.paperId).toArray();
+    setPageTexts((current) => {
+      const next = [...current];
+      next[record.page - 1] = record.text;
+      setPaperText(next.map((value, index) => `[Page ${index + 1}]\n${value}`).join('\n\n'));
+      return next;
+    });
+    setPaperChunks(chunks);
+  }, [setPaperChunks, setPaperText]);
 
   const prepareUrl = useCallback(async (rawUrl: string, title?: string) => {
     const value = rawUrl.trim();
@@ -188,8 +254,32 @@ export function usePdfDocument() {
   useEffect(() => {
     const parameters = new URLSearchParams(location.search);
     const url = parameters.get('url');
-    if (url) void prepareUrl(url, parameters.get('title') || undefined);
-  }, [prepareUrl]);
+    const paperId = parameters.get('paperId');
+    const title = parameters.get('title') || undefined;
+    let active = true;
+    void (async () => {
+      if (paperId) {
+        const stored = await loadStoredDocumentForPaper(paperId);
+        if (!active) return;
+        if (stored) {
+          await loadSource({
+            data: stored.data,
+            name: stored.document.name,
+            paperId,
+            documentId: stored.document.id,
+          });
+          return;
+        }
+      }
+      if (url) await prepareUrl(url, title);
+      else if (paperId) setError('The offline PDF is unavailable and this paper has no source URL to restore it.');
+    })().catch((reason: unknown) => {
+      if (active) setError(errorMessage(reason));
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadSource, prepareUrl]);
 
   useEffect(() => () => {
     loadGeneration.current += 1;
@@ -202,6 +292,8 @@ export function usePdfDocument() {
   return {
     pdfDocument,
     source,
+    documentData,
+    activeDocument,
     pendingUrl,
     urlDraft,
     loading,
@@ -216,5 +308,7 @@ export function usePdfDocument() {
     prepareUrl,
     selectFile,
     grantAccess,
+    saveOffline,
+    applyOcrPage,
   };
 }

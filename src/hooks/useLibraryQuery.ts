@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { openPaperFlowDatabase } from '../db/PaperFlowDatabase';
 import type {
   Annotation,
@@ -10,6 +10,8 @@ import type {
   Tag,
 } from '../types';
 import { identityCandidates, normalizeText } from '../services/library/paperIdentity';
+import { searchClient, type SearchIndexStatus } from '../services/search/searchClient';
+import { buildSearchDocuments } from '../services/search/searchIndexer';
 import { useLibraryStore, type LibrarySortKey } from '../store/useLibraryStore';
 
 export interface LibrarySnapshot {
@@ -122,7 +124,7 @@ async function loadSnapshot(): Promise<LibrarySnapshot> {
   };
 }
 
-interface SearchClause {
+export interface SearchClause {
   field?: 'author' | 'tag' | 'collection' | 'year' | 'status';
   value: string;
 }
@@ -161,6 +163,7 @@ interface LibraryFilterOptions {
   searchQuery: string;
   sortKey: LibrarySortKey;
   sortDirection: 'asc' | 'desc';
+  searchResultIds?: Set<string>;
   now?: number;
 }
 
@@ -168,7 +171,7 @@ export function filterAndSortLibraryPapers(
   snapshot: LibrarySnapshot,
   options: LibraryFilterOptions,
 ): PaperInfo[] {
-  const { scope, searchQuery, sortKey, sortDirection, now = Date.now() } = options;
+  const { scope, searchQuery, sortKey, sortDirection, searchResultIds, now = Date.now() } = options;
   const duplicates = scope === 'duplicates' ? duplicateIds(snapshot.papers) : new Set<string>();
   const clauses = parseLibrarySearch(searchQuery);
   const collectionById = new Map(snapshot.collections.map((item) => [item.id, normalizeText(item.name)]));
@@ -184,7 +187,11 @@ export function filterAndSortLibraryPapers(
     if (scope.startsWith('tag:') && !(snapshot.paperTags.get(paper.id) || []).includes(scope.slice(4))) return false;
     if (scope === 'duplicates' && !duplicates.has(paper.id)) return false;
     return clauses.every((clause) => {
-      if (!clause.field) return snapshot.searchText.get(paper.id)?.includes(clause.value);
+      if (!clause.field) {
+        return searchResultIds
+          ? searchResultIds.has(paper.id)
+          : snapshot.searchText.get(paper.id)?.includes(clause.value);
+      }
       if (clause.field === 'author') return normalizeText(paper.authors).includes(clause.value);
       if (clause.field === 'year') return normalizeText(paper.year) === clause.value;
       if (clause.field === 'status') return normalizeText(paper.readStatus) === clause.value;
@@ -208,6 +215,14 @@ export function useLibraryQuery() {
   const [snapshot, setSnapshot] = useState<LibrarySnapshot>(EMPTY_SNAPSHOT);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchResultIds, setSearchResultIds] = useState<Set<string>>();
+  const [indexStatus, setIndexStatus] = useState<SearchIndexStatus>({
+    state: 'idle',
+    completed: 0,
+    total: 0,
+  });
+  const rebuildController = useRef<AbortController | undefined>(undefined);
+  const loadingIndexDocuments = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -230,12 +245,79 @@ export function useLibraryQuery() {
     };
   }, [refreshVersion]);
 
+  useEffect(() => searchClient.subscribe((status) => {
+    if (!loadingIndexDocuments.current) setIndexStatus(status);
+  }), []);
+
+  const rebuildIndex = useCallback(async () => {
+    rebuildController.current?.abort();
+    const controller = new AbortController();
+    rebuildController.current = controller;
+    loadingIndexDocuments.current = true;
+    setIndexStatus({ state: 'building', completed: 0, total: 0 });
+    try {
+      const documents = await buildSearchDocuments((completed, total) => {
+        setIndexStatus({ state: 'building', completed, total });
+      }, controller.signal);
+      loadingIndexDocuments.current = false;
+      await searchClient.rebuild(documents, controller.signal);
+    } catch (reason) {
+      loadingIndexDocuments.current = false;
+      if (controller.signal.aborted || (reason instanceof DOMException && reason.name === 'AbortError')) {
+        setIndexStatus({ state: 'idle', completed: 0, total: 0 });
+      } else {
+        setError(reason instanceof Error ? reason.message : 'Unable to rebuild the search index.');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loading) void rebuildIndex();
+  }, [loading, rebuildIndex, refreshVersion]);
+
+  const plainQuery = useMemo(
+    () => parseLibrarySearch(searchQuery).filter((clause) => !clause.field).map((clause) => clause.value).join(' '),
+    [searchQuery],
+  );
+
+  useEffect(() => {
+    if (!plainQuery) {
+      setSearchResultIds(undefined);
+      return;
+    }
+    if (indexStatus.state !== 'ready') {
+      setSearchResultIds(undefined);
+      return;
+    }
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      void searchClient.search(plainQuery).then((ids) => {
+        if (active) setSearchResultIds(new Set(ids));
+      }).catch((reason: unknown) => {
+        if (active) setError(reason instanceof Error ? reason.message : 'Search failed.');
+      });
+    }, 80);
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [indexStatus.state, plainQuery]);
+
   const papers = useMemo(() => filterAndSortLibraryPapers(snapshot, {
     scope,
     searchQuery,
     sortKey,
     sortDirection,
-  }), [scope, searchQuery, snapshot, sortDirection, sortKey]);
+    searchResultIds,
+  }), [scope, searchQuery, searchResultIds, snapshot, sortDirection, sortKey]);
 
-  return { snapshot, papers, loading, error };
+  return {
+    snapshot,
+    papers,
+    loading,
+    error,
+    indexStatus,
+    rebuildIndex,
+    cancelIndexRebuild: () => rebuildController.current?.abort(),
+  };
 }

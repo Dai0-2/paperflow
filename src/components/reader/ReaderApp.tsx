@@ -1,10 +1,19 @@
 import { FileQuestion } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { WorkspaceSurface } from '../../App';
 import { usePdfDocument } from '../../hooks/usePdfDocument';
 import { useReaderNavigation } from '../../hooks/useReaderNavigation';
 import { useWorkspaceBootstrap } from '../../hooks/useWorkspaceBootstrap';
+import { savePaperToLibrary } from '../../repositories/libraryRepository';
 import { saveAnnotation, saveSelection } from '../../services/database';
+import {
+  recoverStaleOcrJobs,
+  startOcr,
+  type OcrJob,
+  type OcrLanguage,
+  type OcrProgress,
+} from '../../services/ocr/ocrService';
+import { queueStoredDocumentsForSync } from '../../services/storage/documentStore';
 import { useAppStore } from '../../store/useAppStore';
 import type { PaperSelection, ReaderSidebar } from '../../types';
 import { PdfPage } from './PdfPage';
@@ -22,10 +31,15 @@ export function ReaderApp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionToolbar, setSelectionToolbar] = useState<{ x: number; y: number; text: string; page: number }>();
   const [renderAll, setRenderAll] = useState(false);
+  const [savingOffline, setSavingOffline] = useState(false);
+  const [operationError, setOperationError] = useState('');
+  const [ocrProgress, setOcrProgress] = useState<OcrProgress>();
+  const ocrJob = useRef<OcrJob | undefined>(undefined);
   const {
     paper,
     theme,
     uiLanguage,
+    setPaper,
     setSelection,
     setDraft,
     setTheme,
@@ -33,6 +47,8 @@ export function ReaderApp() {
   const {
     pdfDocument,
     source,
+    documentData,
+    activeDocument,
     pendingUrl,
     urlDraft,
     loading,
@@ -46,6 +62,8 @@ export function ReaderApp() {
     prepareUrl,
     selectFile,
     grantAccess,
+    saveOffline,
+    applyOcrPage,
   } = usePdfDocument();
   const {
     scrollRoot,
@@ -145,6 +163,74 @@ export function ReaderApp() {
     window.setTimeout(() => window.print(), 900);
   };
 
+  const persistOffline = async () => {
+    if (!paper || !documentData || savingOffline) return activeDocument;
+    setSavingOffline(true);
+    setOperationError('');
+    try {
+      const savedPaper = paper.libraryState === 'saved'
+        ? paper
+        : await savePaperToLibrary(paper.id);
+      if (savedPaper !== paper) setPaper(savedPaper);
+      const document = await saveOffline(savedPaper);
+      await queueStoredDocumentsForSync(savedPaper.id);
+      return document;
+    } catch (reason) {
+      setOperationError(reason instanceof Error ? reason.message : 'The PDF could not be saved offline.');
+      return undefined;
+    } finally {
+      setSavingOffline(false);
+    }
+  };
+
+  const runOcr = async (fromPage: number, toPage: number, language: OcrLanguage) => {
+    if (!pdfDocument || !paper) return;
+    if (toPage - fromPage + 1 > 50) {
+      setOperationError('Run OCR on at most 50 pages at a time.');
+      return;
+    }
+    setOperationError('');
+    let document = activeDocument;
+    if (!document) {
+      setSavingOffline(true);
+      try {
+        document = await saveOffline(paper);
+      } catch (reason) {
+        setOperationError(reason instanceof Error ? reason.message : 'The PDF could not be prepared for OCR.');
+        return;
+      } finally {
+        setSavingOffline(false);
+      }
+    }
+    const job = startOcr({
+      document: pdfDocument,
+      documentId: document.id,
+      paperId: paper.id,
+      pages: Array.from({ length: toPage - fromPage + 1 }, (_, index) => fromPage + index),
+      language,
+      onProgress: setOcrProgress,
+      onPage: (record) => { void applyOcrPage(record); },
+    });
+    ocrJob.current = job;
+    try {
+      await job.promise;
+    } catch (reason) {
+      if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
+        setOperationError(reason instanceof Error ? reason.message : 'OCR failed.');
+      }
+    } finally {
+      if (ocrJob.current === job) {
+        ocrJob.current = undefined;
+        setOcrProgress(undefined);
+      }
+    }
+  };
+
+  useEffect(() => () => ocrJob.current?.cancel(), []);
+  useEffect(() => {
+    void recoverStaleOcrJobs();
+  }, []);
+
   const startResize = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
     const startX = event.clientX;
@@ -172,6 +258,8 @@ export function ReaderApp() {
       assistantOpen={assistantOpen}
       searchQuery={searchQuery}
       searchPages={searchPages}
+      offlineState={activeDocument ? 'available' : savingOffline ? 'saving' : 'unavailable'}
+      ocrProgress={ocrProgress}
       onPageChange={goToPage}
       onScaleChange={setScale}
       onFitWidth={() => void fitWidth()}
@@ -182,13 +270,16 @@ export function ReaderApp() {
       onOpenFile={() => fileInput.current?.click()}
       onDownload={download}
       onPrint={print}
+      onSaveOffline={() => void persistOffline()}
+      onStartOcr={(fromPage, toPage, language) => void runOcr(fromPage, toPage, language)}
+      onCancelOcr={() => ocrJob.current?.cancel()}
     />
     <div className="reader-workspace">
       {sidebarOpen && pdfDocument && <ReaderSidebarPanel document={pdfDocument} pageCount={pageCount} page={page} view={sidebarView} outline={outline} onViewChange={setSidebarView} onPageChange={goToPage} onOutlineClick={(item) => void resolveOutline(item)} />}
       <section className="reader-document">
         {!pdfDocument && <ReaderOpenState url={urlDraft} loading={loading} progress={loadProgress} error={error} accessRequired={Boolean(pendingUrl)} onUrlChange={setUrlDraft} onSubmit={() => void prepareUrl(urlDraft)} onOpenFile={() => fileInput.current?.click()} onGrantAccess={() => void grantAccess()} />}
         {pdfDocument && <>
-          {error && <div className="reader-warning"><FileQuestion />{error}</div>}
+          {(operationError || error) && <div className="reader-warning"><FileQuestion />{operationError || error}</div>}
           <div ref={scrollRoot} className="reader-scroll" onPointerUp={onSelection}>
             <div className="reader-pages">
               {Array.from({ length: pageCount }, (_, index) => <PdfPage key={index + 1} document={pdfDocument} pageNumber={index + 1} scale={scale} searchQuery={searchQuery} forceRender={renderAll} />)}

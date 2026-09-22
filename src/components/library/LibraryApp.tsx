@@ -2,11 +2,13 @@ import {
   ArchiveRestore,
   BookOpen,
   Copy,
+  Database,
   FileDown,
   FolderInput,
   Library,
   Menu,
   Moon,
+  LoaderCircle,
   Search,
   Star,
   Sun,
@@ -68,7 +70,15 @@ function currentTheme(): Theme {
 
 export function LibraryApp() {
   const store = useLibraryStore();
-  const { snapshot, papers, loading, error: loadError } = useLibraryQuery();
+  const {
+    snapshot,
+    papers,
+    loading,
+    error: loadError,
+    indexStatus,
+    rebuildIndex,
+    cancelIndexRebuild,
+  } = useLibraryQuery();
   const [theme, setTheme] = useState<Theme>(currentTheme);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 850);
   const [dialog, setDialog] = useState<'import' | 'duplicates' | 'ai' | 'tags' | null>(null);
@@ -138,6 +148,15 @@ export function LibraryApp() {
       <label className="library-search"><Search /><input value={store.searchQuery} onChange={(event) => store.setSearchQuery(event.target.value)} placeholder="Search papers, author:, tag:, collection:, year:, status:" aria-label="Search library" />{store.searchQuery && <button title="Clear search" onClick={() => store.setSearchQuery('')}><X /></button>}</label>
       <div className="library-header-actions">
         <button title={dark ? 'Use light theme' : 'Use dark theme'} onClick={() => setThemeValue(dark ? 'light' : 'dark')}>{dark ? <Sun /> : <Moon />}</button>
+        <button
+          title={indexStatus.state === 'building'
+            ? `Cancel search indexing (${indexStatus.completed}/${indexStatus.total})`
+            : indexStatus.state === 'error'
+              ? `Rebuild search index: ${indexStatus.error}`
+              : 'Rebuild search index'}
+          data-active={indexStatus.state === 'building'}
+          onClick={() => indexStatus.state === 'building' ? cancelIndexRebuild() : void rebuildIndex()}
+        >{indexStatus.state === 'building' ? <LoaderCircle className="spin" /> : <Database />}</button>
         <button className="header-command" onClick={() => setDialog('import')}><FileDown /><span>Import / Export</span></button>
       </div>
     </header>

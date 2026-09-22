@@ -3,18 +3,22 @@ import {
   ChevronRight,
   Download,
   FolderOpen,
+  HardDriveDownload,
   Library,
+  LoaderCircle,
   Maximize2,
   Moon,
   PanelLeft,
   PanelRight,
   Printer,
+  ScanText,
   Search,
   Sun,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
 import { useState } from 'react';
+import type { OcrLanguage, OcrProgress } from '../../services/ocr/ocrService';
 import type { Theme } from '../../types';
 
 interface ReaderToolbarProps {
@@ -27,6 +31,8 @@ interface ReaderToolbarProps {
   assistantOpen: boolean;
   searchQuery: string;
   searchPages: number[];
+  offlineState: 'unavailable' | 'saving' | 'available';
+  ocrProgress?: OcrProgress;
   onPageChange: (page: number) => void;
   onScaleChange: (scale: number) => void;
   onFitWidth: () => void;
@@ -37,10 +43,17 @@ interface ReaderToolbarProps {
   onOpenFile: () => void;
   onDownload: () => void;
   onPrint: () => void;
+  onSaveOffline: () => void;
+  onStartOcr: (fromPage: number, toPage: number, language: OcrLanguage) => void;
+  onCancelOcr: () => void;
 }
 
 export function ReaderToolbar(props: ReaderToolbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [ocrOpen, setOcrOpen] = useState(false);
+  const [ocrFrom, setOcrFrom] = useState(props.page);
+  const [ocrTo, setOcrTo] = useState(props.page);
+  const [ocrLanguage, setOcrLanguage] = useState<OcrLanguage>('eng');
   const themeIsDark = props.theme === 'dark'
     || (props.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   const setPage = (page: number) => props.onPageChange(Math.max(1, Math.min(props.pageCount, page)));
@@ -79,6 +92,35 @@ export function ReaderToolbar(props: ReaderToolbarProps) {
         </div>}
       </div>
       <button title={themeIsDark ? 'Use light theme' : 'Use dark theme'} aria-label="Toggle theme" onClick={() => props.onThemeChange(themeIsDark ? 'light' : 'dark')}>{themeIsDark ? <Sun /> : <Moon />}</button>
+      <button
+        title={props.offlineState === 'available' ? 'PDF available offline' : props.offlineState === 'saving' ? 'Saving PDF offline' : 'Save paper and PDF offline'}
+        aria-label="Save PDF offline"
+        data-active={props.offlineState === 'available'}
+        disabled={!props.pageCount || props.offlineState !== 'unavailable'}
+        onClick={props.onSaveOffline}
+      >{props.offlineState === 'saving' ? <LoaderCircle className="spin" /> : <HardDriveDownload />}</button>
+      <div className="reader-ocr">
+        <button title="OCR pages" aria-label="OCR pages" data-active={ocrOpen || Boolean(props.ocrProgress)} disabled={!props.pageCount} onClick={() => {
+          setOcrFrom(props.page);
+          setOcrTo(props.page);
+          setOcrOpen((open) => !open);
+        }}><ScanText /></button>
+        {ocrOpen && <div className="reader-ocr-popover">
+          <strong>Recognize scanned pages</strong>
+          <div className="ocr-page-range">
+            <label><span>From</span><input type="number" min={1} max={props.pageCount} value={ocrFrom} onChange={(event) => setOcrFrom(Number(event.target.value))} /></label>
+            <label><span>To</span><input type="number" min={1} max={props.pageCount} value={ocrTo} onChange={(event) => setOcrTo(Number(event.target.value))} /></label>
+          </div>
+          <label className="ocr-language"><span>Language</span><select value={ocrLanguage} onChange={(event) => setOcrLanguage(event.target.value as OcrLanguage)}><option value="eng">English</option><option value="chi_sim">简体中文</option><option value="eng+chi_sim">English + 简体中文</option></select></label>
+          {props.ocrProgress
+            ? <><div className="ocr-progress"><span style={{ width: `${Math.max(2, props.ocrProgress.progress * 100)}%` }} /></div><small>Page {props.ocrProgress.page} · {props.ocrProgress.status}</small><button className="ocr-command" onClick={props.onCancelOcr}>Cancel OCR</button></>
+            : <button className="ocr-command" onClick={() => props.onStartOcr(
+              Math.max(1, Math.min(props.pageCount, Math.min(ocrFrom, ocrTo))),
+              Math.max(1, Math.min(props.pageCount, Math.max(ocrFrom, ocrTo))),
+              ocrLanguage,
+            )}>Start OCR</button>}
+        </div>}
+      </div>
       <button title="Download PDF" aria-label="Download PDF" onClick={props.onDownload}><Download /></button>
       <button title="Print" aria-label="Print" onClick={props.onPrint}><Printer /></button>
       <button title="Open library" aria-label="Open library" onClick={openLibrary}><Library /></button>
