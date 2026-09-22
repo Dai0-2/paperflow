@@ -15,6 +15,9 @@ import { getVaultCredentialStatus } from '../../services/bridge';
 import { vaultController } from '../../services/sync/vaultController';
 import { text } from '../../i18n';
 import type { Language } from '../../types';
+import { ConflictCenter } from './ConflictCenter';
+import { SyncStatus } from './SyncStatus';
+import { syncEngine } from '../../sync/SyncEngine';
 
 type VaultStage = 'unconfigured' | 'disconnected' | 'new' | 'locked' | 'unlocked';
 type UnlockMethod = 'password' | 'recovery';
@@ -73,6 +76,7 @@ export function VaultSetup({ language }: { language: Language }) {
     setPassword('');
     setConfirmation('');
     setStage('unlocked');
+    void syncEngine.run({ force: true }).catch(() => undefined);
     if (rememberDevice && !result.remembered) {
       setError(text(language, 'Vault created, but this device could not be remembered.', '保险库已创建，但无法记住此设备。'));
     }
@@ -88,6 +92,7 @@ export function VaultSetup({ language }: { language: Language }) {
     setPassword('');
     setRecoveryInput('');
     setStage('unlocked');
+    void syncEngine.run({ force: true }).catch(() => undefined);
     if (rememberDevice && !remembered) {
       setError(text(language, 'Vault unlocked, but this device could not be remembered.', '保险库已解锁，但无法记住此设备。'));
     }
@@ -133,6 +138,8 @@ export function VaultSetup({ language }: { language: Language }) {
     </div>}
 
     {stage === 'unlocked' && <div className="vault-form">
+      <SyncStatus language={language} />
+      <ConflictCenter language={language} />
       {recoveryKey && <div className="recovery-key"><strong>{text(language, 'Save this recovery key now', '请立即保存此恢复密钥')}</strong><p>{text(language, 'It is shown once. Without the password or this key, the vault cannot be recovered.', '它只显示一次。若密码和恢复密钥均丢失，保险库将无法恢复。')}</p><code>{recoveryKey}</code><div><button onClick={() => void navigator.clipboard.writeText(recoveryKey)}><Copy />{text(language, 'Copy', '复制')}</button><button onClick={() => setRecoveryKey('')}><Check />{text(language, 'I saved it', '我已保存')}</button></div></div>}
       <details><summary><KeyRound />{text(language, 'Change vault password', '更改保险库密码')}</summary><div className="vault-password-change"><input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder={text(language, 'New password · 12+ characters', '新密码 · 至少 12 个字符')} /><input type="password" autoComplete="new-password" value={newPasswordConfirmation} onChange={(event) => setNewPasswordConfirmation(event.target.value)} placeholder={text(language, 'Confirm new password', '确认新密码')} /><button disabled={busy || !newPassword || !newPasswordConfirmation} onClick={() => void changePassword()}>{text(language, 'Update password', '更新密码')}</button></div></details>
       <div className="vault-actions"><button onClick={() => { vaultController.lock(); setStage('locked'); }}><LockKeyhole />{text(language, 'Lock', '锁定')}</button><button onClick={() => void run(async () => { await vaultController.forgetDevice(); setRememberDevice(false); })}><KeyRound />{text(language, 'Forget device', '忘记此设备')}</button><button onClick={() => void run(async () => { await vaultController.disconnect(); setStage('disconnected'); })}><LogOut />{text(language, 'Disconnect', '断开连接')}</button></div>

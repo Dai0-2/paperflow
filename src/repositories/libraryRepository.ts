@@ -4,16 +4,29 @@ import type {
   CollectionItem,
   PaperInfo,
   PaperNote,
+  PaperSyncField,
   PaperTag,
   ReadStatus,
   Tag,
 } from '../types';
 import { normalizeTagName } from '../services/library/paperIdentity';
+import { queuePaperWorkspaceForSync } from '../services/database';
+import { queueStoredDocumentsForSync } from '../services/storage/documentStore';
 import { queueAnnotationsForSync } from './annotationRepository';
 import { versionAndRecord } from './versioning';
 
 function relationId(left: string, right: string): string {
   return `${left}:${right}`;
+}
+
+function versionPaperFields(
+  paper: PaperInfo,
+  version: { counter: number; deviceId: string },
+  fields: PaperSyncField[],
+): PaperInfo['fieldVersions'] {
+  const fieldVersions = { ...paper.fieldVersions };
+  for (const field of fields) fieldVersions[field] = version;
+  return fieldVersions;
 }
 
 export async function listLibraryPapers(includeTrash = false): Promise<PaperInfo[]> {
@@ -44,12 +57,15 @@ export async function savePaperToLibrary(paperId: string): Promise<PaperInfo> {
       accessedAt: now,
       updatedAt: now,
       version,
+      fieldVersions: versionPaperFields(current, version, ['libraryState', 'favorite']),
     };
     await db.papers.put(paper);
     await db.syncOps.update(operation.id, { payload: paper });
     return paper;
   });
   await queueAnnotationsForSync(paperId);
+  await queuePaperWorkspaceForSync(paperId);
+  await queueStoredDocumentsForSync(paperId);
   return paper;
 }
 
@@ -62,9 +78,15 @@ export async function updatePaperMetadata(
     const current = await db.papers.get(paperId);
     if (!current) throw new Error('Paper was not found.');
     const now = Date.now();
-    const next = { ...current, ...patch, updatedAt: now };
+    const next = { ...current, ...patch, metadataSource: 'manual' as const, updatedAt: now };
     const { version, operation } = await versionAndRecord(db, 'paper', paperId, 'put', next);
-    const paper = { ...next, version };
+    const fields = (['favorite', 'readStatus'] as const)
+      .filter((field) => field in patch);
+    const paper = {
+      ...next,
+      version,
+      fieldVersions: versionPaperFields(current, version, [...fields]),
+    };
     await db.papers.put(paper);
     await db.syncOps.update(operation.id, { payload: paper });
     return paper;
@@ -83,8 +105,13 @@ export async function movePaperToTrash(paperId: string): Promise<void> {
     const deletedAt = Date.now();
     const next = { ...current, libraryState: 'trashed' as const, deletedAt, updatedAt: deletedAt };
     const { version, operation } = await versionAndRecord(db, 'paper', paperId, 'delete', next);
-    await db.papers.put({ ...next, version });
-    await db.syncOps.update(operation.id, { payload: { ...next, version } });
+    const paper = {
+      ...next,
+      version,
+      fieldVersions: versionPaperFields(current, version, ['libraryState']),
+    };
+    await db.papers.put(paper);
+    await db.syncOps.update(operation.id, { payload: paper });
   });
 }
 
@@ -101,7 +128,11 @@ export async function restorePaper(paperId: string): Promise<void> {
       updatedAt: now,
     };
     const { version, operation } = await versionAndRecord(db, 'paper', paperId, 'put', next);
-    const paper = { ...next, version };
+    const paper = {
+      ...next,
+      version,
+      fieldVersions: versionPaperFields(current, version, ['libraryState']),
+    };
     await db.papers.put(paper);
     await db.syncOps.update(operation.id, { payload: paper });
   });
@@ -124,9 +155,14 @@ export async function importPaperToLibrary(
       createdAt: current?.createdAt || now,
       accessedAt: now,
       updatedAt: now,
+      metadataSource: current?.metadataSource || 'automatic' as const,
     };
     const { version, operation } = await versionAndRecord(db, 'paper', paper.id, 'put', next);
-    const saved = { ...next, version };
+    const saved = {
+      ...next,
+      version,
+      fieldVersions: versionPaperFields(current || next, version, ['libraryState']),
+    };
     await db.papers.put(saved);
     await db.syncOps.update(operation.id, { payload: saved });
     return saved;
@@ -397,7 +433,14 @@ export async function saveNote(
     const id = input.id || crypto.randomUUID();
     const current = await db.notes.get(id);
     const now = Date.now();
-    const { version, operation } = await versionAndRecord(db, 'note', id, 'put', undefined);
+    const { version, operation } = await versionAndRecord(
+      db,
+      'note',
+      id,
+      'put',
+      undefined,
+      current?.version,
+    );
     const note: PaperNote = {
       id,
       paperId,
@@ -421,7 +464,14 @@ export async function deleteNote(noteId: string): Promise<void> {
     if (!current || current.deletedAt) return;
     const now = Date.now();
     const next = { ...current, deletedAt: now, updatedAt: now };
-    const { version, operation } = await versionAndRecord(db, 'note', noteId, 'delete', next);
+    const { version, operation } = await versionAndRecord(
+      db,
+      'note',
+      noteId,
+      'delete',
+      next,
+      current.version,
+    );
     const note = { ...next, version };
     await db.notes.put(note);
     await db.syncOps.update(operation.id, { payload: note });

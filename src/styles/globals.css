@@ -142,5 +142,25 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid color-mix(in s
 .vault-password-change button { width: fit-content; }
 .vault-error { margin: 0; color: #a34848; font-size: 10.5px; line-height: 1.5; }
 .vault-footnote { margin-top: 0; }
+.sync-status { padding: 8px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.sync-status-line { display: grid; grid-template-columns: 18px minmax(0,1fr) 28px; align-items: center; gap: 7px; }
+.sync-status-line > svg { width: 15px; height: 15px; color: var(--accent); }
+.sync-status-line > span { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sync-status-line strong { font-size: 11px; font-weight: 600; }
+.sync-status-line small { overflow-wrap: anywhere; color: var(--faint); font-size: 10px; line-height: 1.4; }
+.sync-status-line button, .conflict-item button { width: 27px; height: 27px; display: grid; place-items: center; color: var(--muted); background: transparent; border-radius: 6px; }
+.sync-status-line button:hover, .conflict-item button:hover { color: var(--text); background: var(--hover); }
+.sync-status-line button:disabled { opacity: .5; cursor: default; }
+.sync-status-line button svg, .conflict-item button svg { width: 13px; height: 13px; }
+.conflict-center { border-bottom: 1px solid var(--border); }
+.conflict-center > summary { min-height: 34px; display: flex; align-items: center; gap: 7px; color: var(--muted); cursor: pointer; font-size: 10.5px; list-style: none; }
+.conflict-center > summary::-webkit-details-marker { display: none; }
+.conflict-center > summary svg { width: 14px; height: 14px; }
+.conflict-list { display: grid; gap: 4px; padding-bottom: 8px; }
+.conflict-item { min-width: 0; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 6px; padding: 6px 7px; background: var(--bg-subtle); border-radius: 6px; }
+.conflict-item > span { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.conflict-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; }
+.conflict-item small { color: var(--faint); font-size: 9.5px; }
+.conflict-item > div { display: flex; }
 @media (max-width: 379px) { .paper-header { padding-left: 14px; }.conversation { padding-left: 15px; padding-right: 15px; }.composer-zone { padding-left: 9px; padding-right: 9px; }.model-trigger { max-width: 102px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }.message-body { font-size: 13.3px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

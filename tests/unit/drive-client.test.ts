@@ -49,4 +49,65 @@ describe('Google Drive client', () => {
       message: 'Rate limit exceeded.',
     });
   });
+
+  it('reads Drive changes and advances resumable uploads from HTTP 308', async () => {
+    const requests: string[] = [];
+    const fetcher: DriveFetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      requests.push(`${init?.method || 'GET'} ${url}`);
+      if (url.includes('/changes/startPageToken')) {
+        return new Response(JSON.stringify({ startPageToken: 'start-1' }), { status: 200 });
+      }
+      if (url.includes('/changes?')) {
+        return new Response(JSON.stringify({
+          newStartPageToken: 'start-2',
+          changes: [{
+            fileId: 'batch-file',
+            file: {
+              id: 'batch-file',
+              name: 'opaque.pfo',
+              mimeType: 'application/vnd.paperflow.encrypted+json',
+              appProperties: {
+                paperflowVault: 'vault-1',
+                paperflowType: 'batch',
+                paperflowLogicalId: 'batch-1',
+              },
+            },
+          }],
+        }), { status: 200 });
+      }
+      if (url.includes('uploadType=resumable')) {
+        return new Response(null, {
+          status: 200,
+          headers: { Location: 'https://upload.example/session-1' },
+        });
+      }
+      if (url === 'https://upload.example/session-1') {
+        return new Response(null, {
+          status: 308,
+          headers: { Range: 'bytes=0-2' },
+        });
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    };
+    const client = new DriveClient(async () => 'token', fetcher);
+
+    expect(await client.getStartPageToken()).toBe('start-1');
+    const changes = await client.listChanges('start-1');
+    expect(changes.newStartPageToken).toBe('start-2');
+    const session = await client.createResumableUpload({
+      parentId: 'folder-1',
+      name: 'opaque.pfo',
+      mimeType: 'application/vnd.paperflow.encrypted+json',
+      appProperties: { paperflowType: 'blob' },
+      size: 6,
+    });
+    expect(await client.uploadResumableChunk(
+      session,
+      new Uint8Array([1, 2, 3]),
+      0,
+      6,
+    )).toEqual({ complete: false, nextOffset: 3 });
+    expect(requests.some((request) => request.includes('pageToken=start-1'))).toBe(true);
+  });
 });

@@ -14,6 +14,8 @@ import type {
   PaperTag,
   SettingRecord,
   SyncOperation,
+  SyncCheckpoint,
+  SyncConflict,
   SyncState,
   Tag,
   Thread,
@@ -43,6 +45,8 @@ export interface SchemaTables {
   paperChunks: PaperChunk;
   ocrPages: OcrPage;
   syncOps: SyncOperation;
+  syncConflicts: SyncConflict;
+  syncCheckpoints: SyncCheckpoint;
   syncState: SyncState;
 }
 
@@ -71,4 +75,10 @@ export const V2_STORES = {
   ocrPages: '&id,[documentId+page],paperId,documentId,page,status,updatedAt',
   syncOps: '&id,[deviceId+seq],state,entityType,entityId,createdAt,batchId',
   syncState: '&key,deviceId',
+} as const;
+
+export const V3_STORES = {
+  ...V2_STORES,
+  syncConflicts: '&id,entityType,entityId,paperId,createdAt,resolvedAt',
+  syncCheckpoints: '&id,kind,stage,documentId,updatedAt',
 } as const;

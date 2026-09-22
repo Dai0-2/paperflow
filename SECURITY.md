@@ -22,7 +22,7 @@ PaperFlow does not use private ChatGPT web endpoints or simulate `chatgpt.com` s
 
 ## Local persistence
 
-Paper metadata, conversations, memory, selections, annotations, and reading state are stored in the browser's local IndexedDB database. Lightweight display and provider preferences use `localStorage`. The v1 branch has an encrypted Drive vault foundation but does not transmit data until the user explicitly connects and creates or unlocks a vault. There is no telemetry.
+Paper metadata, conversations, memory, selections, annotations, and reading state are stored in the browser's local IndexedDB database. Lightweight display and provider preferences use `localStorage`. Saved-library data is synchronized only after the user explicitly connects and creates or unlocks a vault; temporary workspaces stay local. There is no telemetry.
 
 ## Encrypted Google Drive vault
 
@@ -33,6 +33,9 @@ Paper metadata, conversations, memory, selections, annotations, and reading stat
 - Drive object names are HMAC-derived opaque IDs. Titles, authors, DOI values, notes, conversations, PDF bytes, and logical IDs are not used as Drive file names or metadata.
 - The vault password uses PBKDF2-HMAC-SHA-256 with a random 128-bit salt and 600,000 iterations. The 256-bit recovery key uses HKDF-SHA-256. There is no recovery bypass.
 - The decrypted Vault Master Key is session memory only by default. The explicit **Remember this device** option stores it through the Native Host in the operating-system credential store, never browser storage.
+- Operation batches and snapshots are immutable encrypted objects. Their Drive metadata contains only protocol classification and random identifiers, never paper IDs, titles, DOI values, note text, or attachment names.
+- PDF uploads use resumable sessions. IndexedDB checkpoints may contain the resumable session URL, byte offset, and encrypted chunk hash, but never OAuth tokens, plaintext PDF data, or the Vault Master Key.
+- Replayed operation IDs are idempotent. Concurrent note edits preserve a conflict copy instead of silently overwriting user text.
 
 ## Native bridge
 

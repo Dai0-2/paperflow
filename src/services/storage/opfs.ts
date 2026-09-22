@@ -1,4 +1,5 @@
 const ROOT_DIRECTORY = 'papers';
+const SYNC_DIRECTORY = 'sync-uploads';
 const MINIMUM_HEADROOM = 5 * 1024 * 1024;
 
 export class OpfsUnavailableError extends Error {
@@ -33,6 +34,15 @@ async function rootDirectory(): Promise<FileSystemDirectoryHandle> {
 async function papersDirectory(create: boolean): Promise<FileSystemDirectoryHandle> {
   const root = await rootDirectory();
   return root.getDirectoryHandle(ROOT_DIRECTORY, { create });
+}
+
+async function syncDirectory(create: boolean): Promise<FileSystemDirectoryHandle> {
+  const root = await rootDirectory();
+  return root.getDirectoryHandle(SYNC_DIRECTORY, { create });
+}
+
+function assertOpaqueName(name: string): void {
+  if (!/^[A-Za-z0-9_-]{43}\.pfo$/.test(name)) throw new Error('Invalid encrypted upload name.');
 }
 
 export async function storageEstimate(): Promise<{
@@ -115,6 +125,35 @@ export async function deleteStoredPdf(contentHash: string): Promise<void> {
   try {
     const directory = await papersDirectory(false);
     await directory.removeEntry(`${contentHash}.pdf`);
+  } catch (reason) {
+    if (reason instanceof DOMException && reason.name === 'NotFoundError') return;
+    throw reason;
+  }
+}
+
+export async function writeEncryptedUpload(name: string, data: Uint8Array): Promise<void> {
+  assertOpaqueName(name);
+  const directory = await syncDirectory(true);
+  const handle = await directory.getFileHandle(name, { create: true });
+  const current = await handle.getFile();
+  if (current.size === data.byteLength && current.size > 0) return;
+  await assertStorageCapacity(data.byteLength);
+  const writable = await handle.createWritable();
+  await writable.write(data.slice());
+  await writable.close();
+}
+
+export async function readEncryptedUpload(name: string): Promise<Uint8Array> {
+  assertOpaqueName(name);
+  const directory = await syncDirectory(false);
+  const handle = await directory.getFileHandle(name);
+  return new Uint8Array(await (await handle.getFile()).arrayBuffer());
+}
+
+export async function deleteEncryptedUpload(name: string): Promise<void> {
+  assertOpaqueName(name);
+  try {
+    await (await syncDirectory(false)).removeEntry(name);
   } catch (reason) {
     if (reason instanceof DOMException && reason.name === 'NotFoundError') return;
     throw reason;

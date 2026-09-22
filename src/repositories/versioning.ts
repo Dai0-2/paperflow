@@ -1,5 +1,6 @@
 import type { PaperFlowDatabase } from '../db/PaperFlowDatabase';
 import type { EntityVersion, SyncEntityType, SyncOperation, SyncState } from '../types';
+import { requestSyncSoon } from '../sync/operationLog';
 
 const LOCAL_STATE_KEY = 'local-device';
 
@@ -26,6 +27,7 @@ export async function recordMutation(
   action: SyncOperation['action'],
   payload: unknown,
   version: EntityVersion,
+  baseVersion?: EntityVersion,
 ): Promise<SyncOperation> {
   const state = (await database.syncState.get(LOCAL_STATE_KEY)) || createDeviceState();
   state.counter = Math.max(state.counter, version.counter);
@@ -40,11 +42,13 @@ export async function recordMutation(
     entityId,
     action,
     version,
+    baseVersion,
     payload,
     createdAt: Date.now(),
     state: 'pending',
   };
   await database.syncOps.put(operation);
+  requestSyncSoon();
   return operation;
 }
 
@@ -54,8 +58,17 @@ export async function versionAndRecord(
   entityId: string,
   action: SyncOperation['action'],
   payload: unknown,
+  baseVersion?: EntityVersion,
 ): Promise<{ version: EntityVersion; operation: SyncOperation }> {
   const version = await nextEntityVersion(database);
-  const operation = await recordMutation(database, entityType, entityId, action, payload, version);
+  const operation = await recordMutation(
+    database,
+    entityType,
+    entityId,
+    action,
+    payload,
+    version,
+    baseVersion,
+  );
   return { version, operation };
 }

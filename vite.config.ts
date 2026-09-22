@@ -53,8 +53,14 @@ export default defineConfig(({ mode }) => {
           sidepanel: 'index.html',
           reader: 'reader.html',
           library: 'library.html',
+          background: 'src/background.ts',
         },
         output: {
+          entryFileNames(chunkInfo) {
+            return chunkInfo.name === 'background'
+              ? 'background.js'
+              : 'assets/[name]-[hash].js';
+          },
           manualChunks(id) {
             if (id.includes('pdfjs-dist')) return 'pdfjs';
             if (id.includes('node_modules') && /(react|remark|zustand)/.test(id)) return 'react';

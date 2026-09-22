@@ -1,5 +1,15 @@
 import { database, openPaperFlowDatabase } from '../../db/PaperFlowDatabase';
-import type { PaperChunk, PaperInfo, PaperMemory } from '../../types';
+import type {
+  Annotation,
+  PaperChunk,
+  PaperDocument,
+  PaperInfo,
+  PaperMemory,
+  PaperNote,
+  PaperSelection,
+  Thread,
+} from '../../types';
+import type { PersistedMessage } from '../../db/schema';
 import { aliasesForPaper } from '../paper';
 import { versionAndRecord } from '../../repositories/versioning';
 
@@ -63,29 +73,109 @@ export async function mergeDuplicatePapers(canonicalId: string, duplicateId: str
       const collectionItems = await db.collectionItems.where('paperId').equals(duplicateId).toArray();
       for (const item of collectionItems) {
         const id = `${item.collectionId}:${canonicalId}`;
-        await db.collectionItems.put({ ...item, id, paperId: canonicalId, updatedAt: now });
-        await db.collectionItems.delete(item.id);
+        const target = { ...item, id, paperId: canonicalId, deletedAt: undefined, updatedAt: now };
+        const put = await versionAndRecord(db, 'collectionItem', id, 'put', target);
+        const versionedTarget = { ...target, version: put.version };
+        await db.collectionItems.put(versionedTarget);
+        await db.syncOps.update(put.operation.id, { payload: versionedTarget });
+        const removed = { ...item, deletedAt: now, updatedAt: now };
+        const deletion = await versionAndRecord(
+          db,
+          'collectionItem',
+          item.id,
+          'delete',
+          removed,
+          item.version,
+        );
+        const tombstone = { ...removed, version: deletion.version };
+        await db.collectionItems.put(tombstone);
+        await db.syncOps.update(deletion.operation.id, { payload: tombstone });
       }
 
       const paperTags = await db.paperTags.where('paperId').equals(duplicateId).toArray();
       for (const item of paperTags) {
         const id = `${canonicalId}:${item.tagId}`;
-        await db.paperTags.put({ ...item, id, paperId: canonicalId, updatedAt: now });
-        await db.paperTags.delete(item.id);
+        const target = { ...item, id, paperId: canonicalId, deletedAt: undefined, updatedAt: now };
+        const put = await versionAndRecord(db, 'paperTag', id, 'put', target);
+        const versionedTarget = { ...target, version: put.version };
+        await db.paperTags.put(versionedTarget);
+        await db.syncOps.update(put.operation.id, { payload: versionedTarget });
+        const removed = { ...item, deletedAt: now, updatedAt: now };
+        const deletion = await versionAndRecord(
+          db,
+          'paperTag',
+          item.id,
+          'delete',
+          removed,
+          item.version,
+        );
+        const tombstone = { ...removed, version: deletion.version };
+        await db.paperTags.put(tombstone);
+        await db.syncOps.update(deletion.operation.id, { payload: tombstone });
       }
 
-      for (const table of [db.documents, db.notes, db.annotations, db.threads, db.selections]) {
-        const records = await table.where('paperId').equals(duplicateId).toArray();
-        await Promise.all(records.map((record) => table.update(record.id, { paperId: canonicalId, updatedAt: now })));
+      const moveRecord = async <T extends {
+        id: string;
+        paperId: string;
+        updatedAt?: number;
+        version?: { counter: number; deviceId: string };
+        deletedAt?: number;
+      }>(
+        entityType: 'document' | 'note' | 'annotation' | 'thread' | 'selection',
+        record: T,
+        putRecord: (next: T & { version: { counter: number; deviceId: string } }) => Promise<unknown>,
+      ) => {
+        const next = { ...record, paperId: canonicalId, updatedAt: now };
+        const mutation = await versionAndRecord(
+          db,
+          entityType,
+          record.id,
+          record.deletedAt ? 'delete' : 'put',
+          next,
+          record.version,
+        );
+        const versioned = { ...next, version: mutation.version };
+        await putRecord(versioned);
+        await db.syncOps.update(mutation.operation.id, { payload: versioned });
+      };
+      for (const record of await db.documents.where('paperId').equals(duplicateId).toArray()) {
+        await moveRecord('document', record, (next) => db.documents.put(next as PaperDocument));
+      }
+      for (const record of await db.notes.where('paperId').equals(duplicateId).toArray()) {
+        await moveRecord('note', record, (next) => db.notes.put(next as PaperNote));
+      }
+      for (const record of await db.annotations.where('paperId').equals(duplicateId).toArray()) {
+        await moveRecord('annotation', record, (next) => db.annotations.put(next as Annotation));
+      }
+      for (const record of await db.threads.where('paperId').equals(duplicateId).toArray()) {
+        await moveRecord('thread', record, (next) => db.threads.put(next as Thread));
+      }
+      for (const record of await db.selections.where('paperId').equals(duplicateId).toArray()) {
+        await moveRecord('selection', record, (next) => db.selections.put(next as PaperSelection));
       }
 
       const threads = await db.threads.where('paperId').equals(canonicalId).toArray();
       const threadIds = new Set(threads.map((thread) => thread.id));
       const duplicateMessages = await db.messages.where('paperId').equals(duplicateId).toArray();
-      await Promise.all(duplicateMessages.map((message) => db.messages.update(message.id, {
-        paperId: canonicalId,
-        threadId: threadIds.has(message.threadId) ? message.threadId : message.threadId,
-      })));
+      for (const message of duplicateMessages) {
+        const next = {
+          ...message,
+          paperId: canonicalId,
+          threadId: threadIds.has(message.threadId) ? message.threadId : message.threadId,
+          updatedAt: now,
+        };
+        const mutation = await versionAndRecord(
+          db,
+          'message',
+          message.id,
+          message.deletedAt ? 'delete' : 'put',
+          next,
+          message.version,
+        );
+        const versioned = { ...next, version: mutation.version };
+        await db.messages.put(versioned as PersistedMessage);
+        await db.syncOps.update(mutation.operation.id, { payload: versioned });
+      }
 
       const duplicateChunks = await db.paperChunks.where('paperId').equals(duplicateId).toArray();
       for (const chunk of duplicateChunks) {
@@ -111,23 +201,63 @@ export async function mergeDuplicatePapers(canonicalId: string, duplicateId: str
       ]);
       if (duplicateMemory) {
         const content = [canonicalMemory?.content, duplicateMemory.content].filter(Boolean).join('\n\n---\n\n');
-        const memory: PaperMemory = {
+        const memoryDraft: PaperMemory = {
           ...duplicateMemory,
           id: `memory:${canonicalId}`,
           paperId: canonicalId,
           content,
           updatedAt: now,
         };
-        if (canonicalMemory) await db.paperMemory.delete(canonicalMemory.id);
-        await db.paperMemory.delete(duplicateMemory.id);
+        const mutation = await versionAndRecord(
+          db,
+          'paperMemory',
+          memoryDraft.id,
+          'put',
+          memoryDraft,
+          canonicalMemory?.version,
+        );
+        const memory = { ...memoryDraft, version: mutation.version };
         await db.paperMemory.put(memory);
+        await db.syncOps.update(mutation.operation.id, { payload: memory });
+        if (duplicateMemory.id !== memory.id) {
+          const removed = { ...duplicateMemory, deletedAt: now, updatedAt: now };
+          const deletion = await versionAndRecord(
+            db,
+            'paperMemory',
+            duplicateMemory.id,
+            'delete',
+            removed,
+            duplicateMemory.version,
+          );
+          const tombstone = { ...removed, version: deletion.version };
+          await db.paperMemory.put(tombstone);
+          await db.syncOps.update(deletion.operation.id, { payload: tombstone });
+        }
       }
 
       const aliases = [
         ...(await db.paperAliases.where('paperId').equals(duplicateId).toArray()),
         ...aliasesForPaper(duplicate),
       ];
-      await Promise.all(aliases.map((alias) => db.paperAliases.put({ ...alias, paperId: canonicalId })));
+      for (const alias of aliases) {
+        const next = {
+          ...alias,
+          paperId: canonicalId,
+          createdAt: alias.createdAt || now,
+          updatedAt: now,
+        };
+        const mutation = await versionAndRecord(
+          db,
+          'paperAlias',
+          alias.alias,
+          'put',
+          next,
+          alias.version,
+        );
+        const versioned = { ...next, version: mutation.version };
+        await db.paperAliases.put(versioned);
+        await db.syncOps.update(mutation.operation.id, { payload: versioned });
+      }
 
       const tombstone = {
         ...duplicate,

@@ -57,6 +57,7 @@ Paper
 - 订阅模式采用低推理延迟配置，并限制累计历史上下文，避免对话越长越慢
 - 通过 IndexedDB 按论文保存 papers、aliases、threads、messages、memory、selections、annotations、settings 和阅读状态
 - Google Drive `drive.file` 适配器与端到端加密保险库，支持独立密码、恢复密钥和可选的系统凭据库解锁
+- 加密增量同步：不可变操作批次、快照、Drive Changes 游标、笔记冲突副本及 PDF 断点续传
 - 自动迁移旧版 `localStorage` 对话与笔记
 - 首次初始化与连接诊断页面
 - 论文标题、作者、来源、页码和上下文状态
@@ -79,7 +80,7 @@ Paper
 - 尚未实现 Citation 原文范围高亮。
 - OCR 采用用户按需触发模式，单次最多处理 50 页。
 - 登录墙或严格 CORS 限制的远程 PDF 需要先下载，再本地打开。
-- Google OAuth 与加密 Drive 保险库已经实现；后台增量同步和冲突合并属于下一项 v1 Gate。
+- 真实 Google Drive 双设备发布验收仍需要生产 OAuth Client ID；自动化测试使用内存双设备 Drive 适配器。
 - 暂不包含团队协作、向量数据库和账号付费系统。
 
 ## 安装原型

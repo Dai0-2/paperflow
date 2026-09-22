@@ -3,6 +3,8 @@ import { z } from 'zod';
 export const VAULT_PROTOCOL_VERSION = 1 as const;
 export const VAULT_FORMAT = 'paperflow-vault' as const;
 export const ENCRYPTED_OBJECT_FORMAT = 'paperflow-object' as const;
+export const SYNC_BATCH_FORMAT = 'paperflow-sync-batch' as const;
+export const SYNC_SNAPSHOT_FORMAT = 'paperflow-sync-snapshot' as const;
 
 const wrappedKeySchema = z.object({
   algorithm: z.literal('AES-256-GCM'),
@@ -42,9 +44,77 @@ export const encryptedObjectSchema = z.object({
   })),
 });
 
+export const entityVersionSchema = z.object({
+  counter: z.number().int().nonnegative(),
+  deviceId: z.string().min(1),
+});
+
+export const syncEntityTypeSchema = z.enum([
+  'paper',
+  'paperAlias',
+  'collection',
+  'collectionItem',
+  'tag',
+  'paperTag',
+  'document',
+  'note',
+  'annotation',
+  'thread',
+  'message',
+  'paperMemory',
+  'selection',
+  'setting',
+]);
+
+export const syncOperationSchema = z.object({
+  id: z.string().min(1),
+  deviceId: z.string().min(1),
+  seq: z.number().int().positive(),
+  entityType: syncEntityTypeSchema,
+  entityId: z.string().min(1),
+  action: z.enum(['put', 'delete']),
+  version: entityVersionSchema,
+  baseVersion: entityVersionSchema.optional(),
+  payload: z.unknown().optional(),
+  createdAt: z.number().int().nonnegative(),
+  state: z.enum(['pending', 'uploaded']),
+  batchId: z.string().optional(),
+});
+
+export const syncBatchSchema = z.object({
+  format: z.literal(SYNC_BATCH_FORMAT),
+  version: z.literal(VAULT_PROTOCOL_VERSION),
+  vaultId: z.string().uuid(),
+  batchId: z.string().uuid(),
+  deviceId: z.string().min(1),
+  fromSeq: z.number().int().positive(),
+  toSeq: z.number().int().positive(),
+  createdAt: z.number().int().nonnegative(),
+  operations: z.array(syncOperationSchema).min(1),
+});
+
+export const syncSnapshotRecordSchema = z.object({
+  entityType: syncEntityTypeSchema,
+  entityId: z.string().min(1),
+  version: entityVersionSchema,
+  payload: z.unknown(),
+});
+
+export const syncSnapshotSchema = z.object({
+  format: z.literal(SYNC_SNAPSHOT_FORMAT),
+  version: z.literal(VAULT_PROTOCOL_VERSION),
+  vaultId: z.string().uuid(),
+  snapshotId: z.string().uuid(),
+  createdAt: z.number().int().nonnegative(),
+  records: z.array(syncSnapshotRecordSchema),
+  appliedOperationIds: z.array(z.string()),
+});
+
 export type WrappedKey = z.infer<typeof wrappedKeySchema>;
 export type VaultHeader = z.infer<typeof vaultHeaderSchema>;
 export type EncryptedObject = z.infer<typeof encryptedObjectSchema>;
+export type SyncBatch = z.infer<typeof syncBatchSchema>;
+export type SyncSnapshot = z.infer<typeof syncSnapshotSchema>;
 
 export function parseVaultHeader(input: unknown): VaultHeader {
   return vaultHeaderSchema.parse(input);
@@ -52,4 +122,12 @@ export function parseVaultHeader(input: unknown): VaultHeader {
 
 export function parseEncryptedObject(input: unknown): EncryptedObject {
   return encryptedObjectSchema.parse(input);
+}
+
+export function parseSyncBatch(input: unknown): SyncBatch {
+  return syncBatchSchema.parse(input);
+}
+
+export function parseSyncSnapshot(input: unknown): SyncSnapshot {
+  return syncSnapshotSchema.parse(input);
 }

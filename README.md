@@ -57,6 +57,7 @@ Open the same paper days later—from a different source when identity can be re
 - Low-latency reasoning configuration and bounded conversation history to prevent progressive slowdowns
 - Per-paper IndexedDB storage for papers, aliases, threads, messages, memory, selections, annotations, settings, and reading state
 - Google Drive `drive.file` adapter and end-to-end encrypted vault setup with password, recovery key, and optional OS credential-store unlock
+- Encrypted incremental sync with immutable operation batches, snapshots, Drive Changes cursors, note conflict copies, and resumable PDF uploads
 - One-time migration of legacy `localStorage` conversations and notes
 - First-run setup and connection diagnostics
 - Research conversation with Markdown and tables
@@ -78,7 +79,7 @@ Open the same paper days later—from a different source when identity can be re
 - Citation-range highlighting is not yet rendered.
 - OCR is intentionally on demand and limited to 50 pages per run.
 - Remote PDFs behind login walls or restrictive CORS must be downloaded and opened locally.
-- The encrypted Drive vault and OAuth flow are implemented; incremental background synchronization and conflict merging are the next v1 gate.
+- Real Google Drive two-device release validation still requires a production OAuth client ID; automated tests use an in-memory two-device Drive adapter.
 - No collaboration, vector database, or account/payment system.
 
 ## Install the prototype

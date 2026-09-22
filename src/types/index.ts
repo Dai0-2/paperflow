@@ -42,6 +42,9 @@ export interface Message {
   feedbackDetail?: string;
   copied?: boolean;
   saved?: boolean;
+  updatedAt?: number;
+  version?: EntityVersion;
+  deletedAt?: number;
 }
 
 export interface Thread {
@@ -55,6 +58,15 @@ export interface Thread {
   version?: EntityVersion;
   deletedAt?: number;
 }
+
+export type PaperSyncField =
+  | 'favorite'
+  | 'readStatus'
+  | 'libraryState'
+  | 'lastPage'
+  | 'zoom'
+  | 'panelWidth'
+  | 'activeThreadId';
 
 export interface PaperInfo {
   id: string;
@@ -85,6 +97,8 @@ export interface PaperInfo {
   version?: EntityVersion;
   deletedAt?: number;
   mergedInto?: string;
+  metadataSource?: 'automatic' | 'manual';
+  fieldVersions?: Partial<Record<PaperSyncField, EntityVersion>>;
 }
 
 export interface PaperChunk {
@@ -113,6 +127,10 @@ export interface PaperAlias {
   alias: string;
   paperId: string;
   kind: 'doi' | 'arxiv' | 'openreview' | 'title-author' | 'url' | 'content-hash';
+  createdAt?: number;
+  updatedAt?: number;
+  version?: EntityVersion;
+  deletedAt?: number;
 }
 
 export interface PaperMemory {
@@ -243,6 +261,7 @@ export interface SyncOperation {
   entityId: string;
   action: 'put' | 'delete';
   version: EntityVersion;
+  baseVersion?: EntityVersion;
   payload?: unknown;
   createdAt: number;
   state: 'pending' | 'uploaded';
@@ -258,6 +277,36 @@ export interface SyncState {
   lastSyncedAt?: number;
   retryAt?: number;
   lastError?: string;
+  lastErrorCode?: 'offline' | 'auth-required' | 'quota' | 'rate-limited' | 'remote-missing' | 'unknown';
+  status?: 'idle' | 'syncing' | 'offline' | 'auth-required' | 'paused' | 'error';
+  activeCheckpointId?: string;
+  lastSnapshotAt?: number;
+}
+
+export interface SyncConflict {
+  id: string;
+  entityType: 'note';
+  entityId: string;
+  paperId: string;
+  conflictCopyId: string;
+  localVersion: EntityVersion;
+  remoteVersion: EntityVersion;
+  createdAt: number;
+  resolvedAt?: number;
+}
+
+export interface SyncCheckpoint {
+  id: string;
+  kind: 'sync-run' | 'blob-upload';
+  stage: string;
+  batchId?: string;
+  documentId?: string;
+  sessionUrl?: string;
+  offset?: number;
+  totalBytes?: number;
+  chunkHash?: string;
+  attempt: number;
+  updatedAt: number;
 }
 
 export interface SettingRecord {
@@ -266,6 +315,7 @@ export interface SettingRecord {
   scope?: SettingScope;
   updatedAt?: number;
   version?: EntityVersion;
+  deletedAt?: number;
 }
 
 export interface Attachment {

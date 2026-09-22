@@ -59,8 +59,8 @@ afterEach(async () => {
   await Promise.all(databaseNames.splice(0).map((name) => Dexie.delete(name)));
 });
 
-describe('Dexie v2 migration', () => {
-  it('preserves v1 data and adds local-first defaults', async () => {
+describe('Dexie migrations', () => {
+  it('preserves v1 data and adds local-first and sync recovery stores', async () => {
     const name = `paperflow-test-${crypto.randomUUID()}`;
     databaseNames.push(name);
     await createLegacyDatabase(name);
@@ -79,6 +79,8 @@ describe('Dexie v2 migration', () => {
     expect(paper?.version?.deviceId).toBe('legacy-v1');
     expect(annotation).toMatchObject({ type: 'highlight', updatedAt: 123 });
     expect(await db.collections.count()).toBe(0);
+    expect(await db.syncConflicts.count()).toBe(0);
+    expect(await db.syncCheckpoints.count()).toBe(0);
     db.close();
   });
 });

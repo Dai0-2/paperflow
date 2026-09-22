@@ -73,6 +73,10 @@ IndexedDB database `paperflow-ai` contains:
 | `selections` | User-selected page text |
 | `annotations` | Six annotation types with PDF geometry, text anchors, and comments |
 | `settings` | Extensible structured settings |
+| `syncOps` | Immutable local operation log keyed by device ID and sequence |
+| `syncState` | Lamport counter, Drive Changes cursor, retry, and last-success state |
+| `syncCheckpoints` | Recoverable sync-run and resumable-upload progress |
+| `syncConflicts` | Unresolved note conflict-copy notifications |
 
 Legacy `paperflow:messages:*` and `paperflow:notes:*` values migrate once after a
 paper workspace opens. Lightweight UI preferences remain in `localStorage`.
@@ -109,6 +113,28 @@ the operating-system credential store under the vault UUID. Browser storage and
 Drive never receive the plaintext VMK, password, recovery key, API key, or OAuth
 token. Changing the vault password replaces only the password wrapper and does
 not re-encrypt historical objects.
+
+## Incremental synchronization
+
+Every saved-library mutation writes its entity and a `[deviceId, seq]`
+operation in the same Dexie transaction. Operations are grouped after a
+five-second debounce into immutable encrypted batches. Replaying an operation
+is safe because its ID is unique and retained locally after application.
+Entity versions are Lamport tuples; relationship rows and annotations merge
+independently, paper identity fields preserve non-empty trusted metadata, and
+concurrent note edits create deterministic conflict copies.
+
+New devices read the latest encrypted snapshot and then replay encrypted
+batches. Established devices use the persisted Google Drive Changes page token.
+The TypeScript MV3 service worker runs on startup, network recovery, local
+change alarms, manual requests, and a 15-minute alarm. A run uses a 20-second
+soft budget and checkpoints each network stage.
+
+Encrypted PDF objects use Drive resumable uploads. The encrypted temporary
+payload remains in OPFS, while the resumable session URL, confirmed byte offset,
+and current chunk hash are checkpointed in IndexedDB. OAuth tokens and plaintext
+vault keys are never checkpointed. HTTP 401 requires user reauthorization,
+403 pauses uploads, and 429 honors `Retry-After` with full-jitter backoff.
 
 ## ChatGPT subscription authentication
 

@@ -49,6 +49,7 @@ import { LibrarySidebar, collectionLabel } from './LibrarySidebar';
 import { PaperInspector } from './PaperInspector';
 import { PaperTable } from './PaperTable';
 import { TagManagerDialog } from './TagManagerDialog';
+import { SyncStatus } from '../sync/SyncStatus';
 
 const ImportExportDialog = lazy(async () => {
   const module = await import('./ImportExportDialog');
@@ -147,6 +148,7 @@ export function LibraryApp() {
       </div>
       <label className="library-search"><Search /><input value={store.searchQuery} onChange={(event) => store.setSearchQuery(event.target.value)} placeholder="Search papers, author:, tag:, collection:, year:, status:" aria-label="Search library" />{store.searchQuery && <button title="Clear search" onClick={() => store.setSearchQuery('')}><X /></button>}</label>
       <div className="library-header-actions">
+        <SyncStatus language="en" compact />
         <button title={dark ? 'Use light theme' : 'Use dark theme'} onClick={() => setThemeValue(dark ? 'light' : 'dark')}>{dark ? <Sun /> : <Moon />}</button>
         <button
           title={indexStatus.state === 'building'
