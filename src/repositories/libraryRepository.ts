@@ -9,6 +9,7 @@ import type {
   Tag,
 } from '../types';
 import { normalizeTagName } from '../services/library/paperIdentity';
+import { queueAnnotationsForSync } from './annotationRepository';
 import { versionAndRecord } from './versioning';
 
 function relationId(left: string, right: string): string {
@@ -25,7 +26,7 @@ export async function listLibraryPapers(includeTrash = false): Promise<PaperInfo
 
 export async function savePaperToLibrary(paperId: string): Promise<PaperInfo> {
   const db = await openPaperFlowDatabase();
-  return db.transaction('rw', db.papers, db.syncState, db.syncOps, async () => {
+  const paper = await db.transaction('rw', db.papers, db.syncState, db.syncOps, async () => {
     const current = await db.papers.get(paperId);
     if (!current) throw new Error('Paper workspace was not found.');
     const now = Date.now();
@@ -48,6 +49,8 @@ export async function savePaperToLibrary(paperId: string): Promise<PaperInfo> {
     await db.syncOps.update(operation.id, { payload: paper });
     return paper;
   });
+  await queueAnnotationsForSync(paperId);
+  return paper;
 }
 
 export async function updatePaperMetadata(

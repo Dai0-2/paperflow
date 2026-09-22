@@ -1,21 +1,46 @@
 import { useEffect, useRef, useState } from 'react';
 import { TextLayer } from 'pdfjs-dist';
-import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PageViewport, RenderTask } from 'pdfjs-dist';
+import type { AnnotationTool } from '../../hooks/useAnnotationTool';
+import type { AnnotationDraft } from '../../repositories/annotationRepository';
+import type { Annotation } from '../../types';
+import { AnnotationLayer } from '../annotations/AnnotationLayer';
 
 interface PdfPageProps {
   document: PDFDocumentProxy;
   pageNumber: number;
   scale: number;
   searchQuery: string;
+  annotations: Annotation[];
+  annotationTool: AnnotationTool;
+  annotationColor: string;
+  selectedAnnotationId?: string;
+  onViewportReady: (page: number, viewport: PageViewport) => void;
+  onCreateAnnotation: (draft: AnnotationDraft) => Promise<Annotation>;
+  onSelectAnnotation: (id: string) => void;
   forceRender?: boolean;
 }
 
-export function PdfPage({ document, pageNumber, scale, searchQuery, forceRender = false }: PdfPageProps) {
+export function PdfPage({
+  document,
+  pageNumber,
+  scale,
+  searchQuery,
+  annotations,
+  annotationTool,
+  annotationColor,
+  selectedAnnotationId,
+  onViewportReady,
+  onCreateAnnotation,
+  onSelectAnnotation,
+  forceRender = false,
+}: PdfPageProps) {
   const root = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const textLayer = useRef<HTMLDivElement>(null);
   const [nearViewport, setNearViewport] = useState(pageNumber <= 2);
   const [size, setSize] = useState({ width: 612 * scale, height: 792 * scale });
+  const [viewport, setViewport] = useState<PageViewport>();
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -53,6 +78,8 @@ export function PdfPage({ document, pageNumber, scale, searchQuery, forceRender 
         if (cancelled) return;
         const viewport = page.getViewport({ scale });
         setSize({ width: viewport.width, height: viewport.height });
+        setViewport(viewport);
+        onViewportReady(pageNumber, viewport);
         const outputScale = Math.min(window.devicePixelRatio || 1, 2);
         const target = canvas.current;
         const layerElement = textLayer.current;
@@ -84,7 +111,7 @@ export function PdfPage({ document, pageNumber, scale, searchQuery, forceRender 
       renderTask?.cancel();
       layer?.cancel();
     };
-  }, [document, nearViewport, pageNumber, scale]);
+  }, [document, nearViewport, onViewportReady, pageNumber, scale]);
 
   return <section
     ref={root}
@@ -97,6 +124,15 @@ export function PdfPage({ document, pageNumber, scale, searchQuery, forceRender 
     {nearViewport ? <>
       <canvas ref={canvas} />
       <div ref={textLayer} className="textLayer" />
+      {viewport && <AnnotationLayer
+        viewport={viewport}
+        annotations={annotations}
+        tool={annotationTool}
+        color={annotationColor}
+        selectedId={selectedAnnotationId}
+        onCreate={(draft) => onCreateAnnotation({ ...draft, page: pageNumber })}
+        onSelect={onSelectAnnotation}
+      />}
       {searchQuery && <div className="page-search-marker" title={`Search active: ${searchQuery}`} />}
       {error && <div className="page-render-error">{error}</div>}
     </> : <div className="page-placeholder">Page {pageNumber}</div>}

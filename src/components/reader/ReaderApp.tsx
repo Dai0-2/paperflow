@@ -1,11 +1,19 @@
 import { FileQuestion } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import type { PageViewport } from 'pdfjs-dist';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WorkspaceSurface } from '../../App';
+import { AnnotationInspector } from '../annotations/AnnotationInspector';
+import { AnnotationToolbar } from '../annotations/AnnotationToolbar';
+import { useAnnotationTool } from '../../hooks/useAnnotationTool';
 import { usePdfDocument } from '../../hooks/usePdfDocument';
 import { useReaderNavigation } from '../../hooks/useReaderNavigation';
 import { useWorkspaceBootstrap } from '../../hooks/useWorkspaceBootstrap';
 import { savePaperToLibrary } from '../../repositories/libraryRepository';
-import { saveAnnotation, saveSelection } from '../../services/database';
+import {
+  createTextAnchor,
+  rangeRectsToPdfQuads,
+} from '../../services/annotations/coordinates';
+import { saveSelection } from '../../services/database';
 import {
   recoverStaleOcrJobs,
   startOcr,
@@ -15,7 +23,7 @@ import {
 } from '../../services/ocr/ocrService';
 import { queueStoredDocumentsForSync } from '../../services/storage/documentStore';
 import { useAppStore } from '../../store/useAppStore';
-import type { PaperSelection, ReaderSidebar } from '../../types';
+import type { PdfQuad, PaperSelection, ReaderSidebar, TextAnchor } from '../../types';
 import { PdfPage } from './PdfPage';
 import { ReaderOpenState, ReaderSidebarPanel, SelectionToolbar } from './ReaderPanels';
 import type { FlatOutlineItem } from './ReaderPanels';
@@ -29,12 +37,20 @@ export function ReaderApp() {
   const [assistantOpen, setAssistantOpen] = useState(() => window.innerWidth > 760);
   const [assistantWidth, setAssistantWidth] = useState(390);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectionToolbar, setSelectionToolbar] = useState<{ x: number; y: number; text: string; page: number }>();
+  const [selectionToolbar, setSelectionToolbar] = useState<{
+    x: number;
+    y: number;
+    text: string;
+    page: number;
+    quadPoints: PdfQuad[];
+    anchor: TextAnchor;
+  }>();
   const [renderAll, setRenderAll] = useState(false);
   const [savingOffline, setSavingOffline] = useState(false);
   const [operationError, setOperationError] = useState('');
   const [ocrProgress, setOcrProgress] = useState<OcrProgress>();
   const ocrJob = useRef<OcrJob | undefined>(undefined);
+  const viewports = useRef(new Map<number, PageViewport>());
   const {
     paper,
     theme,
@@ -44,6 +60,7 @@ export function ReaderApp() {
     setDraft,
     setTheme,
   } = useAppStore();
+  const annotationState = useAnnotationTool(paper?.id);
   const {
     pdfDocument,
     source,
@@ -80,6 +97,20 @@ export function ReaderApp() {
     setAssistantWidth,
   });
 
+  const onViewportReady = useCallback((pageNumber: number, viewport: PageViewport) => {
+    viewports.current.set(pageNumber, viewport);
+  }, []);
+
+  const annotationsByPage = useMemo(() => {
+    const result = new Map<number, typeof annotationState.annotations>();
+    for (const annotation of annotationState.annotations) {
+      const pageAnnotations = result.get(annotation.page) || [];
+      pageAnnotations.push(annotation);
+      result.set(annotation.page, pageAnnotations);
+    }
+    return result;
+  }, [annotationState.annotations]);
+
   const onSelection = () => {
     window.setTimeout(() => {
       const browserSelection = window.getSelection();
@@ -89,18 +120,48 @@ export function ReaderApp() {
         return;
       }
       const range = browserSelection.getRangeAt(0);
-      const element = (range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
-        ? range.commonAncestorContainer
-        : range.commonAncestorContainer.parentElement) as HTMLElement | null;
+      const startContainer = range.startContainer;
+      const element = (startContainer.nodeType === Node.ELEMENT_NODE
+        ? startContainer
+        : startContainer.parentElement) as HTMLElement | null;
       const pageElement = element?.closest<HTMLElement>('.pdf-page');
       if (!pageElement) return;
+      const selectedPage = Number(pageElement.dataset.page);
+      const viewport = viewports.current.get(selectedPage);
+      if (!viewport) return;
       const rectangle = range.getBoundingClientRect();
-      setSelectionToolbar({
+      const quadPoints = rangeRectsToPdfQuads(
+        Array.from(range.getClientRects()),
+        pageElement.getBoundingClientRect(),
+        viewport,
+      );
+      if (!quadPoints.length) return;
+      const captured = {
         x: Math.max(180, Math.min(window.innerWidth - 180, rectangle.left + rectangle.width / 2)),
         y: Math.max(58, rectangle.top - 10),
         text: selectedText.slice(0, 8_000),
-        page: Number(pageElement.dataset.page),
-      });
+        page: selectedPage,
+        quadPoints,
+        anchor: createTextAnchor(browserSelection, selectedText.slice(0, 8_000)),
+      };
+      if (
+        annotationState.tool === 'highlight'
+        || annotationState.tool === 'underline'
+        || annotationState.tool === 'strikeout'
+      ) {
+        void annotationState.add({
+          page: captured.page,
+          text: captured.text,
+          type: annotationState.tool,
+          color: annotationState.color,
+          quadPoints: captured.quadPoints,
+          anchor: captured.anchor,
+        });
+        browserSelection.removeAllRanges();
+        setSelectionToolbar(undefined);
+      } else {
+        setSelectionToolbar(captured);
+      }
     });
   };
 
@@ -116,7 +177,14 @@ export function ReaderApp() {
     setSelection(selection);
     await saveSelection(selection);
     if (action === 'save') {
-      await saveAnnotation({ ...selection, color: 'yellow' });
+      await annotationState.add({
+        page: selectionToolbar.page,
+        text: selectionToolbar.text,
+        type: 'highlight',
+        color: annotationState.color,
+        quadPoints: selectionToolbar.quadPoints,
+        anchor: selectionToolbar.anchor,
+      });
     } else {
       const prompts = {
         ask: uiLanguage === 'zh' ? '基于选中内容回答：' : 'Answer using the selected passage:',
@@ -129,6 +197,39 @@ export function ReaderApp() {
       requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('paperflow:focus-composer')));
     }
     setSelectionToolbar(undefined);
+  };
+
+  const downloadBlob = (blob: Blob, name: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = documentRef.createElement('a');
+    link.href = url;
+    link.download = name;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  };
+
+  const exportAnnotations = async () => {
+    if (!documentData || !annotationState.annotations.length) return;
+    setOperationError('');
+    const exporter = await import('../../services/annotations/exportPdf');
+    try {
+      const output = await exporter.exportAnnotatedPdf(documentData, annotationState.annotations);
+      downloadBlob(
+        new Blob([output.slice().buffer], { type: 'application/pdf' }),
+        exporter.annotatedPdfName(source?.name || 'paper.pdf'),
+      );
+    } catch (reason) {
+      const baseName = (source?.name || 'paper.pdf').replace(/\.pdf$/i, '') || 'paper';
+      downloadBlob(
+        new Blob([exporter.annotationsAsJson(annotationState.annotations)], { type: 'application/json' }),
+        `${baseName}-paperflow-annotations.json`,
+      );
+      downloadBlob(
+        new Blob([exporter.annotationsAsMarkdown(annotationState.annotations)], { type: 'text/markdown' }),
+        `${baseName}-paperflow-annotations.md`,
+      );
+      setOperationError(`${reason instanceof Error ? reason.message : 'PDF export failed.'} JSON and Markdown backups were downloaded instead.`);
+    }
   };
 
   const resolveOutline = async (item: FlatOutlineItem) => {
@@ -279,12 +380,46 @@ export function ReaderApp() {
       <section className="reader-document">
         {!pdfDocument && <ReaderOpenState url={urlDraft} loading={loading} progress={loadProgress} error={error} accessRequired={Boolean(pendingUrl)} onUrlChange={setUrlDraft} onSubmit={() => void prepareUrl(urlDraft)} onOpenFile={() => fileInput.current?.click()} onGrantAccess={() => void grantAccess()} />}
         {pdfDocument && <>
+          <AnnotationToolbar
+            tool={annotationState.tool}
+            color={annotationState.color}
+            annotationCount={annotationState.annotations.length}
+            onToolChange={(tool) => {
+              annotationState.setTool(tool);
+              annotationState.select(undefined);
+            }}
+            onColorChange={annotationState.setColor}
+            onExport={() => void exportAnnotations()}
+          />
           {(operationError || error) && <div className="reader-warning"><FileQuestion />{operationError || error}</div>}
           <div ref={scrollRoot} className="reader-scroll" onPointerUp={onSelection}>
             <div className="reader-pages">
-              {Array.from({ length: pageCount }, (_, index) => <PdfPage key={index + 1} document={pdfDocument} pageNumber={index + 1} scale={scale} searchQuery={searchQuery} forceRender={renderAll} />)}
+              {Array.from({ length: pageCount }, (_, index) => {
+                const pageNumber = index + 1;
+                return <PdfPage
+                  key={pageNumber}
+                  document={pdfDocument}
+                  pageNumber={pageNumber}
+                  scale={scale}
+                  searchQuery={searchQuery}
+                  annotations={annotationsByPage.get(pageNumber) || []}
+                  annotationTool={annotationState.tool}
+                  annotationColor={annotationState.color}
+                  selectedAnnotationId={annotationState.selected?.id}
+                  onViewportReady={onViewportReady}
+                  onCreateAnnotation={annotationState.add}
+                  onSelectAnnotation={annotationState.select}
+                  forceRender={renderAll}
+                />;
+              })}
             </div>
           </div>
+          <AnnotationInspector
+            annotation={annotationState.selected}
+            onClose={() => annotationState.select(undefined)}
+            onUpdate={(patch) => annotationState.update(annotationState.selected!.id, patch)}
+            onDelete={() => annotationState.remove(annotationState.selected!.id)}
+          />
         </>}
       </section>
       {assistantOpen && <><div className="reader-divider" role="separator" aria-orientation="vertical" onPointerDown={startResize} /><aside className="reader-assistant"><WorkspaceSurface /></aside></>}

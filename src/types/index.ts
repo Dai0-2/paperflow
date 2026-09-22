@@ -150,6 +150,8 @@ export interface Annotation {
   updatedAt?: number;
   version?: EntityVersion;
   deletedAt?: number;
+  quadPoints?: PdfQuad[];
+  /** @deprecated Kept only for records created before v1.0. */
   quads?: PdfQuad[];
   rect?: { x: number; y: number; width: number; height: number };
   strokes?: Array<{ points: PdfPoint[]; width: number }>;

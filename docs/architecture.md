@@ -32,6 +32,13 @@ Navigation, current-page observation, zoom restoration, keyboard handling, and
 reading-state persistence live in `useReaderNavigation`. Reader and Side Panel
 both render the same `WorkspaceSurface`, store, chat hooks, and provider adapter.
 
+The annotation layer stores text quads, regions, and ink strokes in PDF user
+space. `PageViewport` converts those coordinates only while rendering, so zoom
+and page rotation do not rewrite persisted records. Only lazily rendered pages
+mount an annotation overlay. `pdf-lib` produces a new annotated copy; the OPFS
+source object is never modified. Text notes are also emitted as standard PDF
+`/Text` annotations, and unsupported PDFs fall back to JSON and Markdown.
+
 ## PDF loading and context
 
 - Remote documents require a matching host permission. arXiv and OpenReview are
@@ -58,7 +65,7 @@ IndexedDB database `paperflow-ai` contains:
 | `messages` | Ordered, thread-scoped chat messages |
 | `paperMemory` | User-saved durable notes |
 | `selections` | User-selected page text |
-| `annotations` | Saved selection annotations |
+| `annotations` | Six annotation types with PDF geometry, text anchors, and comments |
 | `settings` | Extensible structured settings |
 
 Legacy `paperflow:messages:*` and `paperflow:notes:*` values migrate once after a
@@ -104,7 +111,8 @@ access the extension's pages or internal state.
 
 ## Build and third-party code
 
-Vite builds `index.html` and `reader.html` as separate entries with shared React
-and PDF.js chunks. MV3 CSP does not require a runtime CDN or `eval`.
+Vite builds `index.html`, `reader.html`, and `library.html` as separate entries
+with shared React and PDF.js chunks. The `pdf-lib` exporter is loaded only when
+the user requests an annotated copy. MV3 CSP does not require a runtime CDN or `eval`.
 Mozilla PDF.js is bundled from `pdfjs-dist` under Apache License 2.0; its license
 is copied to `dist/pdfjs-LICENSE.txt`.

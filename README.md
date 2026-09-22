@@ -33,6 +33,10 @@ Open the same paper days later—from a different source when identity can be re
 - Current-page tracking, keyboard navigation, responsive narrow-window fit, and light/dark reading surfaces without recoloring PDF pages
 - Reusable PaperFlow AI workspace embedded in a resizable right panel
 - Text-selection actions for asking, explaining, translating, summarizing, and saving
+- PDF-coordinate annotation layer with highlight, underline, strikeout, text note, area note, and ink tools
+- Annotation comments, colors, deletion, zoom-safe persistence, and offline reopening
+- Annotated PDF copy export through `pdf-lib`, with standard text-note comments and JSON/Markdown fallback
+- Explicit offline PDF storage in OPFS, local full-text search, and on-demand English/Simplified Chinese OCR
 - Page-aware chunked context; selected text is preferred over the current page and relevant paper chunks
 - Structured citations with page, label, and excerpt; citation clicks navigate the Reader
 - Explicit errors for missing, blocked, encrypted, or textless PDFs
@@ -70,8 +74,8 @@ Open the same paper days later—from a different source when identity can be re
 - Subscription requests still invoke `codex exec`; a persistent official Codex app server should be evaluated later.
 - Generation cancellation is not yet reliable.
 - Search navigates matching pages but does not yet provide a full match list or in-page match stepping.
-- Saved selections and annotations are persisted, but annotation overlays and citation-range highlighting are not yet rendered.
-- Scanned PDFs are readable as pages, but OCR is not included.
+- Citation-range highlighting is not yet rendered.
+- OCR is intentionally on demand and limited to 50 pages per run.
 - Remote PDFs behind login walls or restrictive CORS must be downloaded and opened locally.
 - No cloud sync, collaboration, vector database, or account/payment system.
 
