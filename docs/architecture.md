@@ -22,8 +22,14 @@ Chrome Side Panel                     ▼
           papers / aliases / threads       Provider adapter
           messages / memory / selections      ├─ Codex Bridge
           annotations / settings              └─ OpenAI-compatible API
-                                                  │
-                                      macOS Keychain / Codex credentials
+                │                                 │
+                │ encrypted object queue          ▼
+                ▼                      OS credential store / Codex credentials
+        Google Drive adapter
+                │ drive.file + Chrome Identity
+                ▼
+      visible PaperFlow folder
+      vault.json + opaque *.pfo objects
 ```
 
 `ReaderApp` is an orchestration component. PDF loading, host permission checks,
@@ -71,6 +77,39 @@ IndexedDB database `paperflow-ai` contains:
 Legacy `paperflow:messages:*` and `paperflow:notes:*` values migrate once after a
 paper workspace opens. Lightweight UI preferences remain in `localStorage`.
 
+## Google Drive vault
+
+`manifest.base.json` is the checked-in source of extension permissions. A Vite
+plugin generates `dist/manifest.json` and injects the non-secret Chrome Extension
+OAuth client ID only when `PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID` is set. The only
+Google scope is `https://www.googleapis.com/auth/drive.file`. Chrome Identity
+owns access-token persistence; PaperFlow requests a token per Drive operation
+and never writes it to application storage.
+
+The Drive adapter creates a user-visible `PaperFlow` folder. `vault.json` is the
+only readable protocol file and contains no paper data. It stores a randomly
+generated 256-bit Vault Master Key wrapped independently by:
+
+- a password-derived AES key using PBKDF2-HMAC-SHA-256, a random 128-bit salt,
+  and 600,000 iterations;
+- a recovery-derived AES key using HKDF-SHA-256 and a random 256-bit Base32
+  recovery key shown once.
+
+Every business object gets a separate random 256-bit key. Content is split into
+independently authenticated AES-256-GCM chunks with unique 96-bit nonces. AAD
+binds the vault ID, protocol version, object type, logical ID, and chunk index.
+The object key is wrapped by a domain-separated VMK subkey. A second
+domain-separated HMAC key derives the opaque `*.pfo` Drive filename, so paper
+titles, DOI values, authors, notes, and attachment names do not appear in Drive
+metadata.
+
+The VMK is held in memory for the unlocked browser session. If the user
+explicitly enables **Remember this device**, the Native Host stores the VMK in
+the operating-system credential store under the vault UUID. Browser storage and
+Drive never receive the plaintext VMK, password, recovery key, API key, or OAuth
+token. Changing the vault password replaces only the password wrapper and does
+not re-encrypt historical objects.
+
 ## ChatGPT subscription authentication
 
 A Chrome extension cannot safely launch arbitrary local executables. It also must not read ChatGPT cookies or store Codex OAuth access tokens. The supported design is a separately installed, open-source native host:
@@ -112,7 +151,9 @@ access the extension's pages or internal state.
 ## Build and third-party code
 
 Vite builds `index.html`, `reader.html`, and `library.html` as separate entries
-with shared React and PDF.js chunks. The `pdf-lib` exporter is loaded only when
-the user requests an annotated copy. MV3 CSP does not require a runtime CDN or `eval`.
+with shared React and PDF.js chunks. It also emits the extension manifest from
+`manifest.base.json`. A release build fails closed when its Google OAuth client
+ID is missing. The `pdf-lib` exporter is loaded only when the user requests an
+annotated copy. MV3 CSP does not require a runtime CDN or `eval`.
 Mozilla PDF.js is bundled from `pdfjs-dist` under Apache License 2.0; its license
 is copied to `dist/pdfjs-LICENSE.txt`.

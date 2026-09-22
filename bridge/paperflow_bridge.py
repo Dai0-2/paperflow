@@ -13,6 +13,7 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 
 CODEX_CANDIDATES = (
     "/Applications/ChatGPT.app/Contents/Resources/codex",
@@ -22,6 +23,7 @@ CODEX_CANDIDATES = (
 )
 KEYCHAIN_SERVICE = "PaperFlow AI"
 KEYCHAIN_ACCOUNT = "openai_api_key"
+VAULT_ACCOUNT_PREFIX = "vault_device_key:"
 LOG_PATH = pathlib.Path.home() / "Library" / "Logs" / "PaperFlow AI" / "bridge.log"
 
 
@@ -89,6 +91,57 @@ def keychain_delete():
     if result.returncode not in (0, 44):
         return {"ok": False, "error": (result.stderr or "Could not remove the API key.").strip()}
     return {"ok": True, "authenticated": False, "detail": "API key removed."}
+
+
+def vault_account(vault_id):
+    try:
+        return VAULT_ACCOUNT_PREFIX + str(uuid.UUID(str(vault_id)))
+    except ValueError as error:
+        raise ValueError("Invalid vault ID.") from error
+
+
+def vault_store_device_key(vault_id, encoded_key):
+    try:
+        key = base64.b64decode(str(encoded_key), validate=True)
+    except (ValueError, TypeError) as error:
+        raise ValueError("Invalid vault key encoding.") from error
+    if len(key) != 32:
+        raise ValueError("Invalid vault key length.")
+    result = run_command([
+        "/usr/bin/security", "add-generic-password", "-U",
+        "-a", vault_account(vault_id), "-s", KEYCHAIN_SERVICE,
+        "-w", str(encoded_key),
+    ], timeout=20)
+    if result.returncode != 0:
+        return {"ok": False, "error": (result.stderr or "Could not remember this device.").strip()}
+    return {"ok": True, "detail": "Vault key saved in macOS Keychain."}
+
+
+def vault_load_device_key(vault_id):
+    result = run_command([
+        "/usr/bin/security", "find-generic-password",
+        "-a", vault_account(vault_id), "-s", KEYCHAIN_SERVICE, "-w",
+    ], timeout=15)
+    if result.returncode != 0:
+        return {"ok": True, "authenticated": False, "detail": "No saved vault key for this device."}
+    encoded_key = result.stdout.strip()
+    try:
+        key = base64.b64decode(encoded_key, validate=True)
+    except ValueError:
+        return {"ok": False, "error": "The saved vault key is invalid."}
+    if len(key) != 32:
+        return {"ok": False, "error": "The saved vault key has an invalid length."}
+    return {"ok": True, "authenticated": True, "vaultKey": encoded_key}
+
+
+def vault_delete_device_key(vault_id):
+    result = run_command([
+        "/usr/bin/security", "delete-generic-password",
+        "-a", vault_account(vault_id), "-s", KEYCHAIN_SERVICE,
+    ], timeout=15)
+    if result.returncode not in (0, 44):
+        return {"ok": False, "error": (result.stderr or "Could not forget this device.").strip()}
+    return {"ok": True, "authenticated": False, "detail": "Saved vault key removed."}
 
 
 def api_status():
@@ -351,6 +404,14 @@ def handle(request, emit=None):
         return keychain_delete()
     if action == "api.chat":
         return api_chat(request, emit)
+    if action == "vault.status":
+        return {"ok": True, "authenticated": True, "detail": "macOS Keychain is available."}
+    if action == "vault.store_device_key":
+        return vault_store_device_key(request.get("vaultId"), request.get("vaultKey"))
+    if action == "vault.load_device_key":
+        return vault_load_device_key(request.get("vaultId"))
+    if action == "vault.delete_device_key":
+        return vault_delete_device_key(request.get("vaultId"))
     codex = find_codex()
     if not codex:
         return {"ok": False, "authenticated": False, "error": "Codex CLI was not found."}

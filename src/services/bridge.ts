@@ -40,3 +40,7 @@ export const getApiStatus = () => nativeMessage({ action: 'api.status' });
 export const saveApiKey = (apiKey: string) => nativeMessage({ action: 'api.save_key', apiKey });
 export const deleteApiKey = () => nativeMessage({ action: 'api.delete_key' });
 export const sendToOpenAI = (question: string, context: string, images: string[] = [], model = 'gpt-5.6-luna', baseUrl = 'https://api.openai.com/v1', protocol = 'responses', responseLanguage = 'en', onEvent?: (event: BridgeResponse) => void) => nativeStream({ action: 'api.chat', question, context, images, model, baseUrl, protocol, responseLanguage }, onEvent);
+export const getVaultCredentialStatus = () => nativeMessage({ action: 'vault.status' });
+export const storeDeviceVaultKey = (vaultId: string, vaultKey: string) => nativeMessage({ action: 'vault.store_device_key', vaultId, vaultKey });
+export const loadDeviceVaultKey = (vaultId: string) => nativeMessage({ action: 'vault.load_device_key', vaultId });
+export const deleteDeviceVaultKey = (vaultId: string) => nativeMessage({ action: 'vault.delete_device_key', vaultId });

@@ -56,6 +56,7 @@ Open the same paper days later—from a different source when identity can be re
 - Live answer progress for ChatGPT subscription mode and token streaming for API mode
 - Low-latency reasoning configuration and bounded conversation history to prevent progressive slowdowns
 - Per-paper IndexedDB storage for papers, aliases, threads, messages, memory, selections, annotations, settings, and reading state
+- Google Drive `drive.file` adapter and end-to-end encrypted vault setup with password, recovery key, and optional OS credential-store unlock
 - One-time migration of legacy `localStorage` conversations and notes
 - First-run setup and connection diagnostics
 - Research conversation with Markdown and tables
@@ -77,7 +78,8 @@ Open the same paper days later—from a different source when identity can be re
 - Citation-range highlighting is not yet rendered.
 - OCR is intentionally on demand and limited to 50 pages per run.
 - Remote PDFs behind login walls or restrictive CORS must be downloaded and opened locally.
-- No cloud sync, collaboration, vector database, or account/payment system.
+- The encrypted Drive vault and OAuth flow are implemented; incremental background synchronization and conflict merging are the next v1 gate.
+- No collaboration, vector database, or account/payment system.
 
 ## Install the prototype
 
@@ -97,6 +99,17 @@ pnpm install
 pnpm build
 bash bridge/install.sh
 ```
+
+Google Drive development builds require a Chrome Extension OAuth client ID:
+
+```bash
+cp .env.example .env.local
+# Set PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID in .env.local
+pnpm build
+```
+
+Without a client ID, local development builds remain loadable and show Drive
+sync as unconfigured. `vite build --mode release` fails closed when it is absent.
 
 Then:
 
@@ -134,6 +147,10 @@ PaperFlow Bridge
 ```
 
 The local bridge invokes the official Codex CLI for subscription access. API keys remain in the operating-system credential store and are never returned to the extension. See [the architecture document](docs/architecture.md).
+
+Google Drive access is separate from AI providers. Chrome Identity manages the
+OAuth token with the `drive.file` scope. PaperFlow encrypts each cloud object
+before upload; the vault password and recovery key are not sent to Google.
 
 ## Privacy and security
 

@@ -103,5 +103,44 @@ button:focus-visible, textarea:focus-visible { outline: 2px solid color-mix(in s
 .continue-button:disabled { color: var(--faint); background: var(--hover); cursor: default; filter: none; }
 .setting-list strong { display: flex; align-items: center; gap: 6px; }
 .setting-note { margin: 10px 2px 0; color: var(--faint); font-size: 10.5px; line-height: 1.5; }
+.vault-setup { display: grid; gap: 11px; }
+.vault-heading { display: grid; grid-template-columns: 34px minmax(0,1fr); align-items: center; gap: 9px; }
+.vault-heading > div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.vault-heading strong { font-size: 12.5px; font-weight: 620; }
+.vault-heading small { color: var(--muted); font-size: 10.5px; }
+.vault-icon { width: 32px; height: 32px; display: grid; place-items: center; color: var(--accent); background: var(--bg-subtle); border-radius: 8px; }
+.vault-icon svg { width: 16px; height: 16px; }
+.vault-state { display: grid; grid-template-columns: 22px minmax(0,1fr); gap: 9px; color: var(--muted); }
+.vault-state > svg { width: 17px; margin-top: 2px; }
+.vault-state strong { color: var(--text); font-size: 12px; }
+.vault-state p, .vault-form > p, .recovery-key p, .vault-footnote { margin: 3px 0 0; color: var(--faint); font-size: 10.5px; line-height: 1.5; }
+.vault-form { display: grid; gap: 7px; }
+.vault-form > input, .vault-form > textarea, .vault-password-change input { width: 100%; min-width: 0; padding: 0 9px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 7px; outline: 0; font-size: 11.5px; }
+.vault-form > input, .vault-password-change input { height: 35px; }
+.vault-form > textarea { min-height: 64px; padding-top: 8px; resize: vertical; }
+.vault-form > input:focus, .vault-form > textarea:focus, .vault-password-change input:focus { border-color: var(--accent); }
+.vault-primary { width: fit-content; min-height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 10px; color: var(--accent-contrast); background: var(--accent); border-radius: 7px; font-size: 11px; font-weight: 590; }
+.vault-primary svg { width: 14px; height: 14px; }
+.vault-primary:disabled, .vault-password-change button:disabled { color: var(--faint); background: var(--hover); cursor: default; }
+.remember-device { min-height: 41px; display: grid; grid-template-columns: 16px minmax(0,1fr); align-items: center; gap: 8px; }
+.remember-device input { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); }
+.remember-device span { display: flex; flex-direction: column; gap: 2px; }
+.remember-device strong { font-size: 11.5px; font-weight: 560; }
+.remember-device small { color: var(--faint); font-size: 10px; }
+.recovery-key { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-subtle); }
+.recovery-key > strong { font-size: 11.5px; }
+.recovery-key code { display: block; overflow-wrap: anywhere; color: var(--text); font-size: 11px; line-height: 1.55; user-select: all; }
+.recovery-key > div, .vault-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.recovery-key button, .vault-actions button, .vault-password-change button { min-height: 29px; display: inline-flex; align-items: center; gap: 5px; padding: 0 8px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-size: 10.5px; }
+.recovery-key button:hover, .vault-actions button:hover, .vault-password-change button:hover { color: var(--text); background: var(--hover); }
+.recovery-key button svg, .vault-actions button svg { width: 13px; height: 13px; }
+.vault-form details { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.vault-form summary { min-height: 38px; display: flex; align-items: center; gap: 7px; color: var(--muted); cursor: pointer; font-size: 11px; list-style: none; }
+.vault-form summary::-webkit-details-marker { display: none; }
+.vault-form summary svg { width: 14px; height: 14px; }
+.vault-password-change { display: grid; gap: 7px; padding-bottom: 10px; }
+.vault-password-change button { width: fit-content; }
+.vault-error { margin: 0; color: #a34848; font-size: 10.5px; line-height: 1.5; }
+.vault-footnote { margin-top: 0; }
 @media (max-width: 379px) { .paper-header { padding-left: 14px; }.conversation { padding-left: 15px; padding-right: 15px; }.composer-zone { padding-left: 9px; padding-right: 9px; }.model-trigger { max-width: 102px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }.message-body { font-size: 13.3px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

@@ -5,9 +5,26 @@
   "version": "0.7.0",
   "minimum_chrome_version": "114",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4fdp52ngrHYozxXVr3c4xPoJ416eidDxvPxy36bqrBU/ypx24h20jzF1Ppubmm5hhYSzTKrpXwiNFnEmZ6+a+vp8opI3Xl0ll1IOysC8aR4V3plZIjB5A9+qP7+6hok08xDtkYFmiOQ92prfW14LSGXYikxQl+WQC6T+k+k6S45qhZNnXb11X679pp8UrIpmyE5bxcTztpd8ZyCx1TZUW67IE9VVPv1SLy4dxMK/D8NBuK/hprTQIPnFzwmVi05C3Qp752j5s/71cqHzK9lahAzu66I74D1iFXXMxNsbz0V7pPSKGm9Mia9Ot7BPN5oBsIiVSVwAipHzOXrHYZyrcwIDAQAB",
-  "permissions": ["sidePanel", "storage", "tabs", "nativeMessaging", "contextMenus"],
-  "host_permissions": ["https://arxiv.org/*", "https://export.arxiv.org/*", "https://openreview.net/*"],
-  "optional_host_permissions": ["https://*/*", "http://*/*", "https://api.crossref.org/*", "https://api2.openreview.net/*"],
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "tabs",
+    "nativeMessaging",
+    "contextMenus",
+    "identity",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://arxiv.org/*",
+    "https://export.arxiv.org/*",
+    "https://openreview.net/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*",
+    "https://api.crossref.org/*",
+    "https://api2.openreview.net/*"
+  ],
   "icons": {
     "16": "icons/paperflow-16.png",
     "32": "icons/paperflow-32.png",
@@ -21,6 +38,11 @@
       "32": "icons/paperflow-32.png"
     }
   },
-  "side_panel": { "default_path": "index.html" },
-  "background": { "service_worker": "background.js", "type": "module" }
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
 }

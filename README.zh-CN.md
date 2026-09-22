@@ -56,6 +56,7 @@ Paper
 - ChatGPT 订阅模式显示实时运行阶段，API 模式逐字流式生成回答
 - 订阅模式采用低推理延迟配置，并限制累计历史上下文，避免对话越长越慢
 - 通过 IndexedDB 按论文保存 papers、aliases、threads、messages、memory、selections、annotations、settings 和阅读状态
+- Google Drive `drive.file` 适配器与端到端加密保险库，支持独立密码、恢复密钥和可选的系统凭据库解锁
 - 自动迁移旧版 `localStorage` 对话与笔记
 - 首次初始化与连接诊断页面
 - 论文标题、作者、来源、页码和上下文状态
@@ -78,7 +79,8 @@ Paper
 - 尚未实现 Citation 原文范围高亮。
 - OCR 采用用户按需触发模式，单次最多处理 50 页。
 - 登录墙或严格 CORS 限制的远程 PDF 需要先下载，再本地打开。
-- 暂不包含云同步、团队协作、向量数据库和账号付费系统。
+- Google OAuth 与加密 Drive 保险库已经实现；后台增量同步和冲突合并属于下一项 v1 Gate。
+- 暂不包含团队协作、向量数据库和账号付费系统。
 
 ## 安装原型
 
@@ -98,6 +100,17 @@ pnpm install
 pnpm build
 bash bridge/install.sh
 ```
+
+Google Drive 开发构建需要 Chrome Extension OAuth Client ID：
+
+```bash
+cp .env.example .env.local
+# 在 .env.local 中设置 PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID
+pnpm build
+```
+
+未设置 Client ID 时，本地开发构建仍可加载，但会明确显示 Drive
+同步“未配置”；`vite build --mode release` 会直接失败。
 
 然后：
 
@@ -136,6 +149,9 @@ PaperFlow Bridge
 ```
 
 独立安装的本地 Bridge 将调用官方 Codex CLI，凭据由 Codex CLI 或操作系统凭据存储管理。详见[架构文档](docs/architecture.md)。
+
+Google Drive 授权与 AI Provider 相互独立。OAuth Token 由 Chrome Identity
+按 `drive.file` 范围管理；所有业务对象在上传前完成加密，保险库密码和恢复密钥不会发送给 Google。
 
 ## 隐私与安全
 

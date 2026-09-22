@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import type { Theme } from '../../types';
 import { deleteApiKey, loginWithChatGPT, saveApiKey } from '../../services/bridge';
 import { text } from '../../i18n';
+import { VaultSetup } from '../sync/VaultSetup';
 
 const themes: { id: Theme; label: string; icon: typeof Sun }[] = [{ id: 'light', label: 'Light', icon: Sun }, { id: 'dark', label: 'Dark', icon: Moon }, { id: 'system', label: 'System', icon: Laptop }];
 
@@ -37,6 +38,7 @@ export function SettingsView() {
       <section><h3>{text(uiLanguage, 'Language', '语言')}</h3><div className="language-settings"><div><span><Globe2 size={15} /><strong>{text(uiLanguage, 'Interface language', '界面语言')}</strong></span><div className="segmented"><button data-active={uiLanguage === 'en'} onClick={() => setUiLanguage('en')}>English</button><button data-active={uiLanguage === 'zh'} onClick={() => setUiLanguage('zh')}>中文</button></div></div><div><span><Languages size={15} /><strong>{text(uiLanguage, 'Answer & prompt language', '回答与提示词语言')}</strong></span><div className="segmented three"><button data-active={promptLanguage === 'auto'} onClick={() => setPromptLanguage('auto')}>{text(uiLanguage, 'Follow UI', '跟随界面')}</button><button data-active={promptLanguage === 'en'} onClick={() => setPromptLanguage('en')}>English</button><button data-active={promptLanguage === 'zh'} onClick={() => setPromptLanguage('zh')}>中文</button></div></div></div></section>
       <section><h3>{text(uiLanguage, 'Appearance', '外观')}</h3><div className="theme-picker">{themes.map(({ id, label, icon: Icon }) => <button key={id} data-active={theme === id} onClick={() => setTheme(id)}><Icon size={15} />{id === 'light' ? text(uiLanguage, label, '浅色') : id === 'dark' ? text(uiLanguage, label, '深色') : text(uiLanguage, label, '跟随系统')}</button>)}</div></section>
       <section><h3>{text(uiLanguage, 'Reading', '阅读')}</h3><div className="setting-list"><label><span><strong>{text(uiLanguage, 'Paper memory', '论文记忆')}</strong><small>{text(uiLanguage, 'Remember insights per paper', '按论文保存重要洞察')}</small></span><input type="checkbox" defaultChecked /><i /></label><label><span><strong><BookOpen size={14} />{text(uiLanguage, 'Open direct PDFs in PaperFlow', '默认用 PaperFlow 打开直接 PDF')}</strong><small>{text(uiLanguage, 'Opt-in for HTTP/HTTPS links ending in .pdf', '仅对以 .pdf 结尾的 HTTP/HTTPS 链接生效')}</small></span><input type="checkbox" checked={defaultOpenReader} onChange={(event) => setDefaultOpenReader(event.target.checked)} /><i /></label></div>{defaultOpenReader && <p className="setting-note">{text(uiLanguage, 'If another extension also redirects PDFs, disable one default handler and keep PaperFlow Side Panel available.', '如果其他扩展也会接管 PDF，请关闭其中一个默认接管选项；PaperFlow Side Panel 仍可继续使用。')}</p>}</section>
+      <section><h3>{text(uiLanguage, 'Sync', '同步')}</h3><VaultSetup language={uiLanguage} /></section>
       <section><h3>{text(uiLanguage, 'Data', '数据')}</h3><button className="data-button"><Database size={15} />{text(uiLanguage, 'Export PaperFlow data', '导出 PaperFlow 数据')}</button></section>
     </div></main>;
 }

@@ -286,5 +286,6 @@ export interface BridgeResponse {
   authenticated?: boolean;
   detail?: string;
   answer?: string;
+  vaultKey?: string;
   error?: string;
 }
