@@ -62,12 +62,10 @@ PaperFlow 不包含广告、行为分析、跟踪或遥测功能。
 
 ### 其他字段
 
-- 官方网址：没有已验证的网站时选择“无”。
-- 首页网址：代码仓库公开后填写公开项目首页。
-- 支持信息页面网址：代码仓库公开后填写 Issue 或支持页面。
+- 官方网址：`https://dai0-2.github.io/paperflow-ai/`
+- 首页网址：`https://dai0-2.github.io/paperflow-ai/`
+- 支持信息页面网址：`https://github.com/Dai0-2/paperflow-ai/issues`
 - 成人内容：关闭。
-
-不要填写虚构网址或临时预览网址。
 
 ## 隐私权
 
@@ -183,8 +181,7 @@ PaperFlow 不请求用户的 Google 个人资料或邮箱地址。
 
 ### 隐私政策网址
 
-将 `docs/privacy.md` 发布到稳定的公开 HTTPS 地址后，填写该页面的准确网址。
-不要填写本地文件路径、临时预览网址或虚构网址。
+填写 `https://dai0-2.github.io/paperflow-ai/privacy.html`。
 
 ## 测试说明
 

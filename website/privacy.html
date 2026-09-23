@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+      name="description"
+      content="PaperFlow AI privacy policy and data-handling overview."
+    >
+    <meta name="theme-color" content="#f7f7f4">
+    <link rel="canonical" href="https://dai0-2.github.io/paperflow-ai/privacy.html">
+    <link rel="icon" href="assets/paperflow.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+    <title>Privacy - PaperFlow AI</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#privacy-policy">Skip to content</a>
+    <header class="site-header legal-header">
+      <a class="wordmark" href="./" aria-label="PaperFlow AI home">
+        <img src="assets/paperflow.svg" alt="" width="30" height="30">
+        <span>PaperFlow</span>
+      </a>
+      <nav class="legal-nav" aria-label="Document navigation">
+        <a href="./">home</a>
+        <a href="https://github.com/Dai0-2/paperflow-ai">github</a>
+      </nav>
+    </header>
+
+    <main class="legal-page paper-grid" id="privacy-policy">
+      <header class="legal-title">
+        <p>LEGAL / PRIVACY</p>
+        <h1>Privacy at PaperFlow</h1>
+        <span>Effective September 24, 2026</span>
+      </header>
+
+      <div class="legal-summary">
+        <p>
+          PaperFlow is designed around a simple boundary: your research library
+          belongs to you. There is no PaperFlow document backend and no product
+          analytics or advertising tracker.
+        </p>
+      </div>
+
+      <article class="legal-content">
+        <section>
+          <span>01</span>
+          <div>
+            <h2>Data stored on your device</h2>
+            <p>
+              Paper metadata, collections, notes, annotations, conversations,
+              paper memory, settings, and reading progress are stored locally
+              in IndexedDB. Offline PDF files use OPFS.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <span>02</span>
+          <div>
+            <h2>Google Drive sync</h2>
+            <p>
+              Sync is optional and begins only after you connect a Google
+              account. PaperFlow requests the minimum
+              <code>drive.file</code> scope and stores encrypted objects in a
+              visible <code>PaperFlow</code> folder in your Drive. Offline PDF
+              backup is separately controlled and off by default.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <span>03</span>
+          <div>
+            <h2>AI requests</h2>
+            <p>
+              When you submit a question, the text you provide and the bounded
+              paper context shown by the product are sent to the AI provider
+              you selected. PaperFlow does not proxy those requests through a
+              PaperFlow-operated server.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <span>04</span>
+          <div>
+            <h2>Credentials</h2>
+            <p>
+              Google OAuth tokens remain under Chrome Identity management.
+              Optional API keys are stored by the native host in macOS
+              Keychain, Windows Credential Manager, or Linux Secret Service,
+              not in extension storage.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <span>05</span>
+          <div>
+            <h2>Local processing</h2>
+            <p>
+              PDF rendering, search indexing, and OCR run locally. OCR workers,
+              WebAssembly, and language data are bundled with the extension;
+              the extension does not load executable code from a CDN.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <span>06</span>
+          <div>
+            <h2>Control and deletion</h2>
+            <p>
+              You can disconnect Google Drive, remove local records, delete
+              offline PDFs, or delete the PaperFlow folder from your own Drive.
+              Uninstalling the extension removes Chrome-managed local extension
+              data; Drive files remain under your account until you delete them.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <span>07</span>
+          <div>
+            <h2>Support and security</h2>
+            <p>
+              For product support, use
+              <a href="https://github.com/Dai0-2/paperflow-ai/issues">GitHub Issues</a>.
+              For a suspected vulnerability, follow the
+              <a href="https://github.com/Dai0-2/paperflow-ai/blob/main/SECURITY.md">security policy</a>
+              and do not disclose credentials or private papers publicly.
+            </p>
+          </div>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer legal-footer paper-grid">
+      <div class="footer-brand">
+        <img src="assets/paperflow.svg" alt="" width="44" height="44">
+        <strong>PaperFlow</strong>
+      </div>
+      <div class="footer-column">
+        <span>links</span>
+        <a href="./">product</a>
+        <a href="https://github.com/Dai0-2/paperflow-ai">source</a>
+        <a href="https://github.com/Dai0-2/paperflow-ai/issues">support</a>
+      </div>
+      <p class="footer-note">Apache-2.0 &nbsp;&middot;&nbsp; 2026 PaperFlow AI</p>
+    </footer>
+  </body>
+</html>

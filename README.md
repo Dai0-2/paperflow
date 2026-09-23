@@ -1,16 +1,40 @@
 <div align="center">
-  <img src="public/icons/paperflow-128.png" width="72" height="72" alt="PaperFlow AI logo">
+  <img src="public/icons/paperflow-128.png" width="78" height="78" alt="PaperFlow AI logo">
   <h1>PaperFlow AI</h1>
   <p><strong>A persistent AI research companion beside every paper.</strong></p>
-  <p>Keep your browser's PDF reader. Add understanding, reasoning, and memory.</p>
+  <p>Read, annotate, ask, remember, and sync without giving up your data.</p>
+  <p>
+    <a href="https://dai0-2.github.io/paperflow-ai/"><strong>Website</strong></a>
+    ·
+    <a href="https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc"><strong>Chrome Web Store</strong></a>
+    ·
+    <a href="#install"><strong>Build from source</strong></a>
+  </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
+  <p>
+    <a href="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml/badge.svg" alt="Build status"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 license"></a>
+    <img src="https://img.shields.io/badge/version-1.0.2-5b7fa6" alt="Version 1.0.2">
+    <img src="https://img.shields.io/badge/Chrome-MV3-5f9d75" alt="Chrome Manifest V3">
+  </p>
 </div>
 
+<a href="https://dai0-2.github.io/paperflow-ai/">
+  <img src="website/assets/paperflow-reader.png" alt="PaperFlow Reader with page-aware selection actions and a persistent AI workspace">
+</a>
+
 > [!IMPORTANT]
-> PaperFlow AI 1.0.0 is a local-first personal research library, PDF reader,
-> annotation workspace, and AI companion. Optional encrypted Google Drive sync
-> lets the same library be restored on another computer without a PaperFlow
+> PaperFlow AI 1.0.2 is a local-first personal research library, PDF reader,
+> annotation workspace, and AI companion. Sign in with Google to sync encrypted
+> research data through your own Drive. PaperFlow does not operate a document
 > backend.
+
+## Product at a glance
+
+| Research library | AI beside the paper |
+| --- | --- |
+| <img src="website/assets/paperflow-library.png" alt="PaperFlow library" width="720"> | <img src="website/assets/paperflow-sidepanel.png" alt="PaperFlow AI side panel" width="300"> |
+| Collections, metadata, full-text search, citations, and reading history. | Page-aware questions, streaming answers, notes, and per-paper memory. |
 
 ## Why PaperFlow
 
@@ -38,8 +62,8 @@ Open the same paper days later—from a different source when identity can be re
 - BibTeX/RIS import and export; APA, MLA, Chicago, IEEE, and BibTeX copy
 - User-confirmed AI organization suggestions that never modify the library
   before review
-- Local-first IndexedDB and OPFS storage with encrypted Google Drive sync for
-  saved papers; temporary workspaces remain device-only
+- Local-first IndexedDB and OPFS storage with optional encrypted Google Drive
+  sync; offline PDF backup remains separately controlled and off by default
 
 ## Integrated Reader
 
@@ -72,8 +96,10 @@ Open the same paper days later—from a different source when identity can be re
 - Live answer progress for ChatGPT subscription mode and token streaming for API mode
 - Low-latency reasoning configuration and bounded conversation history to prevent progressive slowdowns
 - Per-paper IndexedDB storage for papers, aliases, threads, messages, memory, selections, annotations, settings, and reading state
-- One-click Google account sign-in and encrypted Drive sync using the minimum `drive.file` scope
-- Encrypted incremental sync for library data, notes, annotations, and conversations; creating a persistent annotation automatically saves the paper so it enters the sync queue
+- One-click Google account sign-in and encrypted Drive sync using only the
+  minimum `drive.file` scope
+- Automatic sync for the library, notes, annotations, conversations, and
+  reading progress; offline PDF backup remains an explicit opt-in
 - One-time migration of legacy `localStorage` conversations and notes
 - First-run setup and connection diagnostics
 - Research conversation with Markdown and tables
@@ -111,7 +137,7 @@ Open the same paper days later—from a different source when identity can be re
 ### Load the extension
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/paperflow-ai.git
+git clone https://github.com/Dai0-2/paperflow-ai.git
 cd paperflow-ai
 pnpm install
 pnpm build
@@ -174,9 +200,9 @@ The local bridge invokes the official Codex CLI for subscription access. API key
 
 Google Drive access is separate from AI providers. Chrome Identity manages the
 OAuth token with the `drive.file` scope. PaperFlow encrypts each cloud object
-before upload and stores account-managed key material in its Drive folder so
-the same Google account can restore data on another device without a separate
-sync password.
+before upload and stores account-managed key material in the user's PaperFlow
+Drive folder. Signing in with the same Google account restores the workspace
+without a separate vault password or recovery-key flow.
 
 ## Privacy and security
 
@@ -192,10 +218,8 @@ sync password.
 - Database upgrade failure enters a read-only recovery export flow
 
 Read the [privacy notice](docs/privacy.md), [security policy](SECURITY.md),
-[Google Drive sync recovery guide](docs/vault-recovery.md), and
-[migration/rollback guide](docs/migration-and-rollback.md). Release validation
-is recorded in the [v1.0.0 acceptance report](docs/acceptance-report-v1.0.0.md)
-and [release checklist](docs/release-checklist.md).
+[migration/rollback guide](docs/migration-and-rollback.md), and
+[release checklist](docs/release-checklist.md).
 
 ## Development
 

@@ -72,12 +72,10 @@ PaperFlow contains no advertising, analytics, tracking, or telemetry.
 
 ### Other fields
 
-- Official website: leave empty until a verified project website exists.
-- Homepage URL: use the public project homepage after the repository is public.
-- Support URL: use the public issue/support page after the repository is public.
+- Official website: `https://dai0-2.github.io/paperflow-ai/`
+- Homepage URL: `https://dai0-2.github.io/paperflow-ai/`
+- Support URL: `https://github.com/Dai0-2/paperflow-ai/issues`
 - Adult content: Off.
-
-Do not invent temporary website or support URLs.
 
 ## Privacy
 
@@ -192,8 +190,7 @@ Confirm all applicable limited-use declarations:
 
 ### Privacy policy
 
-Publish `docs/privacy.md` at a stable public URL and enter that exact HTTPS URL.
-Do not use a local file path, temporary preview URL, or fabricated URL.
+Use `https://dai0-2.github.io/paperflow-ai/privacy.html`.
 
 ## Test instructions
 

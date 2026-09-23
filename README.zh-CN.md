@@ -1,15 +1,39 @@
 <div align="center">
-  <img src="public/icons/paperflow-128.png" width="72" height="72" alt="PaperFlow AI 图标">
+  <img src="public/icons/paperflow-128.png" width="78" height="78" alt="PaperFlow AI 图标">
   <h1>PaperFlow AI</h1>
   <p><strong>陪伴每一篇论文的持久化 AI 研究助手。</strong></p>
-  <p>保留浏览器原有 PDF 阅读体验，为论文增加理解、推理与记忆。</p>
+  <p>阅读、批注、提问、记忆与同步，同时保留你的数据主权。</p>
+  <p>
+    <a href="https://dai0-2.github.io/paperflow-ai/"><strong>产品网站</strong></a>
+    ·
+    <a href="https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc"><strong>Chrome 应用商店</strong></a>
+    ·
+    <a href="#安装"><strong>从源码构建</strong></a>
+  </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
+  <p>
+    <a href="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml/badge.svg" alt="构建状态"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 许可证"></a>
+    <img src="https://img.shields.io/badge/version-1.0.2-5b7fa6" alt="版本 1.0.2">
+    <img src="https://img.shields.io/badge/Chrome-MV3-5f9d75" alt="Chrome Manifest V3">
+  </p>
 </div>
 
+<a href="https://dai0-2.github.io/paperflow-ai/">
+  <img src="website/assets/paperflow-reader.png" alt="PaperFlow Reader 的页码感知划词操作与持久化 AI 工作区">
+</a>
+
 > [!IMPORTANT]
-> PaperFlow AI 1.0.0 是本地优先的个人文献库、PDF 阅读与批注工作台和
-> AI 研究助手。可选的 Google Drive 端到端加密同步无需 PaperFlow 后端，
-> 即可在另一台电脑恢复同一资料库。
+> PaperFlow AI 1.0.2 是本地优先的个人文献库、PDF 阅读与批注工作台和
+> AI 研究助手。登录 Google 后即可通过用户自己的云盘同步加密研究数据；
+> PaperFlow 不运营文档后端。
+
+## 产品概览
+
+| 研究资料库 | 论文旁的 AI |
+| --- | --- |
+| <img src="website/assets/paperflow-library.png" alt="PaperFlow 资料库" width="720"> | <img src="website/assets/paperflow-sidepanel.png" alt="PaperFlow AI 侧边栏" width="300"> |
+| 集合、元数据、全文检索、引用与阅读历史。 | 页码感知提问、流式回答、笔记与每篇论文的长期记忆。 |
 
 ## 为什么做 PaperFlow
 
@@ -35,8 +59,8 @@ Paper
 - Markdown 笔记、批注摘要、PDF 附件和每篇论文独立的 AI 记忆
 - BibTeX/RIS 导入导出，以及 APA、MLA、Chicago、IEEE、BibTeX 复制
 - AI 整理建议必须由用户确认，确认前不会修改分类
-- IndexedDB + OPFS 本地优先存储；仅正式收藏的论文进入加密同步，
-  临时 Workspace 只保留在当前设备
+- IndexedDB + OPFS 本地优先存储，并可选通过 Google Drive 加密同步；
+  离线 PDF 备份独立控制且默认关闭
 
 ## 集成式 Reader
 
@@ -69,7 +93,7 @@ Paper
 - 订阅模式采用低推理延迟配置，并限制累计历史上下文，避免对话越长越慢
 - 通过 IndexedDB 按论文保存 papers、aliases、threads、messages、memory、selections、annotations、settings 和阅读状态
 - Google 账号一键登录与加密 Drive 同步，仅申请最小 `drive.file` 权限
-- 加密增量同步：不可变操作批次、快照、Drive Changes 游标、笔记冲突副本及 PDF 断点续传
+- 自动同步资料库、笔记、批注、对话与阅读进度；离线 PDF 备份保持手动开启
 - 自动迁移旧版 `localStorage` 对话与笔记
 - 首次初始化与连接诊断页面
 - 论文标题、作者、来源、页码和上下文状态
@@ -108,7 +132,7 @@ Paper
 ### 加载扩展
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/paperflow-ai.git
+git clone https://github.com/Dai0-2/paperflow-ai.git
 cd paperflow-ai
 pnpm install
 pnpm build
@@ -171,9 +195,9 @@ PaperFlow Rust Native Host
 独立安装的本地 Bridge 将调用官方 Codex CLI，凭据由 Codex CLI 或操作系统凭据存储管理。详见[架构文档](docs/architecture.md)。
 
 Google Drive 授权与 AI Provider 相互独立。OAuth Token 由 Chrome Identity
-按 `drive.file` 范围管理；所有业务对象在上传前完成加密，同步密钥由
-PaperFlow 创建的 Drive 文件托管，因此同一 Google 账号可在新设备直接恢复，
-无需另设同步密码。
+按 `drive.file` 范围管理；所有业务对象在上传前完成加密，账号管理的密钥材料
+存放在用户云盘的 `PaperFlow` 文件夹中。新设备登录同一 Google 账号即可恢复，
+不再需要保险库密码或恢复密钥流程。
 
 ## 隐私与安全
 
@@ -188,9 +212,7 @@ PaperFlow 创建的 Drive 文件托管，因此同一 Google 账号可在新设�
 - 数据库升级失败时进入只读恢复导出流程
 
 请阅读[隐私说明](docs/privacy.md)、[安全策略](SECURITY.md)、
-[Google Drive 同步恢复指南](docs/vault-recovery.md)和
-[迁移与回滚指南](docs/migration-and-rollback.md)。发布验证结果见
-[v1.0.0 验收报告](docs/acceptance-report-v1.0.0.md)和
+[迁移与回滚指南](docs/migration-and-rollback.md)和
 [发布检查清单](docs/release-checklist.md)。
 
 ## 开发
