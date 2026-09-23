@@ -243,7 +243,7 @@ export async function deleteApiKey(): Promise<BridgeResponse> {
 }
 
 export async function testApiConnection(
-  model = 'gpt-5.6-luna',
+  model = 'gpt-4.1-mini',
   baseUrl = 'https://api.openai.com/v1',
   protocol = 'responses',
 ): Promise<BridgeResponse> {
@@ -261,7 +261,7 @@ export async function sendToOpenAI(
   question: string,
   context: string,
   images: string[] = [],
-  model = 'gpt-5.6-luna',
+  model = 'gpt-4.1-mini',
   baseUrl = 'https://api.openai.com/v1',
   protocol = 'responses',
   responseLanguage = 'en',

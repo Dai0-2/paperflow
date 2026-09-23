@@ -28,6 +28,8 @@
 - Migrated the local data layer to versioned Dexie schemas and repositories.
 - Saved papers now synchronize; temporary workspaces remain local.
 - API keys and remembered vault keys use the operating-system credential store.
+- OpenAI-compatible provider setup now exposes Base URL, model ID, and API
+  format during onboarding and tests the configured endpoint after saving.
 - HTTP/HTTPS access is optional and requested for the user-selected origin.
 - OCR dependencies are patched to fail closed without local worker, core, and
   language paths; dynamic `Function` compatibility branches are removed.

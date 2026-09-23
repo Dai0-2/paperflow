@@ -111,7 +111,7 @@ pub enum ApiProtocol {
 }
 
 fn default_model() -> String {
-    "gpt-5.6-luna".to_owned()
+    "gpt-4.1-mini".to_owned()
 }
 
 fn default_base_url() -> String {

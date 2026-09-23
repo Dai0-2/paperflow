@@ -43,7 +43,7 @@ export function AiOrganizeReview({ language, paper, snapshot, onClose, onApply }
           request.question,
           request.context,
           [],
-          localStorage.getItem('paperflow:api-model') || 'gpt-5.6-luna',
+          localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini',
           localStorage.getItem('paperflow:api-base-url') || 'https://api.openai.com/v1',
           localStorage.getItem('paperflow:api-protocol') || 'responses',
         )

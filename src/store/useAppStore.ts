@@ -55,7 +55,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  view: 'chat', theme: (localStorage.getItem('paperflow:theme') as Theme) || 'system', chatState: 'empty', model: localStorage.getItem('paperflow:provider') === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-5.6-luna') : 'ChatGPT via Codex',
+  view: 'chat', theme: (localStorage.getItem('paperflow:theme') as Theme) || 'system', chatState: 'empty', model: localStorage.getItem('paperflow:provider') === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini') : 'ChatGPT via Codex',
   initialized: false, detecting: true, paper: null, paperText: '', paperChunks: [], readingPaper: false,
   activeThreadId: null, selection: null, defaultOpenReader: localStorage.getItem('paperflow:default-reader') === 'true',
   bridgeState: 'checking', bridgeDetail: '', providerMode: (localStorage.getItem('paperflow:provider') as ProviderMode) || 'chatgpt', apiState: 'checking', apiDetail: '',
@@ -76,7 +76,7 @@ export const useAppStore = create<AppState>((set) => ({
     set({ defaultOpenReader });
   },
   setBridge: (bridgeState, bridgeDetail = '') => set({ bridgeState, bridgeDetail }),
-  setProviderMode: (providerMode) => { localStorage.setItem('paperflow:provider', providerMode); const model = providerMode === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-5.6-luna') : 'ChatGPT via Codex'; set({ providerMode, model }); },
+  setProviderMode: (providerMode) => { localStorage.setItem('paperflow:provider', providerMode); const model = providerMode === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini') : 'ChatGPT via Codex'; set({ providerMode, model }); },
   setApiState: (apiState, apiDetail = '') => set({ apiState, apiDetail }),
   setUiLanguage: (uiLanguage) => {
     localStorage.setItem('paperflow:ui-language', uiLanguage);

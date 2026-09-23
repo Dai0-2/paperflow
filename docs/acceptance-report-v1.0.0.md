@@ -16,7 +16,7 @@ provided.
 |---|---|
 | TypeScript strict build | Pass |
 | Unit and integration tests | 22 files, 60 tests passed |
-| Chromium E2E against production `dist/` | 8 tests passed |
+| Chromium E2E against production `dist/` | 9 tests passed |
 | 10,000-paper virtualized library/filter smoke test | Pass; full test completed in 651 ms on this machine |
 | Local OCR cancellation and restart | Pass |
 | Annotation persistence and readable PDF-copy export | Pass |
@@ -52,8 +52,8 @@ annotation persistence, and exported-PDF readability.
 
 | Artifact | SHA-256 |
 |---|---|
-| `outputs/v1.0.0/paperflow-ai-v1.0.0-unsigned.zip` | `73b6cf42c8421ce9d44738a06adb62a8024fef23841177f4fdd7d7e303b46ed8` |
-| `outputs/v1.0.0/paperflow-native-host-macos-arm64-unsigned.tar.gz` | `5f298e4e6dddf3f982062706caf1d1e6e8f1b04257ea232d5fc569fe9ed17c94` |
+| `outputs/v1.0.0/paperflow-ai-v1.0.0-unsigned.zip` | `0eafcc3b8e2b792950aacf8d84e7767937ba03aa0228bffcf909d044b6771ce7` |
+| `outputs/v1.0.0/paperflow-native-host-macos-arm64-unsigned.tar.gz` | `c695d2f1242708810bcce3e9db2705b85e2460e424ec3e6f6405e1d9a24d17e2` |
 
 The same extension package supports both a fresh install and an in-place
 v0.7.0-to-v1.0.0 upgrade. Upgrade behavior differs through the existing
