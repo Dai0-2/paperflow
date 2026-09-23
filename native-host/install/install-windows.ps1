@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $HostName = "com.paperflow.ai"
-$ExtensionId = "baddhdmpdljpcmnbpfgiegmgkmdbodie"
+$ExtensionId = "dffiahjmpkmellmjijffpcofoahbccoc"
 $ScriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 if ([string]::IsNullOrWhiteSpace($BinaryPath)) {

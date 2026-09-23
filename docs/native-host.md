@@ -56,7 +56,7 @@ On Debian or Ubuntu, install `libdbus-1-dev` and `pkg-config` before building.
 
 ## Install and uninstall
 
-The checked-in manifest files are templates for inspection. Installers generate a manifest with the actual absolute binary path and register only the fixed production extension ID `baddhdmpdljpcmnbpfgiegmgkmdbodie`.
+The checked-in manifest files are templates for inspection. Installers generate a manifest with the actual absolute binary path and register only the fixed production extension ID `dffiahjmpkmellmjijffpcofoahbccoc`.
 
 ### macOS
 

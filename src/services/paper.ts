@@ -130,7 +130,8 @@ export async function detectActivePaper(): Promise<PaperInfo | null> {
     return { id: 'preview:paperflow', shortTitle: 'PAPERFLOW PREVIEW', title: 'Open a PDF in Chrome to detect the current paper', source: 'Preview', url: location.href };
   }
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-  if (!tab?.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://baddhdmp')) return null;
+  const ownOrigin = chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/` : '';
+  if (!tab?.url || tab.url.startsWith('chrome://') || (ownOrigin && tab.url.startsWith(ownOrigin))) return null;
   const resolvedUrl = unwrapViewerUrl(tab.url);
   const title = cleanTitle(tab.title || decodeURIComponent(resolvedUrl.split('/').pop() || 'Untitled paper'));
   const looksLikePaper = /\.pdf(?:$|[?#])/i.test(resolvedUrl) || /arxiv\.org|openreview\.net/i.test(resolvedUrl) || /pdf/i.test(tab.title || '');

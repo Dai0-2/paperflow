@@ -7,6 +7,8 @@ outputs/
 !.env.example
 paperflow-ai.zip
 paperflow-ai.zip.sha256
+paperflow-ai-release.zip
+paperflow-ai-release.zip.sha256
 .DS_Store
 *.log
 test-results/

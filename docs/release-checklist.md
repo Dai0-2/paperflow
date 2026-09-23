@@ -35,9 +35,9 @@ account, device, or signing service.
 
 ## Google Drive gate
 
-- [ ] Configure a production Chrome Extension OAuth client for the final fixed
+- [x] Configure a production Chrome Extension OAuth client for the final fixed
   extension ID.
-- [ ] Build with `PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID` and `--mode release`.
+- [x] Build with `PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID` and `--mode release`.
 - [ ] Verify the consent screen and requested scope show only `drive.file`.
 - [ ] Complete the documented two-profile/two-device synchronization scenario
   with a real Google account.
@@ -61,8 +61,8 @@ Unsigned CI and local builds must be labeled development artifacts.
 
 ## Chrome Web Store gate
 
-- [ ] Confirm the checked-in manifest key maps to the production store ID.
-- [ ] Host `docs/privacy.md` at a stable public privacy-policy URL.
+- [x] Confirm the checked-in manifest key maps to the production store ID.
+- [x] Host `docs/privacy.md` at a stable public privacy-policy URL.
 - [ ] Prepare screenshots, listing copy, support URL, and data-use disclosures.
 - [ ] Upload the OAuth-enabled audited ZIP.
 - [ ] Complete Chrome Web Store review and record the approved version.

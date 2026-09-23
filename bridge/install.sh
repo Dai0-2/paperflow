@@ -25,8 +25,7 @@ manifest = {
     "path": bridge_path,
     "type": "stdio",
     "allowed_origins": [
-        "chrome-extension://baddhdmpdljpcmnbpfgiegmgkmdbodie/",
-        "chrome-extension://pgldggnllkmkigmdiakhjnpicpefkkij/"
+        "chrome-extension://dffiahjmpkmellmjijffpcofoahbccoc/"
     ]
 }
 with open(manifest_path, "w", encoding="utf-8") as handle:
@@ -35,5 +34,5 @@ with open(manifest_path, "w", encoding="utf-8") as handle:
 PY
 
 echo "PaperFlow Bridge installed for Chrome."
-echo "Extension ID: baddhdmpdljpcmnbpfgiegmgkmdbodie"
+echo "Extension ID: dffiahjmpkmellmjijffpcofoahbccoc"
 echo "Runtime: $runtime_script"

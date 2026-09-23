@@ -45,7 +45,7 @@ annotation persistence, and exported-PDF readability.
 - Tesseract worker, WebAssembly core, and English/Simplified Chinese language
   data are packaged locally. Missing paths fail closed.
 - The manifest public key resolves to extension ID
-  `baddhdmpdljpcmnbpfgiegmgkmdbodie`; all Native Host manifests are checked
+  `dffiahjmpkmellmjijffpcofoahbccoc`; all Native Host manifests are checked
   against that ID.
 - API keys and remembered vault keys remain behind the Native Host and the OS
   credential store. They are not present in the extension archive.

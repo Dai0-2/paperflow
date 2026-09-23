@@ -2,7 +2,7 @@
 set -euo pipefail
 
 host_name="com.paperflow.ai"
-extension_id="baddhdmpdljpcmnbpfgiegmgkmdbodie"
+extension_id="dffiahjmpkmellmjijffpcofoahbccoc"
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 source_binary="${1:-}"
 
