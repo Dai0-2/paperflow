@@ -70,15 +70,15 @@ export function ReaderToolbar(props: ReaderToolbarProps) {
     window.open(url, '_blank', 'noopener');
   };
   const libraryTitle = props.libraryState === 'saved'
-    ? text(props.language, 'Saved to PaperFlow', '已保存到 PaperFlow')
+    ? text(props.language, 'Manage PaperFlow folders', '管理 PaperFlow 文件夹')
     : props.libraryState === 'saving'
       ? text(props.language, 'Saving to PaperFlow', '正在保存到 PaperFlow')
       : text(props.language, 'Save to PaperFlow', '保存到 PaperFlow');
   const offlineTitle = props.offlineState === 'available'
-    ? text(props.language, 'PDF available offline', 'PDF 可离线使用')
+    ? text(props.language, 'Stored on this device · available offline', '已保存在本机 · 可断网阅读')
     : props.offlineState === 'saving'
-      ? text(props.language, 'Saving PDF offline', '正在保存离线 PDF')
-      : text(props.language, 'Save PDF offline', '保存离线 PDF');
+      ? text(props.language, 'Saving PDF to this device', '正在将 PDF 保存到本机')
+      : text(props.language, 'Keep PDF on this device for offline reading', '将 PDF 保存到本机，供断网阅读');
   return <header className="reader-toolbar">
     <div className="reader-toolbar-group reader-document-tools">
       <button title={text(props.language, 'Toggle navigation', '切换导航栏')} aria-label={text(props.language, 'Toggle navigation', '切换导航栏')} data-active={props.sidebarOpen} onClick={props.onSidebarToggle}><PanelLeft /></button>
@@ -94,7 +94,7 @@ export function ReaderToolbar(props: ReaderToolbarProps) {
       <button title={text(props.language, 'Next page', '下一页')} aria-label={text(props.language, 'Next page', '下一页')} disabled={props.page >= props.pageCount} onClick={() => setPage(props.page + 1)}><ChevronRight /></button>
       <i />
       <button title={text(props.language, 'Zoom out', '缩小')} aria-label={text(props.language, 'Zoom out', '缩小')} onClick={() => props.onScaleChange(Math.max(.45, props.scale - .1))}><ZoomOut /></button>
-      <button className="zoom-label" title={text(props.language, 'Reset zoom', '重置缩放')} onClick={() => props.onScaleChange(1)}>{Math.round(props.scale * 100)}%</button>
+      <button className="zoom-label" title={text(props.language, 'Reset zoom', '重置缩放')} aria-label={text(props.language, 'Reset zoom', '重置缩放')} onClick={() => props.onScaleChange(1)}>{Math.round(props.scale * 100)}%</button>
       <button title={text(props.language, 'Zoom in', '放大')} aria-label={text(props.language, 'Zoom in', '放大')} onClick={() => props.onScaleChange(Math.min(2.5, props.scale + .1))}><ZoomIn /></button>
       <button title={text(props.language, 'Fit to width', '适合宽度')} aria-label={text(props.language, 'Fit to width', '适合宽度')} onClick={props.onFitWidth}><Maximize2 /></button>
     </div>
@@ -109,29 +109,36 @@ export function ReaderToolbar(props: ReaderToolbarProps) {
       </div>
       <button title={themeIsDark ? text(props.language, 'Use light theme', '使用浅色主题') : text(props.language, 'Use dark theme', '使用深色主题')} aria-label={text(props.language, 'Toggle theme', '切换主题')} onClick={() => props.onThemeChange(themeIsDark ? 'light' : 'dark')}>{themeIsDark ? <Sun /> : <Moon />}</button>
       <button
+        className="reader-save-library"
         title={libraryTitle}
-        aria-label={text(props.language, 'Save to PaperFlow', '保存到 PaperFlow')}
+        aria-label={libraryTitle}
         data-active={props.libraryState === 'saved'}
-        disabled={!props.pageCount || props.libraryState !== 'temporary'}
+        disabled={!props.pageCount || props.libraryState === 'saving'}
         onClick={props.onSaveToLibrary}
       >{props.libraryState === 'saving'
           ? <LoaderCircle className="spin" />
           : props.libraryState === 'saved' ? <BookmarkCheck /> : <BookmarkPlus />}</button>
       <button
+        className="reader-save-offline"
         title={offlineTitle}
-        aria-label={text(props.language, 'Save PDF offline', '保存离线 PDF')}
+        aria-label={offlineTitle}
         data-active={props.offlineState === 'available'}
         disabled={!props.pageCount || props.offlineState !== 'unavailable'}
         onClick={props.onSaveOffline}
       >{props.offlineState === 'saving' ? <LoaderCircle className="spin" /> : <HardDriveDownload />}</button>
       <div className="reader-ocr">
-        <button title={text(props.language, 'OCR pages', '识别扫描页面')} aria-label={text(props.language, 'OCR pages', '识别扫描页面')} data-active={ocrOpen || Boolean(props.ocrProgress)} disabled={!props.pageCount} onClick={() => {
+        <button title={text(props.language, 'Recognize text in scanned PDF pages (OCR)', '识别扫描版 PDF 中的文字（OCR）')} aria-label={text(props.language, 'Recognize scanned PDF text', '识别扫描版 PDF 文字')} data-active={ocrOpen || Boolean(props.ocrProgress)} disabled={!props.pageCount} onClick={() => {
           setOcrFrom(props.page);
           setOcrTo(props.page);
           setOcrOpen((open) => !open);
         }}><ScanText /></button>
         {ocrOpen && <div className="reader-ocr-popover">
-          <strong>{text(props.language, 'Recognize scanned pages', '识别扫描页面')}</strong>
+          <strong>{text(props.language, 'Scanned PDF text recognition', '扫描版 PDF 文字识别')}</strong>
+          <p>{text(
+            props.language,
+            'Use OCR only for image-only pages. Recognized text becomes searchable, selectable, and available to AI.',
+            '仅用于没有文字层的扫描页；识别后可搜索、划词，并可供 AI 读取。',
+          )}</p>
           <div className="ocr-page-range">
             <label><span>{text(props.language, 'From', '从')}</span><input type="number" min={1} max={props.pageCount} value={ocrFrom} onChange={(event) => setOcrFrom(Number(event.target.value))} /></label>
             <label><span>{text(props.language, 'To', '到')}</span><input type="number" min={1} max={props.pageCount} value={ocrTo} onChange={(event) => setOcrTo(Number(event.target.value))} /></label>

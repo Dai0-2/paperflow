@@ -1,15 +1,14 @@
 use std::{
-    fs,
     io::{BufRead, BufReader, Read, Write},
     path::PathBuf,
     process::{Command, Stdio},
-    sync::mpsc,
+    sync::mpsc::{self, Receiver, RecvTimeoutError},
     thread,
     time::{Duration, Instant},
 };
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use serde_json::Value;
+use serde_json::{json, Value};
 use tempfile::{Builder, NamedTempFile};
 use thiserror::Error;
 
@@ -26,6 +25,8 @@ pub enum CodexError {
     Start,
     #[error("Codex CLI timed out.")]
     Timeout,
+    #[error("Codex rejected the request: {0}")]
+    Rejected(String),
     #[error("An attached image is invalid or too large.")]
     InvalidImage,
     #[error("Codex did not return an answer.")]
@@ -106,47 +107,36 @@ pub fn chat(
     question: &str,
     context: &str,
     images: &[String],
+    model: Option<&str>,
     language: ResponseLanguage,
     emit: &mut impl FnMut(Response),
 ) -> Result<String, CodexError> {
     let codex = find_executable().ok_or(CodexError::NotFound)?;
     let image_files = decode_images(images)?;
-    let output_file = NamedTempFile::new().map_err(|_| CodexError::Start)?;
-    let output_path = output_file.path().to_path_buf();
     let mut command = Command::new(codex);
-    command.arg("exec");
-    for image in &image_files {
-        command.arg("--image").arg(image.path());
+    command.args(["app-server", "--stdio", "-c", "mcp_servers={}"]);
+    for feature in [
+        "apps",
+        "browser_use",
+        "hooks",
+        "multi_agent",
+        "plugins",
+        "shell_tool",
+        "skill_search",
+        "tool_suggest",
+    ] {
+        command.args(["--disable", feature]);
     }
-    command.args([
-        "-",
-        "--skip-git-repo-check",
-        "--ephemeral",
-        "--ignore-rules",
-        "--ignore-user-config",
-        "--sandbox",
-        "read-only",
-        "--config",
-        "model_reasoning_effort=\"low\"",
-        "--json",
-        "--output-last-message",
-    ]);
-    command.arg(&output_path);
     command
         .current_dir(std::env::temp_dir())
         .env("NO_COLOR", "1")
+        .env("RUST_LOG", "error")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
     let mut child = command.spawn().map_err(|_| CodexError::Start)?;
-    let prompt = build_prompt(question, context, language);
     let mut stdin = child.stdin.take().ok_or(CodexError::Start)?;
-    stdin
-        .write_all(prompt.as_bytes())
-        .map_err(|_| CodexError::Start)?;
-    drop(stdin);
-
     let stdout = child.stdout.take().ok_or(CodexError::Start)?;
     let stderr = child.stderr.take().ok_or(CodexError::Start)?;
     let (line_sender, line_receiver) = mpsc::channel();
@@ -165,59 +155,210 @@ pub fn chat(
         value
     });
 
-    let start = Instant::now();
-    let mut answer = String::new();
+    let result = (|| -> Result<String, CodexError> {
+        let deadline = Instant::now() + CODEX_TIMEOUT;
+        write_json_line(
+            &mut stdin,
+            &json!({
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "clientInfo": {
+                    "name": "paperflow-native-host",
+                    "version": env!("CARGO_PKG_VERSION")
+                },
+                "capabilities": {
+                    "experimentalApi": true
+                }
+            }
+            }),
+        )?;
+        wait_for_response(&line_receiver, &mut child, 1, deadline)?;
+        write_json_line(
+            &mut stdin,
+            &json!({
+            "method": "initialized",
+            "params": {}
+            }),
+        )?;
+        write_json_line(
+            &mut stdin,
+            &json!({
+            "id": 2,
+            "method": "thread/start",
+            "params": {
+                "cwd": std::env::temp_dir(),
+                "model": model,
+                "approvalPolicy": "never",
+                "sandbox": "read-only",
+                "ephemeral": true,
+                "dynamicTools": [],
+                "environments": [],
+                "baseInstructions": "You are PaperFlow, a research-paper reading assistant. Never use tools, inspect local files, run commands, or modify the computer. Return only the requested answer.",
+                "config": {
+                    "model_reasoning_effort": "low",
+                    "mcp_servers": {}
+                }
+            }
+            }),
+        )?;
+        let thread_response = wait_for_response(&line_receiver, &mut child, 2, deadline)?;
+        let thread_id = thread_response
+            .pointer("/result/thread/id")
+            .and_then(Value::as_str)
+            .ok_or(CodexError::Start)?;
+        emit(Response::event("progress", "connected"));
+
+        let mut input = vec![json!({
+            "type": "text",
+            "text": build_prompt(question, context, language)
+        })];
+        input.extend(image_files.iter().map(|image| {
+            json!({
+                "type": "localImage",
+                "path": image.path()
+            })
+        }));
+        write_json_line(
+            &mut stdin,
+            &json!({
+            "id": 3,
+            "method": "turn/start",
+            "params": {
+                "threadId": thread_id,
+                "input": input,
+                "effort": "low",
+                "environments": [],
+                "sandboxPolicy": {
+                    "type": "readOnly",
+                    "networkAccess": false
+                }
+            }
+            }),
+        )?;
+
+        let mut answer = String::new();
+        let mut completed_answer: Option<String> = None;
+        let mut received_delta = false;
+        loop {
+            let event = next_event(&line_receiver, &mut child, deadline)?;
+            match event.get("method").and_then(Value::as_str) {
+                Some("turn/started") => emit(Response::event("progress", "reasoning")),
+                Some("item/agentMessage/delta") => {
+                    if let Some(delta) = event.pointer("/params/delta").and_then(Value::as_str) {
+                        if !delta.is_empty() {
+                            received_delta = true;
+                            answer.push_str(delta);
+                            let mut response = Response::event("delta", "writing");
+                            response.delta = Some(delta.to_owned());
+                            emit(response);
+                        }
+                    }
+                }
+                Some("item/completed") => {
+                    let item = &event["params"]["item"];
+                    if item.get("type").and_then(Value::as_str) == Some("agentMessage")
+                        && item.get("phase").and_then(Value::as_str) != Some("commentary")
+                    {
+                        completed_answer =
+                            item.get("text").and_then(Value::as_str).map(str::to_owned);
+                    }
+                }
+                Some("turn/completed") => {
+                    let turn = &event["params"]["turn"];
+                    if turn.get("status").and_then(Value::as_str) != Some("completed") {
+                        return Err(turn
+                            .pointer("/error/message")
+                            .and_then(Value::as_str)
+                            .map(|message| CodexError::Rejected(message.to_owned()))
+                            .unwrap_or(CodexError::NoAnswer));
+                    }
+                    if let Some(final_answer) =
+                        completed_answer.filter(|value| !value.trim().is_empty())
+                    {
+                        if !received_delta {
+                            let mut response = Response::event("delta", "writing");
+                            response.delta = Some(final_answer.clone());
+                            emit(response);
+                        }
+                        answer = final_answer;
+                    }
+                    return if answer.trim().is_empty() {
+                        Err(CodexError::NoAnswer)
+                    } else {
+                        Ok(answer.trim().to_owned())
+                    };
+                }
+                _ => {}
+            }
+        }
+    })();
+    stop_child(&mut child, stdout_thread, stderr_thread);
+    result
+}
+
+fn write_json_line(writer: &mut impl Write, value: &Value) -> Result<(), CodexError> {
+    serde_json::to_writer(&mut *writer, value).map_err(|_| CodexError::Start)?;
+    writer.write_all(b"\n").map_err(|_| CodexError::Start)?;
+    writer.flush().map_err(|_| CodexError::Start)
+}
+
+fn wait_for_response(
+    receiver: &Receiver<String>,
+    child: &mut std::process::Child,
+    id: u64,
+    deadline: Instant,
+) -> Result<Value, CodexError> {
     loop {
-        while let Ok(line) = line_receiver.try_recv() {
-            handle_event(&line, &mut answer, emit);
+        let event = next_event(receiver, child, deadline)?;
+        if event.get("id").and_then(Value::as_u64) == Some(id) {
+            return if event.get("result").is_some() {
+                Ok(event)
+            } else {
+                Err(event
+                    .pointer("/error/message")
+                    .and_then(Value::as_str)
+                    .map(|message| CodexError::Rejected(message.to_owned()))
+                    .unwrap_or(CodexError::Start))
+            };
         }
-        if let Some(status) = child.try_wait().map_err(|_| CodexError::Start)? {
-            let _ = stdout_thread.join();
-            while let Ok(line) = line_receiver.try_recv() {
-                handle_event(&line, &mut answer, emit);
-            }
-            let _stderr = stderr_thread.join().unwrap_or_default();
-            if answer.trim().is_empty() {
-                answer = fs::read_to_string(&output_path).unwrap_or_default();
-            }
-            if !status.success() || answer.trim().is_empty() {
-                return Err(CodexError::NoAnswer);
-            }
-            return Ok(answer.trim().to_owned());
-        }
-        if start.elapsed() >= CODEX_TIMEOUT {
-            let _ = child.kill();
-            let _ = child.wait();
-            let _ = stdout_thread.join();
-            let _ = stderr_thread.join();
-            return Err(CodexError::Timeout);
-        }
-        thread::sleep(Duration::from_millis(40));
     }
 }
 
-fn handle_event(line: &str, answer: &mut String, emit: &mut impl FnMut(Response)) {
-    let Ok(event) = serde_json::from_str::<Value>(line) else {
-        return;
-    };
-    match event.get("type").and_then(Value::as_str) {
-        Some("thread.started") => emit(Response::event("progress", "connected")),
-        Some("turn.started") => emit(Response::event("progress", "reasoning")),
-        Some("item.completed") => {
-            let item = &event["item"];
-            if item.get("type").and_then(Value::as_str) == Some("agent_message") {
-                if let Some(text) = item.get("text").and_then(Value::as_str) {
-                    *answer = text.trim().to_owned();
-                    let mut response = Response::event("delta", "writing");
-                    response.delta = Some(answer.clone());
-                    emit(response);
-                }
-            } else {
-                emit(Response::event("progress", "reasoning"));
-            }
+fn next_event(
+    receiver: &Receiver<String>,
+    child: &mut std::process::Child,
+    deadline: Instant,
+) -> Result<Value, CodexError> {
+    loop {
+        if Instant::now() >= deadline {
+            return Err(CodexError::Timeout);
         }
-        _ => {}
+        match receiver.recv_timeout(Duration::from_millis(100)) {
+            Ok(line) => {
+                if let Ok(event) = serde_json::from_str::<Value>(&line) {
+                    return Ok(event);
+                }
+            }
+            Err(RecvTimeoutError::Timeout) => {
+                if child.try_wait().map_err(|_| CodexError::Start)?.is_some() {
+                    return Err(CodexError::NoAnswer);
+                }
+            }
+            Err(RecvTimeoutError::Disconnected) => return Err(CodexError::NoAnswer),
+        }
     }
+}
+
+fn stop_child(
+    child: &mut std::process::Child,
+    stdout_thread: thread::JoinHandle<()>,
+    stderr_thread: thread::JoinHandle<String>,
+) {
+    let _ = child.kill();
+    let _ = child.wait();
+    let _ = stdout_thread.join();
+    let _ = stderr_thread.join();
 }
 
 fn build_prompt(question: &str, context: &str, language: ResponseLanguage) -> String {

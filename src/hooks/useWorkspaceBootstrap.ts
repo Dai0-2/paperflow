@@ -1,17 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { getApiStatus, getBridgeStatus } from '../services/bridge';
-import { loadMessages, openPaperWorkspace, saveMessages } from '../services/database';
-import { readPaperText } from '../services/files';
+import {
+  loadMessages,
+  loadPaperChunks,
+  openPaperWorkspace,
+  saveMessages,
+} from '../services/database';
 import { detectActivePaper } from '../services/paper';
-import { chunksFromPages, pagesFromLegacyText } from '../services/paperContext';
 import { useAppStore } from '../store/useAppStore';
 
 export function useWorkspaceBootstrap({
   detectPaper = false,
-  readDetectedPaper = false,
 }: {
   detectPaper?: boolean;
-  readDetectedPaper?: boolean;
 } = {}) {
   const loadedPaperId = useRef<string | undefined>(undefined);
   const workspaceReady = useRef(false);
@@ -29,7 +30,6 @@ export function useWorkspaceBootstrap({
     setMessages,
     setPaperText,
     setPaperChunks,
-    setReadingPaper,
     setActiveThreadId,
   } = useAppStore();
 
@@ -74,24 +74,6 @@ export function useWorkspaceBootstrap({
   }, [detectPaper, setPaper]);
 
   useEffect(() => {
-    if (!readDetectedPaper) return;
-    setPaperText('');
-    setPaperChunks([]);
-    if (!paper) return;
-    setReadingPaper(true);
-    void readPaperText(paper.url)
-      .then((paperText) => {
-        setPaperText(paperText);
-        setPaperChunks(chunksFromPages(paper.id, pagesFromLegacyText(paperText)));
-      })
-      .catch(() => {
-        setPaperText('');
-        setPaperChunks([]);
-      })
-      .finally(() => setReadingPaper(false));
-  }, [paper?.id, paper?.url, readDetectedPaper, setPaperChunks, setPaperText, setReadingPaper]);
-
-  useEffect(() => {
     if (initialized) localStorage.setItem('paperflow:initialized', 'true');
   }, [initialized]);
 
@@ -99,20 +81,33 @@ export function useWorkspaceBootstrap({
     if (!paper || loadedPaperId.current === paper.id) return;
     loadedPaperId.current = paper.id;
     workspaceReady.current = false;
+    setPaperText('');
+    setPaperChunks([]);
     void openPaperWorkspace(paper).then(({ paper: resolvedPaper, threadId }) => {
       loadedPaperId.current = resolvedPaper.id;
       setPaper(resolvedPaper);
       setActiveThreadId(threadId);
-      return loadMessages(threadId);
-    }).then((savedMessages) => {
+      return Promise.all([
+        loadMessages(threadId),
+        loadPaperChunks(resolvedPaper.id),
+      ]);
+    }).then(([savedMessages, savedChunks]) => {
       setMessages(savedMessages);
+      setPaperChunks(savedChunks);
       workspaceReady.current = true;
     }).catch(() => {
       setActiveThreadId(null);
       setMessages([]);
       workspaceReady.current = true;
     });
-  }, [paper, setActiveThreadId, setMessages, setPaper]);
+  }, [
+    paper,
+    setActiveThreadId,
+    setMessages,
+    setPaper,
+    setPaperChunks,
+    setPaperText,
+  ]);
 
   useEffect(() => {
     if (!paper || !activeThreadId || loadedPaperId.current !== paper.id || !workspaceReady.current) return;

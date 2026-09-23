@@ -106,7 +106,7 @@ export function VaultSetup({ language }: { language: Language }) {
   });
 
   if (stage === 'unconfigured') {
-    return <div className="vault-state"><CloudOff /><div><strong>{text(language, 'Google Drive sync is not configured', 'Google Drive 同步尚未配置')}</strong><p>{text(language, 'Set PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID when building the extension. Local library features remain available.', '构建扩展时设置 PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID。本地资料库功能不受影响。')}</p></div></div>;
+    return <div className="vault-state" role="status"><CloudOff /><div><strong>{text(language, 'Google Drive is unavailable in this build', '此版本暂不可使用 Google Drive')}</strong><p>{text(language, 'This development build does not include Google OAuth credentials. Install a release build configured for Google Drive to connect your account. Local library features remain available.', '当前开发版未包含 Google OAuth 凭据。请安装已配置 Google Drive 的发行版本后再连接账号；本地资料库功能不受影响。')}</p></div></div>;
   }
 
   return <div className="vault-setup">
@@ -116,7 +116,7 @@ export function VaultSetup({ language }: { language: Language }) {
         ? text(language, 'Connected · no vault yet', '已连接 · 尚未创建保险库')
         : stage === 'locked'
           ? text(language, 'Connected · vault locked', '已连接 · 保险库已锁定')
-          : text(language, 'Connected · end-to-end encrypted', '已连接 · 端到端加密')}</small></div></div>
+          : text(language, 'Connected · encrypted sync is active', '已连接 · 加密同步已启用')}</small></div></div>
 
     {stage === 'disconnected' && <button className="vault-primary" disabled={busy} onClick={() => void connect()}>{busy ? <LoaderCircle className="spin" /> : <Cloud />}{text(language, 'Connect Google Drive', '连接 Google Drive')}</button>}
 
@@ -146,7 +146,7 @@ export function VaultSetup({ language }: { language: Language }) {
     </div>}
 
     {error && <p className="vault-error" role="alert">{error}</p>}
-    <p className="vault-footnote">{text(language, 'Drive stores opaque encrypted objects. The vault key stays in memory unless you explicitly save it to the OS credential store.', 'Drive 仅保存不透明的加密对象。除非你明确选择保存到系统凭据库，否则保险库密钥只存在于内存。')}</p>
+    <p className="vault-footnote">{text(language, 'Use the same Google account on another device, then unlock this vault once with its password or recovery key. Drive stores only encrypted objects.', '在另一台设备登录同一 Google 账号，再用保险库密码或恢复密钥解锁一次即可同步。Drive 中仅保存加密对象。')}</p>
   </div>;
 }
 

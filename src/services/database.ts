@@ -3,6 +3,7 @@ import type { PersistedMessage } from '../db/schema';
 import type {
   Annotation,
   Message,
+  PaperChunk,
   PaperInfo,
   PaperMemory,
   PaperSelection,
@@ -89,6 +90,38 @@ export async function loadMessages(threadId: string): Promise<Message[]> {
     .filter((message) => !message.deletedAt)
     .sort((left, right) => left.sequence - right.sequence)
     .map(({ sequence: _sequence, ...message }) => message);
+}
+
+export async function loadPaperChunks(paperId: string): Promise<PaperChunk[]> {
+  const db = await openPaperFlowDatabase();
+  return db.paperChunks
+    .where('paperId')
+    .equals(paperId)
+    .sortBy('page');
+}
+
+export async function cachePaperChunks(
+  paperId: string,
+  chunks: PaperChunk[],
+): Promise<PaperChunk[]> {
+  const db = await openPaperFlowDatabase();
+  const now = Date.now();
+  const records = chunks.map((chunk) => ({
+    ...chunk,
+    paperId,
+    source: 'text-layer' as const,
+    updatedAt: now,
+  }));
+  await db.transaction('rw', db.paperChunks, async () => {
+    const oldTextChunks = await db.paperChunks
+      .where('paperId')
+      .equals(paperId)
+      .filter((chunk) => chunk.source !== 'ocr')
+      .toArray();
+    await db.paperChunks.bulkDelete(oldTextChunks.map((chunk) => chunk.id));
+    await db.paperChunks.bulkPut(records);
+  });
+  return records;
 }
 
 export async function saveMessages(paperId: string, threadId: string, messages: Message[]) {

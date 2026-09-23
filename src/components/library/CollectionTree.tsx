@@ -1,6 +1,7 @@
 import { Check, Folder, FolderPlus, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { text } from '../../i18n';
+import { PAPER_DRAG_TYPE, readPaperDragData } from '../../services/library/paperDrag';
 import type { Collection, Language } from '../../types';
 
 interface CollectionTreeProps {
@@ -11,6 +12,7 @@ interface CollectionTreeProps {
   onCreate: (name: string, parentId?: string) => Promise<void>;
   onUpdate: (collectionId: string, name: string, parentId?: string) => Promise<void>;
   onDelete: (collectionId: string) => Promise<void>;
+  onDropPapers: (collectionId: string, paperIds: string[]) => Promise<void>;
 }
 
 interface EditorState {
@@ -28,6 +30,7 @@ function descendants(collections: Collection[], parentId?: string, depth = 0): A
 export function CollectionTree(props: CollectionTreeProps) {
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
   const flattened = descendants(props.collections);
   const save = async () => {
     if (!editor?.name.trim()) return;
@@ -56,7 +59,30 @@ export function CollectionTree(props: CollectionTreeProps) {
             <button title={text(props.language, 'Save collection', '保存集合')} disabled={saving} onClick={() => void save()}><Check /></button>
             <button title={text(props.language, 'Cancel', '取消')} onClick={() => setEditor(null)}><X /></button>
           </div>
-        : <div className="collection-row" data-active={props.activeId === item.id} style={{ paddingLeft: 10 + depth * 14 }}>
+        : <div
+            className="collection-row"
+            data-active={props.activeId === item.id}
+            data-drop-target={dropTarget === item.id}
+            style={{ paddingLeft: 10 + depth * 14 }}
+            onDragEnter={(event) => {
+              if (event.dataTransfer.types.includes(PAPER_DRAG_TYPE)) setDropTarget(item.id);
+            }}
+            onDragOver={(event) => {
+              if (!event.dataTransfer.types.includes(PAPER_DRAG_TYPE)) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'copy';
+              setDropTarget(item.id);
+            }}
+            onDragLeave={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropTarget(null);
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              const paperIds = readPaperDragData(event.dataTransfer);
+              setDropTarget(null);
+              if (paperIds.length) void props.onDropPapers(item.id, paperIds);
+            }}
+          >
             <button className="collection-name" onClick={() => props.onSelect(item.id)}><Folder /><span>{item.name}</span></button>
             <div className="collection-actions">
               <button title={text(props.language, 'New subcollection', '新建子集合')} onClick={() => setEditor({ name: '', parentId: item.id })}><Plus /></button>

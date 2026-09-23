@@ -25,6 +25,6 @@ export function WorkspaceSurface() {
 }
 
 export function App() {
-  useWorkspaceBootstrap({ detectPaper: true, readDetectedPaper: true });
+  useWorkspaceBootstrap({ detectPaper: true });
   return <WorkspaceSurface />;
 }

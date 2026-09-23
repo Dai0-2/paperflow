@@ -47,7 +47,14 @@ export function AiOrganizeReview({ language, paper, snapshot, onClose, onApply }
           localStorage.getItem('paperflow:api-base-url') || 'https://api.openai.com/v1',
           localStorage.getItem('paperflow:api-protocol') || 'responses',
         )
-      : sendToCodex(request.question, request.context);
+      : sendToCodex(
+          request.question,
+          request.context,
+          [],
+          localStorage.getItem('paperflow:codex-model') === 'ChatGPT via Codex'
+            ? undefined
+            : localStorage.getItem('paperflow:codex-model') || undefined,
+        );
     void response.then((result) => {
       if (!active) return;
       if (!result.ok || !result.answer) throw new Error(result.error || text(language, 'The AI provider returned no proposal.', 'AI 服务没有返回整理建议。'));

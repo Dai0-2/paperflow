@@ -9,7 +9,7 @@ import { text } from '../../i18n';
 
 export function Composer() {
   const [modelsOpen, setModelsOpen] = useState(false); const [attachmentsOpen, setAttachmentsOpen] = useState(false); const [fileError, setFileError] = useState(''); const [readingFile, setReadingFile] = useState(false);
-  const textarea = useRef<HTMLTextAreaElement>(null); const documentInput = useRef<HTMLInputElement>(null); const imageInput = useRef<HTMLInputElement>(null);
+  const zone = useRef<HTMLDivElement>(null); const textarea = useRef<HTMLTextAreaElement>(null); const documentInput = useRef<HTMLInputElement>(null); const imageInput = useRef<HTMLInputElement>(null);
   const { model, providerMode, uiLanguage, promptLanguage, draft, paper, selection, bridgeState, apiState, attachments, sending, setDraft, setSelection, addAttachment, removeAttachment } = useAppStore();
   const { submit } = useChatActions();
   const value = draft;
@@ -18,6 +18,26 @@ export function Composer() {
     const focus = () => textarea.current?.focus();
     window.addEventListener('paperflow:focus-composer', focus);
     return () => window.removeEventListener('paperflow:focus-composer', focus);
+  }, []);
+  useEffect(() => {
+    const dismiss = (event: PointerEvent) => {
+      if (!zone.current?.contains(event.target as Node)) {
+        setModelsOpen(false);
+        setAttachmentsOpen(false);
+      }
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setModelsOpen(false);
+        setAttachmentsOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', dismiss);
+    window.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('pointerdown', dismiss);
+      window.removeEventListener('keydown', escape);
+    };
   }, []);
   const send = async () => {
     await submit(value);
@@ -30,7 +50,7 @@ export function Composer() {
     setDraft(prompt);
     requestAnimationFrame(() => textarea.current?.focus());
   };
-  return <div className="composer-zone">
+  return <div className="composer-zone" ref={zone}>
     <div className="prompt-presets" aria-label={text(uiLanguage, 'Prompt shortcuts', '快捷提示词')}>
       {promptPresets.map((preset) => <button key={preset.id} onClick={() => applyPreset(preset.prompt[promptLanguage === 'auto' ? uiLanguage : promptLanguage])}>{preset.label[uiLanguage]}</button>)}
     </div>

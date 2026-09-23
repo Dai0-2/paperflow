@@ -29,6 +29,8 @@ pub enum Request {
         context: String,
         #[serde(default)]
         images: Vec<String>,
+        #[serde(default)]
+        model: Option<String>,
         #[serde(rename = "responseLanguage", default)]
         response_language: ResponseLanguage,
     },
@@ -125,8 +127,14 @@ impl Request {
                 question,
                 context,
                 images,
+                model,
                 ..
-            } => validate_chat_fields(question, context, images)?,
+            } => {
+                validate_chat_fields(question, context, images)?;
+                if let Some(model) = model {
+                    validate_model(model)?;
+                }
+            }
             Self::ApiChat {
                 question,
                 context,
@@ -202,17 +210,22 @@ fn valid_image_data_url(value: &str) -> bool {
 }
 
 fn validate_api_fields(model: &str, base_url: &str) -> Result<(), ProtocolError> {
+    validate_model(model)?;
+    if base_url.len() > MAX_URL_BYTES {
+        return Err(ProtocolError::InvalidField(
+            "API base URL is too long.".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_model(model: &str) -> Result<(), ProtocolError> {
     if model.trim().is_empty()
         || model.len() > MAX_MODEL_BYTES
         || model.chars().any(char::is_control)
     {
         return Err(ProtocolError::InvalidField(
             "Model ID is invalid.".to_owned(),
-        ));
-    }
-    if base_url.len() > MAX_URL_BYTES {
-        return Err(ProtocolError::InvalidField(
-            "API base URL is too long.".to_owned(),
         ));
     }
     Ok(())
@@ -346,6 +359,7 @@ fn validate_object_shape(value: &Value) -> Result<(), ProtocolError> {
             "question",
             "context",
             "images",
+            "model",
             "responseLanguage",
         ],
         "api_key.set" => &["action", "apiKey"],
@@ -400,6 +414,11 @@ mod tests {
         assert!(matches!(
             read_request(&mut Cursor::new(data)).unwrap(),
             Some(Request::Status)
+        ));
+        let codex = frame(br#"{"action":"codex.chat","question":"Hi","model":"gpt-5.6-sol"}"#);
+        assert!(matches!(
+            read_request(&mut Cursor::new(codex)).unwrap(),
+            Some(Request::CodexChat { model: Some(_), .. })
         ));
     }
 

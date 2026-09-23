@@ -25,8 +25,10 @@ async function createFixture(path: string): Promise<void> {
 
 async function annotationState(page: Page): Promise<{
   paperId?: string;
+  paperLibraryState?: string;
   annotations: Array<{
     type?: string;
+    color?: string;
     rect?: { x: number; y: number; width: number; height: number };
     quadPoints?: unknown[];
     strokes?: unknown[];
@@ -46,9 +48,10 @@ async function annotationState(page: Page): Promise<{
       request.onerror = () => reject(request.error);
     });
     const [papers, annotations] = await Promise.all([
-      readAll<{ id: string }>('papers'),
+      readAll<{ id: string; libraryState?: string }>('papers'),
       readAll<{
         type?: string;
+        color?: string;
         rect?: { x: number; y: number; width: number; height: number };
         quadPoints?: unknown[];
         strokes?: unknown[];
@@ -59,12 +62,13 @@ async function annotationState(page: Page): Promise<{
     database.close();
     return {
       paperId: papers[0]?.id,
+      paperLibraryState: papers[0]?.libraryState,
       annotations: annotations.filter((annotation) => !annotation.deletedAt),
     };
   });
 }
 
-async function selectText(page: Page, tool: 'Highlight' | 'Underline' | 'Strikeout'): Promise<void> {
+async function selectText(page: Page, tool: 'Select' | 'Highlight' | 'Underline' | 'Strikeout'): Promise<void> {
   await page.getByTitle(tool).click();
   await page.evaluate(() => {
     const textNode = document.querySelector('.textLayer span')?.firstChild;
@@ -89,14 +93,106 @@ test('creates persistent annotations and exports a readable PDF copy', async ({ 
   await page.goto('/reader.html');
   await page.locator('input[type="file"]').setInputFiles(fixture);
   await expect(page.locator('.textLayer span').first()).toBeVisible();
-  await page.getByTitle('Save PDF offline').click();
-  await expect(page.getByTitle('PDF available offline')).toBeVisible();
+  await expect.poll(() => page.locator('.pdf-page').first().evaluate((element) => (
+    getComputedStyle(element).getPropertyValue('--total-scale-factor').trim()
+  ))).toBe('1');
+  const lineBreak = page.locator('.textLayer br').first();
+  await expect(lineBreak).toBeAttached();
+  expect(await lineBreak.evaluate((element) => (
+    getComputedStyle(element, '::selection').backgroundColor
+  ))).toBe('rgba(0, 0, 0, 0)');
+  const zoomIn = page.getByLabel('Zoom in');
+  await zoomIn.hover();
+  await expect.poll(() => zoomIn.evaluate((element) => (
+    getComputedStyle(element, '::after').opacity
+  ))).toBe('1');
+  expect(await zoomIn.evaluate((element) => (
+    getComputedStyle(element, '::after').content
+  ))).toContain('Zoom in');
+  await page.screenshot({ path: testInfo.outputPath('toolbar-tooltip.png'), fullPage: true });
 
   await selectText(page, 'Highlight');
   await expect.poll(async () => (await annotationState(page)).annotations.length).toBe(1);
+  await expect.poll(async () => (await annotationState(page)).paperLibraryState).toBe('saved');
+  const quickToolbar = page.getByRole('toolbar', { name: 'Highlight actions' });
+  await expect(quickToolbar).toBeVisible();
+  await expect(page.getByLabel('Highlight comment')).toBeVisible();
+  await expect(page.locator('.annotation-highlight[data-selected="true"]')).toHaveAttribute('stroke', '#d97706');
+  await expect(page.locator('.markup-sync-state')).toHaveCount(0);
+
+  const quickToolbarBox = await quickToolbar.boundingBox();
+  const highlightedPageBox = await page.locator('.pdf-page').first().boundingBox();
+  expect(quickToolbarBox).toBeTruthy();
+  expect(highlightedPageBox).toBeTruthy();
+  expect(quickToolbarBox!.x).toBeGreaterThanOrEqual(highlightedPageBox!.x);
+  expect(quickToolbarBox!.x + quickToolbarBox!.width)
+    .toBeLessThanOrEqual(highlightedPageBox!.x + highlightedPageBox!.width);
+  await page.mouse.click(
+    highlightedPageBox!.x + highlightedPageBox!.width - 18,
+    highlightedPageBox!.y + highlightedPageBox!.height - 18,
+  );
+  await expect(quickToolbar).toBeHidden();
+  await page.locator('.annotation-highlight').first().click();
+  await expect(quickToolbar).toBeVisible();
+  await expect(page.getByLabel('Highlight comment')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Change highlight color' }).click();
+  await expect(page.getByRole('group', { name: 'Highlight color' })).toBeVisible();
+  await page.getByRole('button', { name: 'Use #67bd77' }).click();
+  await expect.poll(async () => (await annotationState(page)).annotations[0]?.color).toBe('#67bd77');
+
+  await page.getByRole('button', { name: 'Add comment' }).click();
+  const commentPopover = page.getByLabel('Highlight comment');
+  await expect(commentPopover).toBeVisible();
+  await commentPopover.getByPlaceholder('Add a comment to this highlight').fill('Key evidence');
+  await commentPopover.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect.poll(async () => (await annotationState(page)).annotations[0]?.comment).toBe('Key evidence');
+  await page.getByTitle('My annotations').click();
+  await expect(page.locator('.reader-annotations strong')).toHaveText('Key evidence');
+  await page.screenshot({ path: testInfo.outputPath('highlight-quick-actions.png'), fullPage: true });
+
+  await page.getByTitle('Toggle navigation').click();
+  await page.getByTitle('Toggle AI panel').click();
+  await page.setViewportSize({ width: 760, height: 900 });
+  await page.getByRole('button', { name: 'Add comment' }).click();
+  const narrowCommentBox = await page.getByLabel('Highlight comment').boundingBox();
+  const narrowPageBox = await page.locator('.pdf-page').first().boundingBox();
+  expect(narrowCommentBox).toBeTruthy();
+  expect(narrowPageBox).toBeTruthy();
+  expect(narrowCommentBox!.x).toBeGreaterThanOrEqual(narrowPageBox!.x);
+  expect(narrowCommentBox!.x + narrowCommentBox!.width)
+    .toBeLessThanOrEqual(narrowPageBox!.x + narrowPageBox!.width);
+  await page.screenshot({ path: testInfo.outputPath('highlight-quick-actions-narrow.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Add comment' }).click();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByTitle('Toggle navigation').click();
+  await page.getByTitle('Toggle AI panel').click();
+
+  await selectText(page, 'Highlight');
+  await expect.poll(async () => (await annotationState(page)).annotations.length).toBe(2);
+  await page.getByRole('button', { name: 'Delete highlight' }).click();
+  await expect.poll(async () => (await annotationState(page)).annotations.length).toBe(1);
+  await page.getByTitle('Keep PDF on this device for offline reading').click();
+  await expect(page.getByTitle('Stored on this device · available offline')).toBeVisible();
+
   await selectText(page, 'Underline');
   await expect.poll(async () => (await annotationState(page)).annotations.length).toBe(2);
   await selectText(page, 'Strikeout');
+  await expect.poll(async () => (await annotationState(page)).annotations.length).toBe(3);
+
+  await selectText(page, 'Select');
+  await expect(page.locator('.selection-toolbar')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('selection-toolbar.png'), fullPage: true });
+  await page.getByTitle('Highlight', { exact: true }).last().click();
+  await expect.poll(async () => (await annotationState(page)).annotations.length).toBe(4);
+  await page.getByTitle('My annotations').click();
+  await expect(page.locator('.reader-annotations > button')).toHaveCount(1);
+  await expect(page.locator('.reader-annotations > button strong')).toHaveText('Key evidence');
+  await page.screenshot({ path: testInfo.outputPath('annotations-sidebar.png'), fullPage: true });
+  await page.locator('.annotation-highlight').last().click();
+  await expect(page.getByLabel('Highlight comment')).toBeVisible();
+  await page.getByRole('button', { name: 'Add comment' }).click();
+  await page.keyboard.press('Backspace');
   await expect.poll(async () => (await annotationState(page)).annotations.length).toBe(3);
 
   const layer = page.locator('.annotation-layer').first();
@@ -126,6 +222,9 @@ test('creates persistent annotations and exports a readable PDF copy', async ({ 
   const beforeZoom = await page.locator('.annotation-area').boundingBox();
   await page.getByTitle('Zoom in').click();
   await expect(page.locator('.zoom-label')).toHaveText('110%');
+  await expect.poll(() => page.locator('.pdf-page').first().evaluate((element) => (
+    getComputedStyle(element).getPropertyValue('--total-scale-factor').trim()
+  ))).toBe('1.1');
   const afterZoom = await page.locator('.annotation-area').boundingBox();
   expect(afterZoom?.width || 0).toBeGreaterThan((beforeZoom?.width || 0) * 1.08);
 
@@ -135,11 +234,15 @@ test('creates persistent annotations and exports a readable PDF copy', async ({ 
   expect(state.annotations.find((annotation) => annotation.type === 'highlight')?.quadPoints).toHaveLength(1);
   expect(state.annotations.find((annotation) => annotation.type === 'ink')?.strokes).toHaveLength(1);
   expect(state.annotations.find((annotation) => annotation.type === 'text')?.comment).toBe('Cross-device note');
+  expect(state.annotations.find((annotation) => annotation.type === 'highlight')?.comment).toBe('Key evidence');
+  expect(state.annotations.find((annotation) => annotation.type === 'highlight')?.color).toBe('#67bd77');
 
   await page.waitForTimeout(350);
   await page.goto(`/reader.html?paperId=${encodeURIComponent(state.paperId || '')}`);
   await expect(page.locator('.annotation-area')).toBeVisible();
-  expect((await annotationState(page)).annotations.find((annotation) => annotation.type === 'area')?.rect).toEqual(savedRect);
+  const restoredState = await annotationState(page);
+  expect(restoredState.annotations.find((annotation) => annotation.type === 'area')?.rect).toEqual(savedRect);
+  expect(restoredState.annotations.find((annotation) => annotation.type === 'highlight')?.comment).toBe('Key evidence');
 
   const downloadPromise = page.waitForEvent('download');
   await page.getByTitle('Export annotated PDF').click();

@@ -1,6 +1,6 @@
 # PaperFlow AI Privacy Notice
 
-Last updated: 2026-09-22
+Last updated: 2026-09-23
 
 PaperFlow AI is a local-first Chrome extension. It does not operate a PaperFlow
 account service, analytics service, advertising service, or telemetry backend.
@@ -25,11 +25,12 @@ unlocks a vault. PaperFlow requests only the `drive.file` scope, which limits it
 to files created or explicitly opened by PaperFlow.
 
 The readable `vault.json` file contains protocol and key-derivation parameters
-plus encrypted VMK wrappers. Library records and PDFs are encrypted locally
-before upload. Their Drive names are opaque. Google receives ciphertext, object
-sizes, timestamps, the PaperFlow folder name, and limited protocol metadata; it
-does not receive plaintext paper titles, notes, annotations, conversations, or
-PDF bytes from PaperFlow sync.
+plus encrypted VMK wrappers. Library records are encrypted locally before
+upload. Offline PDF backup is a separate setting and is disabled by default; if
+enabled, those PDFs are also encrypted locally before upload. Drive object names
+are opaque. Google receives ciphertext, object sizes, timestamps, the PaperFlow
+folder name, and limited protocol metadata; it does not receive plaintext paper
+titles, notes, annotations, conversations, or PDF bytes from PaperFlow sync.
 
 OAuth access tokens remain managed by Chrome Identity and are not written to
 IndexedDB, OPFS, logs, exports, or Drive.
@@ -64,6 +65,7 @@ the required optional host permission before the request.
 | `sidePanel` | Show the research workspace beside the active tab |
 | `tabs` | Identify the active paper and open Reader or Library tabs |
 | `storage` | Store small local settings and redirect-loop guards |
+| `https://arxiv.org/*` | Mount the integrated Reader while preserving the original arXiv PDF URL and site icon |
 | `contextMenus` | Offer Reader, save, and Library commands |
 | `nativeMessaging` | Use Codex and OS credential storage through the fixed host |
 | `identity` | Request Google Drive authorization |

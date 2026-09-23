@@ -32,7 +32,11 @@ const chatFields = {
 export const bridgeRequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('status') }).strict(),
   z.object({ action: z.literal('codex.auth_status') }).strict(),
-  z.object({ action: z.literal('codex.chat'), ...chatFields }).strict(),
+  z.object({
+    action: z.literal('codex.chat'),
+    ...chatFields,
+    model: z.string().min(1).max(128).optional(),
+  }).strict(),
   z.object({ action: z.literal('api_key.set'), apiKey: z.string().min(8).max(512) }).strict(),
   z.object({ action: z.literal('api_key.delete') }).strict(),
   z.object({
@@ -162,6 +166,11 @@ function hostMode(): Promise<HostMode> {
   return hostModePromise;
 }
 
+function refreshHostMode(): Promise<HostMode> {
+  hostModePromise = detectHost();
+  return hostModePromise;
+}
+
 function updateCachedStatus(changes: Partial<BridgeResponse>): void {
   if (!hostModePromise) return;
   hostModePromise = hostModePromise.then((mode) => ({
@@ -171,7 +180,7 @@ function updateCachedStatus(changes: Partial<BridgeResponse>): void {
 }
 
 export async function getBridgeStatus(): Promise<BridgeResponse> {
-  const host = await hostMode();
+  const host = await refreshHostMode();
   if (host.kind === 'legacy') return host.status;
   if (!host.status.ok) return host.status;
   if (!host.status.codexAvailable) {
@@ -194,6 +203,7 @@ export async function sendToCodex(
   question: string,
   context: string,
   images: string[] = [],
+  model?: string,
   responseLanguage = 'en',
   onEvent?: (event: BridgeResponse) => void,
 ): Promise<BridgeResponse> {
@@ -204,6 +214,7 @@ export async function sendToCodex(
       question,
       context,
       images,
+      ...(model ? { model } : {}),
       responseLanguage: responseLanguage === 'zh' ? 'zh' : 'en',
     }, onEvent)
     : nativeStream({ action: 'chat', question, context, images, responseLanguage }, onEvent);

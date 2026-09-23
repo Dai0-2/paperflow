@@ -1,7 +1,8 @@
 import type { Citation, PaperChunk, PaperInfo, PaperSelection } from '../types';
 
 const MAX_CHUNK_LENGTH = 3_200;
-const MAX_CONTEXT_LENGTH = 32_000;
+const MAX_CONTEXT_LENGTH = 18_000;
+const MAX_CONTEXT_CHUNKS = 6;
 
 function sectionHeading(line: string) {
   const value = line.trim();
@@ -101,7 +102,7 @@ export function buildPaperContext({
     if (length + entryLength > MAX_CONTEXT_LENGTH) continue;
     included.push(chunk);
     length += entryLength;
-    if (included.length >= 10) break;
+    if (included.length >= MAX_CONTEXT_CHUNKS) break;
   }
   included.sort((left, right) => left.page - right.page);
   const excerpts = included.map((chunk) =>

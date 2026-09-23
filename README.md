@@ -55,13 +55,14 @@ Open the same paper days later—from a different source when identity can be re
 - Page-aware chunked context; selected text is preferred over the current page and relevant paper chunks
 - Structured citations with page, label, and excerpt; citation clicks navigate the Reader
 - Explicit errors for missing, blocked, encrypted, or textless PDFs
-- Context-menu action **Open with PaperFlow**, plus an opt-in direct-PDF redirect setting
+- arXiv PDF pages keep their original `arxiv.org/pdf/...` URL and favicon while PaperFlow Reader is mounted in-page; other direct PDFs use the extension Reader
+- Immediate hover labels identify compact Reader and annotation toolbar controls
 
 ## Side Panel and AI
 
 - Minimal Chrome Manifest V3 Side Panel
 - Active-tab detection for arXiv, OpenReview, direct PDFs, and compatible PDF viewers
-- Automatic text extraction for accessible arXiv/OpenReview PDFs
+- On-demand text extraction for accessible arXiv PDFs when AI context is needed
 - PDF, TXT, Markdown, and image attachments from a ChatGPT-style composer menu
 - Two provider modes: ChatGPT subscription through the official Codex CLI, or an OpenAI API key through the Responses API
 - API keys stored in the operating-system credential store rather than Chrome extension storage
@@ -72,7 +73,7 @@ Open the same paper days later—from a different source when identity can be re
 - Low-latency reasoning configuration and bounded conversation history to prevent progressive slowdowns
 - Per-paper IndexedDB storage for papers, aliases, threads, messages, memory, selections, annotations, settings, and reading state
 - Google Drive `drive.file` adapter and end-to-end encrypted vault setup with password, recovery key, and optional OS credential-store unlock
-- Encrypted incremental sync with immutable operation batches, snapshots, Drive Changes cursors, note conflict copies, and resumable PDF uploads
+- Encrypted incremental sync for library data, notes, annotations, and conversations; creating a persistent annotation automatically saves the paper so it enters the sync queue
 - One-time migration of legacy `localStorage` conversations and notes
 - First-run setup and connection diagnostics
 - Research conversation with Markdown and tables
@@ -180,7 +181,7 @@ before upload; the vault password and recovery key are not sent to Google.
 - No analytics or telemetry in the prototype
 - No API keys or OAuth tokens in the repository
 - No ChatGPT cookie scraping
-- No unnecessary PDF uploads
+- No PDF uploads unless **Back up offline PDFs** is explicitly enabled
 - Paper context will be visible and user-controllable before transmission
 - Paper data is designed to remain local by default
 - Google Drive sync is opt-in, uses only `drive.file`, and uploads encrypted

@@ -5,7 +5,7 @@
 PaperFlow has two compatible surfaces:
 
 1. The Chrome Side Panel detects the paper in the active tab and works beside Chrome PDF Viewer, arXiv, OpenReview, or another reader.
-2. The extension-hosted `reader.html` renders a PDF with PDF.js and embeds the same AI workspace. Users enter this mode explicitly through the file picker, context menu, Reader URL, or the opt-in direct-PDF setting.
+2. The extension-hosted `reader.html` renders a PDF with PDF.js and embeds the same AI workspace. For arXiv, a narrow content-script host mounts this Reader while restoring the original `arxiv.org/pdf/...` URL and favicon. Other direct PDFs use the extension URL; users can disable automatic handling in Settings.
 
 PaperFlow does not inspect another extension's DOM, use Google Scholar private APIs, or include Google Scholar PDF Reader code or assets.
 
@@ -44,14 +44,18 @@ and page rotation do not rewrite persisted records. Only lazily rendered pages
 mount an annotation overlay. `pdf-lib` produces a new annotated copy; the OPFS
 source object is never modified. Text notes are also emitted as standard PDF
 `/Text` annotations, and unsupported PDFs fall back to JSON and Markdown.
+Creating an annotation promotes a temporary workspace into the saved library
+before the annotation is written, so both records enter the encrypted sync log.
 
 ## PDF loading and context
 
 - Remote documents require a matching host permission. arXiv and OpenReview are
   predeclared; other HTTP/HTTPS origins are requested only when the user opens a
   PDF from that host.
-- Local files are loaded from a user-selected `File` and are not uploaded by the
-  Reader.
+- The Side Panel uses active-tab metadata without fetching the PDF. It extracts
+  remote PDF text only when the user first requests AI context.
+- Local files are loaded from a user-selected `File`. Offline copies remain
+  device-local unless encrypted PDF backup is explicitly enabled.
 - Pages render lazily. Text extraction yields page-addressable chunks with
   optional section labels rather than one unconditional full-document prompt.
 - Context selection prefers the explicit text selection, then the visible page,

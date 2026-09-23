@@ -9,6 +9,8 @@ export type BackgroundRequest =
   | { type: 'paperflow:sync-now' }
   | { type: 'paperflow:refresh-menus' }
   | { type: 'paperflow:save-paper'; url: string; title?: string }
+  | { type: 'paperflow:reader-mounted'; sourceUrl: string }
+  | { type: 'paperflow:reader-unmounting'; sourceUrl: string }
   | { type: 'paperflow:open-library' };
 
 const REDIRECT_GUARD_WINDOW_MS = 15_000;
@@ -24,7 +26,28 @@ function webUrl(rawUrl: string): URL | undefined {
 
 export function isDirectPdfUrl(rawUrl: string): boolean {
   const url = webUrl(rawUrl);
-  return Boolean(url && /\.pdf$/i.test(url.pathname));
+  if (!url) return false;
+  if (/\.pdf$/i.test(url.pathname)) return true;
+  return isArxivPdfUrl(rawUrl);
+}
+
+export function isArxivPdfUrl(rawUrl: string): boolean {
+  const url = webUrl(rawUrl);
+  if (!url) return false;
+  const arxivHost = url.hostname === 'arxiv.org' || url.hostname === 'www.arxiv.org';
+  return arxivHost && /^\/pdf\/\d{4}\.\d{4,5}(?:v\d+)?\/?$/i.test(url.pathname);
+}
+
+export function arxivReaderHostUrl(rawUrl: string, title = ''): string | undefined {
+  const source = webUrl(rawUrl);
+  if (!source || !isArxivPdfUrl(source.toString())) return undefined;
+  const identifier = source.pathname.match(/^\/pdf\/([^/]+)\/?$/i)?.[1];
+  if (!identifier) return undefined;
+  const host = new URL(`/abs/${identifier}`, source.origin);
+  host.searchParams.set('paperflowReader', '1');
+  if (source.hash) host.searchParams.set('paperflowHash', source.hash.slice(1));
+  if (title) host.searchParams.set('paperflowTitle', title.slice(0, 1_000));
+  return host.toString();
 }
 
 export function readerPath(
@@ -80,6 +103,15 @@ export function parseBackgroundRequest(value: unknown): BackgroundRequest | unde
     || input.type === 'paperflow:open-library'
   ) {
     return { type: input.type };
+  }
+  if (
+    (input.type === 'paperflow:reader-mounted' || input.type === 'paperflow:reader-unmounting')
+    && typeof input.sourceUrl === 'string'
+  ) {
+    const sourceUrl = webUrl(input.sourceUrl)?.toString();
+    return sourceUrl && isArxivPdfUrl(sourceUrl)
+      ? { type: input.type, sourceUrl }
+      : undefined;
   }
   if (input.type !== 'paperflow:save-paper' || typeof input.url !== 'string') return undefined;
   const url = webUrl(input.url);

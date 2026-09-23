@@ -50,8 +50,12 @@ describe('annotation repository', () => {
     expect((await database.annotations.get(created.id))?.version).toBeDefined();
     expect(await database.syncOps.where('entityType').equals('annotation').count()).toBe(1);
 
-    await updateAnnotation(created.id, { comment: 'Important evidence' });
+    await updateAnnotation(created.id, {
+      comment: 'Important evidence',
+      translation: '稳定的选区',
+    });
     expect((await database.annotations.get(created.id))?.comment).toBe('Important evidence');
+    expect((await database.annotations.get(created.id))?.translation).toBe('稳定的选区');
     await deleteAnnotation(created.id);
     expect((await database.annotations.get(created.id))?.deletedAt).toBeTypeOf('number');
     expect(await database.syncOps.where('entityType').equals('annotation').count()).toBe(3);

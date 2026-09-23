@@ -4,6 +4,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
 interface ExtensionManifest {
+  key?: string;
   oauth2?: {
     client_id: string;
     scopes: string[];
@@ -11,7 +12,10 @@ interface ExtensionManifest {
   [key: string]: unknown;
 }
 
-function manifestPlugin(clientId: string): Plugin {
+const GOOGLE_OAUTH_CLIENT_ID_PATTERN =
+  /^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/i;
+
+function manifestPlugin(clientId: string, storeBuild: boolean): Plugin {
   return {
     name: 'paperflow-manifest',
     async generateBundle() {
@@ -20,6 +24,7 @@ function manifestPlugin(clientId: string): Plugin {
         readFile(resolve('THIRD_PARTY_NOTICES.md'), 'utf8'),
       ]);
       const manifest = JSON.parse(source) as ExtensionManifest;
+      if (storeBuild) delete manifest.key;
       if (clientId) {
         manifest.oauth2 = {
           client_id: clientId,
@@ -44,12 +49,16 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const googleOAuthClientId = env.PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID?.trim() || '';
   const releaseBuild = mode === 'release' || env.PAPERFLOW_RELEASE === 'true';
+  const storeBuild = releaseBuild || mode === 'store-draft';
   if (releaseBuild && !googleOAuthClientId) {
     throw new Error('PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID is required for release builds.');
   }
+  if (googleOAuthClientId && !GOOGLE_OAUTH_CLIENT_ID_PATTERN.test(googleOAuthClientId)) {
+    throw new Error('PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID is not a valid Google OAuth client ID.');
+  }
 
   return {
-    plugins: [react(), manifestPlugin(googleOAuthClientId)],
+    plugins: [react(), manifestPlugin(googleOAuthClientId, storeBuild)],
     define: {
       __PAPERFLOW_GOOGLE_OAUTH_CONFIGURED__: JSON.stringify(Boolean(googleOAuthClientId)),
     },

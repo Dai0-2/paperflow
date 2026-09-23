@@ -155,6 +155,7 @@ function duplicateIds(papers: PaperInfo[]): Set<string> {
 
 function sortValue(paper: PaperInfo, key: LibrarySortKey): string | number {
   if (key === 'updatedAt') return paper.updatedAt || 0;
+  if (key === 'accessedAt') return paper.accessedAt || 0;
   return normalizeText(paper[key] || '');
 }
 
@@ -180,7 +181,13 @@ export function filterAndSortLibraryPapers(
     if (scope === 'trash') {
       if (paper.libraryState !== 'trashed') return false;
     } else if (paper.libraryState !== 'saved') return false;
-    if (scope === 'recent' && now - (paper.updatedAt || 0) > 30 * 24 * 60 * 60 * 1000) return false;
+    if (
+      scope === 'recent'
+      && (
+        !paper.accessedAt
+        || now - paper.accessedAt > 7 * 24 * 60 * 60 * 1000
+      )
+    ) return false;
     if (scope === 'favorite' && !paper.favorite) return false;
     if (scope.startsWith('status:') && paper.readStatus !== scope.slice(7)) return false;
     if (scope.startsWith('collection:') && !(snapshot.paperCollections.get(paper.id) || []).includes(scope.slice(11))) return false;

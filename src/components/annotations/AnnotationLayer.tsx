@@ -1,4 +1,4 @@
-import { StickyNote } from 'lucide-react';
+import { Languages, LoaderCircle, StickyNote } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import type { AnnotationDraft } from '../../repositories/annotationRepository';
@@ -11,8 +11,9 @@ import {
   viewportRectToPdfRect,
   type PdfCoordinateViewport,
 } from '../../services/annotations/coordinates';
-import type { Annotation, PdfPoint } from '../../types';
+import type { Annotation, Language, PdfPoint } from '../../types';
 import type { AnnotationTool } from '../../hooks/useAnnotationTool';
+import { isMarkupAnnotation, MarkupQuickActions } from './MarkupQuickActions';
 
 interface Drawing {
   pointerId: number;
@@ -65,7 +66,7 @@ function markupShape(
         y1={bottomLeft.y - 1}
         x2={bottomRight.x}
         y2={bottomRight.y - 1}
-        stroke={color}
+        stroke={selected ? '#d97706' : color}
         strokeWidth={selected ? 3 : 2}
         onClick={onSelect}
       />;
@@ -79,7 +80,7 @@ function markupShape(
         y1={centerLeft.y}
         x2={centerRight.x}
         y2={centerRight.y}
-        stroke={color}
+        stroke={selected ? '#d97706' : color}
         strokeWidth={selected ? 3 : 2}
         onClick={onSelect}
       />;
@@ -90,11 +91,28 @@ function markupShape(
       data-selected={selected}
       points={pointsToAttribute(points)}
       fill={color}
-      stroke={selected ? color : 'transparent'}
+      stroke={selected ? '#d97706' : 'transparent'}
       strokeWidth={selected ? 1.5 : 0}
       onClick={onSelect}
     />;
   });
+}
+
+function translationPosition(
+  annotation: Annotation,
+  viewport: PdfCoordinateViewport,
+): { left: number; top: number; width: number } | undefined {
+  const points = (annotation.quadPoints || annotation.quads || [])
+    .flatMap((quad) => pdfQuadToViewport(viewport, quad));
+  if (!points.length) return undefined;
+  const width = Math.max(180, Math.min(340, viewport.width - 16));
+  const selectionLeft = Math.min(...points.map((point) => point.x));
+  const selectionBottom = Math.max(...points.map((point) => point.y));
+  return {
+    left: Math.max(8, Math.min(viewport.width - width - 8, selectionLeft)),
+    top: Math.max(8, Math.min(viewport.height - 88, selectionBottom + 7)),
+    width,
+  };
 }
 
 export function AnnotationLayer({
@@ -103,16 +121,27 @@ export function AnnotationLayer({
   tool,
   color,
   selectedId,
+  language,
+  translationStatus,
   onCreate,
   onSelect,
+  onUpdate,
+  onDelete,
 }: {
   viewport: PdfCoordinateViewport;
   annotations: Annotation[];
   tool: AnnotationTool;
   color: string;
   selectedId?: string;
+  language: Language;
+  translationStatus?: ReadonlyMap<string, string>;
   onCreate: (draft: AnnotationDraft) => Promise<Annotation>;
   onSelect: (id: string) => void;
+  onUpdate: (
+    annotationId: string,
+    patch: Partial<Pick<Annotation, 'comment' | 'color'>>,
+  ) => Promise<unknown>;
+  onDelete: (annotationId: string) => Promise<void>;
 }) {
   const [drawing, setDrawing] = useState<Drawing>();
   const drawingRef = useRef<Drawing | undefined>(undefined);
@@ -260,6 +289,41 @@ export function AnnotationLayer({
         strokeWidth={2}
       />}
     </svg>
+    {annotations.map((annotation) => (
+      annotation.id === selectedId && isMarkupAnnotation(annotation)
+        ? <MarkupQuickActions
+          key={`actions-${annotation.id}`}
+          annotation={annotation}
+          viewport={viewport}
+          language={language}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+        />
+        : null
+    ))}
+    {annotations.map((annotation) => {
+      const statusVisible = translationStatus?.has(annotation.id) || false;
+      if (annotation.id !== selectedId && !statusVisible) return null;
+      const translation = annotation.translation || translationStatus?.get(annotation.id);
+      const position = translationPosition(annotation, viewport);
+      if (!translation || !position) return null;
+      const loading = translationStatus?.has(annotation.id)
+        && !annotation.translation
+        && !translation.startsWith('!');
+      const content = translation.startsWith('!') ? translation.slice(1) : translation;
+      return <button
+        key={`translation-${annotation.id}`}
+        className="annotation-translation"
+        data-annotation-action
+        data-selected={annotation.id === selectedId}
+        data-error={translation.startsWith('!')}
+        style={position}
+        onClick={() => onSelect(annotation.id)}
+      >
+        <span>{loading ? <LoaderCircle className="spin" /> : <Languages />}</span>
+        <p>{content}</p>
+      </button>;
+    })}
     {annotations.filter((annotation) => annotation.type === 'text' && annotation.rect).map((annotation) => {
       const rect = pdfRectToViewport(viewport, annotation.rect!);
       return <button

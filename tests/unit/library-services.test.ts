@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildAiOrganizeRequest, parseAiOrganizeProposal } from '../../src/services/library/aiOrganize';
+import { refreshPaperMetadata } from '../../src/services/library/metadata';
 import {
   filterAndSortLibraryPapers,
   parseLibrarySearch,
@@ -48,6 +49,39 @@ describe('library services', () => {
     expect(result.suggestedTags).toEqual(['AI']);
   });
 
+  it('infers an arXiv identifier from the source URL when refreshing metadata', async () => {
+    const requests: string[] = [];
+    const fetcher = (async (input: RequestInfo | URL) => {
+      requests.push(String(input));
+      return new Response(`<?xml version="1.0"?>
+        <feed>
+          <entry>
+            <title>Retrieved Paper Title</title>
+            <author><name>Ada Lovelace</name></author>
+            <published>2025-07-21T00:00:00Z</published>
+            <summary>Retrieved abstract.</summary>
+          </entry>
+        </feed>`, {
+        status: 200,
+        headers: { 'content-type': 'application/xml' },
+      });
+    }) as typeof fetch;
+
+    const metadata = await refreshPaperMetadata({
+      ...paper,
+      arxivId: undefined,
+      url: 'https://arxiv.org/pdf/2507.16806',
+    }, fetcher);
+
+    expect(requests[0]).toContain('id_list=2507.16806');
+    expect(metadata).toMatchObject({
+      title: 'Retrieved Paper Title',
+      authors: 'Ada Lovelace',
+      year: '2025',
+      arxivId: '2507.16806',
+    });
+  });
+
   it('filters a 10,000-paper fixture with combined field clauses', () => {
     const papers = Array.from({ length: 10_000 }, (_, index): PaperInfo => ({
       ...paper,
@@ -79,5 +113,51 @@ describe('library services', () => {
     });
     expect(result).toHaveLength(333);
     expect(result[0].updatedAt).toBeGreaterThan(result.at(-1)?.updatedAt || 0);
+  });
+
+  it('uses the last opened time for the seven-day recently read view', () => {
+    const now = Date.UTC(2026, 8, 23);
+    const papers: PaperInfo[] = [
+      {
+        ...paper,
+        id: 'paper:recent',
+        libraryState: 'saved',
+        accessedAt: now - 6 * 24 * 60 * 60 * 1000,
+        updatedAt: now - 30 * 24 * 60 * 60 * 1000,
+      },
+      {
+        ...paper,
+        id: 'paper:old',
+        libraryState: 'saved',
+        accessedAt: now - 8 * 24 * 60 * 60 * 1000,
+        updatedAt: now,
+      },
+      {
+        ...paper,
+        id: 'paper:never-opened',
+        libraryState: 'saved',
+        updatedAt: now,
+      },
+    ];
+    const snapshot: LibrarySnapshot = {
+      papers,
+      collections: [],
+      tags: [],
+      paperCollections: new Map(),
+      paperTags: new Map(),
+      notes: [],
+      annotations: [],
+      documents: [],
+      memories: [],
+      searchText: new Map(),
+    };
+
+    expect(filterAndSortLibraryPapers(snapshot, {
+      scope: 'recent',
+      searchQuery: '',
+      sortKey: 'accessedAt',
+      sortDirection: 'desc',
+      now,
+    }).map(({ id }) => id)).toEqual(['paper:recent']);
   });
 });

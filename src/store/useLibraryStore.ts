@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 
-export type LibrarySortKey = 'title' | 'authors' | 'year' | 'source' | 'updatedAt' | 'readStatus';
+export type LibrarySortKey =
+  | 'title'
+  | 'authors'
+  | 'year'
+  | 'source'
+  | 'updatedAt'
+  | 'accessedAt'
+  | 'readStatus';
 export type LibraryInspectorTab = 'details' | 'notes';
 
 interface LibraryStore {
@@ -28,7 +35,7 @@ export const useLibraryStore = create<LibraryStore>((set) => ({
   searchQuery: '',
   selectedPaperIds: [],
   activePaperId: null,
-  sortKey: 'updatedAt',
+  sortKey: 'accessedAt',
   sortDirection: 'desc',
   inspectorTab: 'details',
   refreshVersion: 0,

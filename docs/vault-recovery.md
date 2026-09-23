@@ -20,8 +20,9 @@ three are unavailable, the encrypted Drive data cannot be recovered.
 4. Optionally enable **Remember this device**. This requires the Rust Native
    Host and stores only the VMK in Keychain, Credential Manager, or Secret
    Service.
-5. Keep Chrome open until the first sync finishes. PDFs are downloaded lazily
-   when opened unless the local offline policy requests them.
+5. Keep Chrome open until the first sync finishes. PDFs are available from the
+   vault only when **Back up offline PDFs** was enabled; backed-up PDFs are
+   downloaded lazily when opened.
 
 ## Recovery key handling
 

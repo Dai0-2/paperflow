@@ -29,6 +29,8 @@ async function databaseState(page: Page): Promise<{
   documentState?: string;
   ocrStatus?: string;
   ocrText?: string;
+  collections?: Array<{ id: string; name: string; parentId?: string }>;
+  collectionItemCount?: number;
 }> {
   return page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -36,7 +38,7 @@ async function databaseState(page: Page): Promise<{
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
-    if (!['papers', 'documents', 'ocrPages'].every((name) => database.objectStoreNames.contains(name))) {
+    if (!['papers', 'documents', 'ocrPages', 'collections', 'collectionItems'].every((name) => database.objectStoreNames.contains(name))) {
       database.close();
       return {};
     }
@@ -46,10 +48,12 @@ async function databaseState(page: Page): Promise<{
       request.onsuccess = () => resolve(request.result as T[]);
       request.onerror = () => reject(request.error);
     });
-    const [papers, documents, ocrPages] = await Promise.all([
+    const [papers, documents, ocrPages, collections, collectionItems] = await Promise.all([
       readAll<{ id: string; libraryState?: string }>('papers'),
       readAll<{ localState: string }>('documents'),
       readAll<{ status: string; text: string }>('ocrPages'),
+      readAll<{ id: string; name: string; parentId?: string; deletedAt?: number }>('collections'),
+      readAll<{ deletedAt?: number }>('collectionItems'),
     ]);
     database.close();
     return {
@@ -58,6 +62,8 @@ async function databaseState(page: Page): Promise<{
       documentState: documents[0]?.localState,
       ocrStatus: ocrPages[0]?.status,
       ocrText: ocrPages[0]?.text,
+      collections: collections.filter((collection) => !collection.deletedAt),
+      collectionItemCount: collectionItems.filter((item) => !item.deletedAt).length,
     };
   });
 }
@@ -73,13 +79,34 @@ test('stores a PDF offline and runs cancellable local OCR', async ({ page }, tes
   await expect.poll(async () => (await databaseState(page)).paperId).toBeTruthy();
 
   await page.getByTitle('Save to PaperFlow').click();
-  await expect(page.getByTitle('Saved to PaperFlow')).toBeVisible();
+  const saveDialog = page.getByRole('dialog', { name: 'Save to PaperFlow' });
+  await expect(saveDialog).toBeVisible();
+  const folderName = saveDialog.getByLabel('Folder name');
+  await folderName.fill('Models');
+  await saveDialog.getByRole('button', { name: 'Create' }).click();
+  await saveDialog.getByLabel('Parent folder').selectOption({ label: 'Models' });
+  await folderName.fill('OPD');
+  await saveDialog.getByRole('button', { name: 'Create' }).click();
+  await saveDialog.getByRole('checkbox', { name: 'Keep a local offline PDF' }).check();
+  await saveDialog.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByTitle('Manage PaperFlow folders')).toBeVisible();
   await expect.poll(async () => (await databaseState(page)).libraryState).toBe('saved');
-  await page.getByTitle('Save PDF offline').click();
-  await expect(page.getByTitle('PDF available offline')).toBeVisible();
+  await expect(page.getByTitle('Stored on this device · available offline')).toBeVisible();
   await expect.poll(async () => (await databaseState(page)).documentState).toBe('available');
+  await expect.poll(async () => (await databaseState(page)).collectionItemCount).toBe(2);
+  const savedState = await databaseState(page);
+  const parent = savedState.collections?.find((collection) => collection.name === 'Models');
+  expect(savedState.collections?.find((collection) => collection.name === 'OPD')?.parentId)
+    .toBe(parent?.id);
+  expect(parent).toBeTruthy();
 
-  await page.getByTitle('OCR pages').click();
+  await page.getByTitle('Manage PaperFlow folders').click();
+  await expect(saveDialog).toBeVisible();
+  await saveDialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(saveDialog).toBeHidden();
+
+  await page.getByTitle('Recognize text in scanned PDF pages (OCR)').click();
+  await expect(page.getByText('Use OCR only for image-only pages.')).toBeVisible();
   await page.getByRole('button', { name: 'Start OCR' }).click();
   await expect(page.getByRole('button', { name: 'Cancel OCR' })).toBeVisible();
   await page.getByRole('button', { name: 'Cancel OCR' }).click();
@@ -92,6 +119,6 @@ test('stores a PDF offline and runs cancellable local OCR', async ({ page }, tes
 
   await page.goto(`/reader.html?paperId=${encodeURIComponent(state.paperId || '')}`);
   await expect(page.getByLabel('Page number')).toHaveValue('1');
-  await expect(page.getByTitle('PDF available offline')).toBeVisible();
+  await expect(page.getByTitle('Stored on this device · available offline')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('reader-offline-ocr.png'), fullPage: true });
 });

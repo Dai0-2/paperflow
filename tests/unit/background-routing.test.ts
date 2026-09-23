@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  arxivReaderHostUrl,
   hasRecentRedirectLoop,
+  isArxivPdfUrl,
   isDirectPdfUrl,
   parseBackgroundRequest,
   readerPath,
@@ -8,11 +10,28 @@ import {
 } from '../../src/services/backgroundRouting';
 
 describe('background routing', () => {
-  it('recognizes only direct HTTP(S) PDF paths', () => {
+  it('recognizes direct PDF files and arXiv PDF routes', () => {
     expect(isDirectPdfUrl('https://example.org/paper.pdf?download=1')).toBe(true);
     expect(isDirectPdfUrl('http://example.org/PAPER.PDF#page=2')).toBe(true);
+    expect(isDirectPdfUrl('https://arxiv.org/pdf/2604.13016#page=1.00')).toBe(true);
+    expect(isDirectPdfUrl('https://www.arxiv.org/pdf/2507.16806v2')).toBe(true);
+    expect(isDirectPdfUrl('https://arxiv.org/abs/2604.13016')).toBe(false);
     expect(isDirectPdfUrl('https://example.org/viewer?file=paper.pdf')).toBe(false);
     expect(isDirectPdfUrl('chrome-extension://example/reader.pdf')).toBe(false);
+  });
+
+  it('creates an arXiv host page that can restore the original PDF URL', () => {
+    expect(isArxivPdfUrl('https://arxiv.org/pdf/2507.16806v2#page=4')).toBe(true);
+    const host = new URL(arxivReaderHostUrl(
+      'https://arxiv.org/pdf/2507.16806v2#page=4',
+      'Paper title',
+    )!);
+
+    expect(host.origin).toBe('https://arxiv.org');
+    expect(host.pathname).toBe('/abs/2507.16806v2');
+    expect(host.searchParams.get('paperflowReader')).toBe('1');
+    expect(host.searchParams.get('paperflowHash')).toBe('page=4');
+    expect(host.searchParams.get('paperflowTitle')).toBe('Paper title');
   });
 
   it('marks Reader launches with a bounded redirect depth', () => {
@@ -67,6 +86,24 @@ describe('background routing', () => {
       url: 'https://example.org/paper.pdf',
       title: 'Paper',
     });
+    expect(parseBackgroundRequest({
+      type: 'paperflow:reader-mounted',
+      sourceUrl: 'https://arxiv.org/pdf/2507.16806',
+    })).toEqual({
+      type: 'paperflow:reader-mounted',
+      sourceUrl: 'https://arxiv.org/pdf/2507.16806',
+    });
+    expect(parseBackgroundRequest({
+      type: 'paperflow:reader-unmounting',
+      sourceUrl: 'https://arxiv.org/pdf/2507.16806',
+    })).toEqual({
+      type: 'paperflow:reader-unmounting',
+      sourceUrl: 'https://arxiv.org/pdf/2507.16806',
+    });
+    expect(parseBackgroundRequest({
+      type: 'paperflow:reader-mounted',
+      sourceUrl: 'https://example.org/paper.pdf',
+    })).toBeUndefined();
     expect(parseBackgroundRequest({
       type: 'paperflow:save-paper',
       url: 'file:///private/paper.pdf',

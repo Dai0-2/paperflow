@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
 import type { LibrarySnapshot } from '../../hooks/useLibraryQuery';
 import { text } from '../../i18n';
 import type { CitationFormat } from '../../services/library/citations';
-import type { Language, PaperInfo, ReadStatus } from '../../types';
+import type { Language, PaperInfo } from '../../types';
 import type { LibraryInspectorTab } from '../../store/useLibraryStore';
 import { NoteEditor } from './NoteEditor';
 
@@ -44,8 +44,9 @@ interface MetadataDraft {
   year: string;
   journal: string;
   doi: string;
+  arxivId: string;
+  openReviewId: string;
   abstract: string;
-  readStatus: ReadStatus;
 }
 
 function draftFor(paper?: PaperInfo): MetadataDraft {
@@ -55,8 +56,9 @@ function draftFor(paper?: PaperInfo): MetadataDraft {
     year: paper?.year || '',
     journal: paper?.journal || '',
     doi: paper?.doi || '',
+    arxivId: paper?.arxivId || '',
+    openReviewId: paper?.openReviewId || '',
     abstract: paper?.abstract || '',
-    readStatus: paper?.readStatus || 'unread',
   };
 }
 
@@ -65,7 +67,12 @@ export function PaperInspector(props: PaperInspectorProps) {
   const [tagName, setTagName] = useState('');
   const [copied, setCopied] = useState<CitationFormat | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  useEffect(() => setDraft(draftFor(props.paper)), [props.paper]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    setDraft(draftFor(props.paper));
+    setSaved(false);
+  }, [props.paper]);
   if (!props.paper) return <aside className="paper-inspector inspector-empty" data-mobile-open="false"><FileText /><span>{text(props.language, 'Select a paper to inspect it.', '选择一篇论文以查看详情。')}</span></aside>;
 
   const paper = props.paper;
@@ -77,6 +84,28 @@ export function PaperInspector(props: PaperInspectorProps) {
   const documents = props.snapshot.documents.filter((document) => document.paperId === paper.id);
   const annotations = props.snapshot.annotations.filter((annotation) => annotation.paperId === paper.id);
   const memory = props.snapshot.memories.find((item) => item.paperId === paper.id);
+  const metadataFields = [
+    draft.title,
+    draft.authors,
+    draft.year,
+    draft.journal,
+    draft.abstract,
+    draft.doi || draft.arxivId || draft.openReviewId,
+  ];
+  const metadataCompleteness = Math.round(
+    metadataFields.filter((value) => value.trim()).length / metadataFields.length * 100,
+  );
+  const saveMetadata = async () => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await props.onUpdate(draft);
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 1600);
+    } finally {
+      setSaving(false);
+    }
+  };
   const copy = async (format: CitationFormat) => {
     await props.onCopyCitation(format);
     setCopied(format);
@@ -101,16 +130,21 @@ export function PaperInspector(props: PaperInspectorProps) {
                 setRefreshing(true);
                 void props.onRefreshMetadata().finally(() => setRefreshing(false));
               }}><RefreshCw className={refreshing ? 'spin' : undefined} /> {text(props.language, 'Refresh', '刷新')}</button>
-              <button className="icon-text-button" onClick={() => void props.onUpdate(draft)}><Save /> {text(props.language, 'Save', '保存')}</button>
+              <button className="icon-text-button" disabled={saving} onClick={() => void saveMetadata()}>{saved ? <Check /> : <Save />} {saved ? text(props.language, 'Saved', '已保存') : text(props.language, 'Save', '保存')}</button>
             </div></div>
+            <div className="metadata-health">
+              <span>{text(props.language, 'Completeness', '完整度')} {metadataCompleteness}%</span>
+              <span>{paper.metadataSource === 'manual'
+                ? text(props.language, 'Manually edited', '手动编辑')
+                : text(props.language, 'Automatically identified', '自动识别')}</span>
+            </div>
             <label><span>{text(props.language, 'Title', '标题')}</span><textarea value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
             <label><span>{text(props.language, 'Authors', '作者')}</span><input value={draft.authors} onChange={(event) => setDraft({ ...draft, authors: event.target.value })} /></label>
-            <div className="metadata-pair">
-              <label><span>{text(props.language, 'Year', '年份')}</span><input value={draft.year} onChange={(event) => setDraft({ ...draft, year: event.target.value })} /></label>
-              <label><span>{text(props.language, 'Status', '状态')}</span><select value={draft.readStatus} onChange={(event) => setDraft({ ...draft, readStatus: event.target.value as ReadStatus })}><option value="unread">{text(props.language, 'Unread', '未读')}</option><option value="reading">{text(props.language, 'Reading', '阅读中')}</option><option value="read">{text(props.language, 'Read', '已读')}</option></select></label>
-            </div>
+            <label><span>{text(props.language, 'Year', '年份')}</span><input value={draft.year} onChange={(event) => setDraft({ ...draft, year: event.target.value })} /></label>
             <label><span>{text(props.language, 'Publication', '出版物')}</span><input value={draft.journal} onChange={(event) => setDraft({ ...draft, journal: event.target.value })} /></label>
             <label><span>DOI</span><input value={draft.doi} onChange={(event) => setDraft({ ...draft, doi: event.target.value })} /></label>
+            <label><span>arXiv ID</span><input value={draft.arxivId} onChange={(event) => setDraft({ ...draft, arxivId: event.target.value })} /></label>
+            <label><span>OpenReview ID</span><input value={draft.openReviewId} onChange={(event) => setDraft({ ...draft, openReviewId: event.target.value })} /></label>
             <label><span>{text(props.language, 'Abstract', '摘要')}</span><textarea className="abstract-field" value={draft.abstract} onChange={(event) => setDraft({ ...draft, abstract: event.target.value })} /></label>
           </section>
           <section className="inspector-section">

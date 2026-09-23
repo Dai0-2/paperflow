@@ -4,7 +4,8 @@ import { extname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
-const dist = resolve(root, 'dist');
+const dist = resolve(root, process.env.PAPERFLOW_AUDIT_DIST || 'dist');
+const storeBuild = process.env.PAPERFLOW_STORE_BUILD === 'true';
 const packageJson = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'));
 const manifest = JSON.parse(await readFile(resolve(dist, 'manifest.json'), 'utf8'));
 const errors = [];
@@ -27,9 +28,11 @@ if (manifest.manifest_version !== 3) errors.push('manifest_version must be 3');
 if (manifest.oauth2?.scopes?.some((scope) => scope !== 'https://www.googleapis.com/auth/drive.file')) {
   errors.push('OAuth scope must be limited to drive.file');
 }
-if (typeof manifest.key !== 'string' || !manifest.key) {
-  errors.push('manifest key is required for a stable extension ID');
-} else {
+if (storeBuild && manifest.key) {
+  errors.push('Chrome Web Store manifests must not contain a key field');
+} else if (!storeBuild && (typeof manifest.key !== 'string' || !manifest.key)) {
+  errors.push('manifest key is required for a stable local extension ID');
+} else if (manifest.key) {
   const digest = createHash('sha256')
     .update(Buffer.from(manifest.key, 'base64'))
     .digest()

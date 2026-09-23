@@ -191,6 +191,7 @@ export function annotationsAsMarkdown(annotations: Annotation[]): string {
       `## Page ${annotation.page} · ${annotation.type || 'highlight'}`,
       '',
       annotation.text ? `> ${annotation.text.replace(/\n/g, '\n> ')}` : '',
+      annotation.translation ? `**Translation:** ${annotation.translation}` : '',
       annotation.comment || '',
       '',
     ]).filter(Boolean),

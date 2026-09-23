@@ -15,13 +15,15 @@ provided.
 | Check | Result |
 |---|---|
 | TypeScript strict build | Pass |
-| Unit and integration tests | 22 files, 60 tests passed |
-| Chromium E2E against production `dist/` | 9 tests passed |
+| Unit and integration tests | 26 files, 70 tests passed |
+| Chromium E2E against production `dist/` | 10 tests passed |
 | 10,000-paper virtualized library/filter smoke test | Pass; full test completed in 651 ms on this machine |
 | Local OCR cancellation and restart | Pass |
 | Annotation persistence and readable PDF-copy export | Pass |
+| Cross-device encrypted PDF restore into local OPFS | Pass with an encrypted in-memory Drive adapter |
+| AI answer-to-note action and model selector UI | Pass |
 | Raw IndexedDB recovery export | Pass |
-| Production extension build | Pass; 2,572 modules transformed |
+| Production extension build | Pass; 2,576 modules transformed |
 | Release static audit | Pass; 47 packaged files |
 | Rust formatting | Pass |
 | Rust unit/property tests | 13 tests passed |
@@ -52,8 +54,8 @@ annotation persistence, and exported-PDF readability.
 
 | Artifact | SHA-256 |
 |---|---|
-| `outputs/v1.0.0/paperflow-ai-v1.0.0-unsigned.zip` | `0eafcc3b8e2b792950aacf8d84e7767937ba03aa0228bffcf909d044b6771ce7` |
-| `outputs/v1.0.0/paperflow-native-host-macos-arm64-unsigned.tar.gz` | `c695d2f1242708810bcce3e9db2705b85e2460e424ec3e6f6405e1d9a24d17e2` |
+| `outputs/v1.0.0/paperflow-ai-v1.0.0-unsigned.zip` | `7c87337e2a1f1d5c2b66e416a29146345dadacfe5d16286df6f1a937b75513ca` |
+| `outputs/v1.0.0/paperflow-native-host-macos-arm64-unsigned.tar.gz` | `1f4e16ca6aee0c6cf794df53ce8babdbf74952040fd72437041a708a750d9bfe` |
 
 The same extension package supports both a fresh install and an in-place
 v0.7.0-to-v1.0.0 upgrade. Upgrade behavior differs through the existing

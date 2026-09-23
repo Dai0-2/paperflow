@@ -9,6 +9,7 @@ import { contentHash, paperFromUrl } from '../services/paper';
 import { chunksFromPages } from '../services/paperContext';
 import { indexPaper } from '../services/search/searchIndexer';
 import {
+  downloadCloudDocumentForPaper,
   loadStoredDocumentForPaper,
   storePdfDocument,
 } from '../services/storage/documentStore';
@@ -272,6 +273,7 @@ export function usePdfDocument() {
     const autoLoad = parameters.get('autoLoad') !== 'false';
     let active = true;
     void (async () => {
+      let cloudRestoreError = '';
       if (url) setUrlDraft(url);
       if (warning === 'pdf-handler-conflict') {
         setError(text(
@@ -282,7 +284,14 @@ export function usePdfDocument() {
         return;
       }
       if (paperId) {
-        const stored = await loadStoredDocumentForPaper(paperId);
+        let stored = await loadStoredDocumentForPaper(paperId);
+        if (!stored) {
+          try {
+            stored = await downloadCloudDocumentForPaper(paperId);
+          } catch (reason) {
+            cloudRestoreError = errorMessage(reason, uiLanguage);
+          }
+        }
         if (!active) return;
         if (stored) {
           await loadSource({
@@ -296,7 +305,7 @@ export function usePdfDocument() {
       }
       if (url && autoLoad) await prepareUrl(url, title);
       else if (paperId) {
-        setError(text(uiLanguage, 'The offline PDF is unavailable and this paper has no source URL to restore it.', '离线 PDF 不可用，且此论文没有可恢复的来源链接。'));
+        setError(cloudRestoreError || text(uiLanguage, 'The offline PDF is unavailable and this paper has no source URL to restore it.', '离线 PDF 不可用，且此论文没有可恢复的来源链接。'));
       }
     })().catch((reason: unknown) => {
       if (active) setError(errorMessage(reason, uiLanguage));

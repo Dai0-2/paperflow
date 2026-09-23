@@ -7,7 +7,8 @@ user's Google Drive. It covers saved papers, aliases, collections, tags,
 documents, notes, annotations, conversations, paper memory, selections,
 reading state, and an allowlist of non-sensitive settings. Temporary workspaces,
 search indexes, OCR caches, OAuth tokens, API keys, and plaintext vault keys are
-not synchronized.
+not synchronized. PDF bytes are synchronized only when the device-local
+**Back up offline PDFs** setting is explicitly enabled; it is off by default.
 
 The implementation constants and runtime schemas are in
 `src/sync/protocol.ts`. Every downloaded header, encrypted object, batch, and
@@ -60,10 +61,12 @@ After a five-second debounce, at most 250 ready operations are assigned a random
 batch UUID. A batch is immutable. Retrying the upload reuses the same opaque
 name, and replaying an operation is idempotent.
 
-Document metadata is not batched until its encrypted PDF object is available.
-PDF payloads use Drive resumable upload. OPFS retains the encrypted temporary
-payload; IndexedDB retains only the session URL, confirmed offset, total size,
-and current chunk hash.
+When PDF backup is enabled, document metadata is not batched until its encrypted
+PDF object is available. PDF payloads use Drive resumable upload. OPFS retains
+the encrypted temporary payload; IndexedDB retains only the session URL,
+confirmed offset, total size, and current chunk hash. Disabling PDF backup
+cancels pending local upload state without affecting notes or other library
+records.
 
 ## Pull and bootstrap
 

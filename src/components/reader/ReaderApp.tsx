@@ -4,16 +4,29 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WorkspaceSurface } from '../../App';
 import { AnnotationInspector } from '../annotations/AnnotationInspector';
 import { AnnotationToolbar } from '../annotations/AnnotationToolbar';
+import { isMarkupAnnotation } from '../annotations/MarkupQuickActions';
 import { useAnnotationTool } from '../../hooks/useAnnotationTool';
 import { usePdfDocument } from '../../hooks/usePdfDocument';
 import { useReaderNavigation } from '../../hooks/useReaderNavigation';
 import { useWorkspaceBootstrap } from '../../hooks/useWorkspaceBootstrap';
 import { text } from '../../i18n';
-import { savePaperToLibrary } from '../../repositories/libraryRepository';
+import type { AnnotationDraft } from '../../repositories/annotationRepository';
+import {
+  addPaperToCollection,
+  getPaperRelations,
+  movePaperToTrash,
+  removePaperFromCollection,
+  savePaperToLibrary,
+} from '../../repositories/libraryRepository';
 import {
   createTextAnchor,
   rangeRectsToPdfQuads,
 } from '../../services/annotations/coordinates';
+import {
+  selectionRectBounds,
+  textSelectionRects,
+} from '../../services/annotations/selectionGeometry';
+import { sendToCodex, sendToOpenAI } from '../../services/bridge';
 import { saveSelection } from '../../services/database';
 import {
   recoverStaleOcrJobs,
@@ -24,10 +37,11 @@ import {
 } from '../../services/ocr/ocrService';
 import { queueStoredDocumentsForSync } from '../../services/storage/documentStore';
 import { useAppStore } from '../../store/useAppStore';
-import type { PdfQuad, PaperSelection, ReaderSidebar, TextAnchor } from '../../types';
+import type { Annotation, PdfQuad, PaperSelection, ReaderSidebar, TextAnchor } from '../../types';
 import { PdfPage } from './PdfPage';
 import { ReaderOpenState, ReaderSidebarPanel, SelectionToolbar } from './ReaderPanels';
 import type { FlatOutlineItem } from './ReaderPanels';
+import { SaveToLibraryDialog } from './SaveToLibraryDialog';
 import { ReaderToolbar } from './ReaderToolbar';
 
 export function ReaderApp() {
@@ -49,7 +63,11 @@ export function ReaderApp() {
   const [renderAll, setRenderAll] = useState(false);
   const [savingLibrary, setSavingLibrary] = useState(false);
   const [savingOffline, setSavingOffline] = useState(false);
+  const [libraryDialogOpen, setLibraryDialogOpen] = useState(false);
   const [operationError, setOperationError] = useState('');
+  const [translationStatus, setTranslationStatus] = useState<ReadonlyMap<string, string>>(
+    () => new Map(),
+  );
   const [ocrProgress, setOcrProgress] = useState<OcrProgress>();
   const ocrJob = useRef<OcrJob | undefined>(undefined);
   const viewports = useRef(new Map<number, PageViewport>());
@@ -121,6 +139,7 @@ export function ReaderApp() {
         setSelectionToolbar(undefined);
         return;
       }
+      setTranslationStatus(new Map());
       const range = browserSelection.getRangeAt(0);
       const startContainer = range.startContainer;
       const element = (startContainer.nodeType === Node.ELEMENT_NODE
@@ -131,15 +150,24 @@ export function ReaderApp() {
       const selectedPage = Number(pageElement.dataset.page);
       const viewport = viewports.current.get(selectedPage);
       if (!viewport) return;
-      const rectangle = range.getBoundingClientRect();
+      const clientRects = textSelectionRects(range, pageElement);
+      const rectangle = selectionRectBounds(clientRects);
+      if (!rectangle) {
+        setSelectionToolbar(undefined);
+        return;
+      }
       const quadPoints = rangeRectsToPdfQuads(
-        Array.from(range.getClientRects()),
+        clientRects,
         pageElement.getBoundingClientRect(),
         viewport,
       );
       if (!quadPoints.length) return;
+      const horizontalMargin = Math.max(8, Math.min(180, window.innerWidth / 2 - 8));
       const captured = {
-        x: Math.max(180, Math.min(window.innerWidth - 180, rectangle.left + rectangle.width / 2)),
+        x: Math.max(
+          horizontalMargin,
+          Math.min(window.innerWidth - horizontalMargin, rectangle.left + rectangle.width / 2),
+        ),
         y: Math.max(58, rectangle.top - 10),
         text: selectedText.slice(0, 8_000),
         page: selectedPage,
@@ -151,7 +179,7 @@ export function ReaderApp() {
         || annotationState.tool === 'underline'
         || annotationState.tool === 'strikeout'
       ) {
-        void annotationState.add({
+        void addPersistentAnnotation({
           page: captured.page,
           text: captured.text,
           type: annotationState.tool,
@@ -167,38 +195,100 @@ export function ReaderApp() {
     });
   };
 
-  const useSelectedText = async (action: 'ask' | 'explain' | 'translate' | 'summarize' | 'save') => {
+  const translateAnnotation = async (annotation: Annotation) => {
+    const current = useAppStore.getState();
+    const ready = current.providerMode === 'api'
+      ? current.apiState === 'connected'
+      : current.bridgeState === 'connected';
+    if (!ready) {
+      setTranslationStatus(new Map([[
+        annotation.id,
+        `!${text(uiLanguage, 'Connect an AI provider to translate.', '请先连接 AI 服务后再翻译。')}`,
+      ]]));
+      return;
+    }
+
+    setTranslationStatus(new Map([[
+      annotation.id,
+      text(uiLanguage, 'Translating…', '正在翻译…'),
+    ]]));
+    let streamed = '';
+    const targetLanguage = uiLanguage === 'zh' ? 'Simplified Chinese' : 'English';
+    const question = `Translate the selected passage into ${targetLanguage}. Return only the translation, without commentary or quotation marks.`;
+    const context = `SELECTED PASSAGE\n${annotation.text}`;
+    try {
+      const result = current.providerMode === 'api'
+        ? await sendToOpenAI(
+          question,
+          context,
+          [],
+          current.model,
+          current.apiBaseUrl,
+          current.apiProtocol,
+          uiLanguage,
+          (event) => {
+            if (event.event === 'delta' && event.delta) streamed += event.delta;
+          },
+        )
+        : await sendToCodex(
+            question,
+            context,
+            [],
+            current.model === 'ChatGPT via Codex' ? undefined : current.model,
+            uiLanguage,
+            (event) => {
+              if (event.event === 'delta' && event.delta) streamed += event.delta;
+            },
+          );
+      const translation = (result.answer || streamed).trim();
+      if (!result.ok || !translation) {
+        throw new Error(result.error || text(uiLanguage, 'Translation failed.', '翻译失败。'));
+      }
+      await annotationState.update(annotation.id, { translation });
+      setTranslationStatus(new Map([[annotation.id, translation]]));
+    } catch (reason) {
+      setTranslationStatus((status) => new Map(status).set(
+        annotation.id,
+        `!${reason instanceof Error ? reason.message : text(uiLanguage, 'Translation failed.', '翻译失败。')}`,
+      ));
+    }
+  };
+
+  const useSelectedText = async (action: 'ask' | 'explain' | 'translate' | 'summarize' | 'highlight') => {
     if (!selectionToolbar || !paper) return;
+    const captured = selectionToolbar;
+    setSelectionToolbar(undefined);
+    window.getSelection()?.removeAllRanges();
     const selection: PaperSelection = {
       id: crypto.randomUUID(),
       paperId: paper.id,
-      page: selectionToolbar.page,
-      text: selectionToolbar.text,
+      page: captured.page,
+      text: captured.text,
       createdAt: Date.now(),
     };
     setSelection(selection);
     await saveSelection(selection);
-    if (action === 'save') {
-      await annotationState.add({
-        page: selectionToolbar.page,
-        text: selectionToolbar.text,
+    if (action === 'highlight' || action === 'translate') {
+      const annotation = await addPersistentAnnotation({
+        page: captured.page,
+        text: captured.text,
         type: 'highlight',
         color: annotationState.color,
-        quadPoints: selectionToolbar.quadPoints,
-        anchor: selectionToolbar.anchor,
+        quadPoints: captured.quadPoints,
+        anchor: captured.anchor,
       });
+      annotationState.select(undefined);
+      if (action === 'translate') void translateAnnotation(annotation);
     } else {
       const prompts = {
         ask: uiLanguage === 'zh' ? '基于选中内容回答：' : 'Answer using the selected passage:',
         explain: uiLanguage === 'zh' ? '解释这段内容，说明关键概念和推理步骤。' : 'Explain this passage, including its key concepts and reasoning.',
-        translate: uiLanguage === 'zh' ? '将这段内容准确翻译成中文。' : 'Translate this passage into clear English.',
         summarize: uiLanguage === 'zh' ? '简洁总结这段内容。' : 'Summarize this passage concisely.',
       };
       setDraft(prompts[action]);
       setAssistantOpen(true);
       requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('paperflow:focus-composer')));
     }
-    setSelectionToolbar(undefined);
   };
 
   const downloadBlob = (blob: Blob, name: string) => {
@@ -270,23 +360,57 @@ export function ReaderApp() {
     window.setTimeout(() => window.print(), 900);
   };
 
-  const persistToLibrary = async () => {
-    if (!paper || paper.libraryState === 'saved' || savingLibrary) return paper;
+  async function persistToLibrary(
+    collectionIds?: string[],
+    cacheOffline = false,
+  ) {
+    if (!paper || savingLibrary) return paper;
     setSavingLibrary(true);
     setOperationError('');
     try {
-      const savedPaper = await savePaperToLibrary(paper.id);
-      setPaper(savedPaper);
+      const savedPaper = paper.libraryState === 'saved'
+        ? paper
+        : await savePaperToLibrary(paper.id);
+      if (collectionIds) {
+        const currentIds = new Set(
+          (await getPaperRelations(savedPaper.id)).collections.map((collection) => collection.id),
+        );
+        for (const collectionId of collectionIds) {
+          if (!currentIds.has(collectionId)) {
+            await addPaperToCollection(savedPaper.id, collectionId);
+          }
+        }
+        for (const collectionId of currentIds) {
+          if (!collectionIds.includes(collectionId)) {
+            await removePaperFromCollection(savedPaper.id, collectionId);
+          }
+        }
+      }
+      if (cacheOffline && !activeDocument) {
+        setSavingOffline(true);
+        const document = await saveOffline(savedPaper);
+        await queueStoredDocumentsForSync(savedPaper.id);
+        if (!document) throw new Error('The offline PDF could not be saved.');
+      }
+      if (savedPaper !== paper) setPaper(savedPaper);
       return savedPaper;
     } catch (reason) {
       setOperationError(reason instanceof Error
         ? reason.message
         : text(uiLanguage, 'The paper could not be saved to PaperFlow.', '无法将论文保存到 PaperFlow。'));
-      return undefined;
+      throw reason;
     } finally {
+      setSavingOffline(false);
       setSavingLibrary(false);
     }
-  };
+  }
+
+  async function addPersistentAnnotation(draft: AnnotationDraft): Promise<Annotation> {
+    if (paper?.libraryState !== 'saved') {
+      await persistToLibrary().catch(() => undefined);
+    }
+    return annotationState.add(draft);
+  }
 
   const persistOffline = async () => {
     if (!paper || !documentData || savingOffline) return activeDocument;
@@ -359,6 +483,41 @@ export function ReaderApp() {
   useEffect(() => {
     void recoverStaleOcrJobs();
   }, []);
+  useEffect(() => {
+    const annotationId = annotationState.selected?.id;
+    if (!annotationId) return;
+    const removeOnKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+      const target = event.target;
+      if (
+        target instanceof HTMLElement
+        && target.closest('input, textarea, select, [contenteditable="true"]')
+      ) return;
+      event.preventDefault();
+      setTranslationStatus((status) => {
+        const next = new Map(status);
+        next.delete(annotationId);
+        return next;
+      });
+      void annotationState.remove(annotationId);
+    };
+    window.addEventListener('keydown', removeOnKey);
+    return () => window.removeEventListener('keydown', removeOnKey);
+  }, [annotationState.remove, annotationState.selected?.id]);
+
+  const dismissReaderOverlays = (event: React.PointerEvent<HTMLDivElement>) => {
+    const target = event.target as Element;
+    if (
+      target.closest(
+        '[data-annotation-action], .annotation-hit, .annotation-inspector, .annotation-toolbar',
+      )
+      || target.closest('.textLayer span')
+    ) return;
+    setSelectionToolbar(undefined);
+    setTranslationStatus(new Map());
+    annotationState.select(undefined);
+    window.getSelection()?.removeAllRanges();
+  };
 
   const startResize = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -401,13 +560,30 @@ export function ReaderApp() {
       onOpenFile={() => fileInput.current?.click()}
       onDownload={download}
       onPrint={print}
-      onSaveToLibrary={() => void persistToLibrary()}
+      onSaveToLibrary={() => setLibraryDialogOpen(true)}
       onSaveOffline={() => void persistOffline()}
       onStartOcr={(fromPage, toPage, language) => void runOcr(fromPage, toPage, language)}
       onCancelOcr={() => ocrJob.current?.cancel()}
     />
     <div className="reader-workspace">
-      {sidebarOpen && pdfDocument && <ReaderSidebarPanel document={pdfDocument} language={uiLanguage} pageCount={pageCount} page={page} view={sidebarView} outline={outline} onViewChange={setSidebarView} onPageChange={goToPage} onOutlineClick={(item) => void resolveOutline(item)} />}
+      {sidebarOpen && pdfDocument && <ReaderSidebarPanel
+        document={pdfDocument}
+        language={uiLanguage}
+        pageCount={pageCount}
+        page={page}
+        view={sidebarView}
+        outline={outline}
+        annotations={annotationState.annotations}
+        selectedAnnotationId={annotationState.selected?.id}
+        onViewChange={setSidebarView}
+        onPageChange={goToPage}
+        onOutlineClick={(item) => void resolveOutline(item)}
+        onAnnotationClick={(annotation) => {
+          setTranslationStatus(new Map());
+          goToPage(annotation.page);
+          annotationState.select(annotation.id);
+        }}
+      />}
       <section className="reader-document">
         {!pdfDocument && <ReaderOpenState url={urlDraft} language={uiLanguage} loading={loading} progress={loadProgress} error={error} accessRequired={Boolean(pendingUrl)} onUrlChange={setUrlDraft} onSubmit={() => void prepareUrl(urlDraft)} onOpenFile={() => fileInput.current?.click()} onGrantAccess={() => void grantAccess()} />}
         {pdfDocument && <>
@@ -417,6 +593,7 @@ export function ReaderApp() {
             color={annotationState.color}
             annotationCount={annotationState.annotations.length}
             onToolChange={(tool) => {
+              setTranslationStatus(new Map());
               annotationState.setTool(tool);
               annotationState.select(undefined);
             }}
@@ -424,7 +601,12 @@ export function ReaderApp() {
             onExport={() => void exportAnnotations()}
           />
           {(operationError || error) && <div className="reader-warning"><FileQuestion />{operationError || error}</div>}
-          <div ref={scrollRoot} className="reader-scroll" onPointerUp={onSelection}>
+          <div
+            ref={scrollRoot}
+            className="reader-scroll"
+            onPointerDown={dismissReaderOverlays}
+            onPointerUp={onSelection}
+          >
             <div className="reader-pages">
               {Array.from({ length: pageCount }, (_, index) => {
                 const pageNumber = index + 1;
@@ -438,25 +620,80 @@ export function ReaderApp() {
                   annotationTool={annotationState.tool}
                   annotationColor={annotationState.color}
                   selectedAnnotationId={annotationState.selected?.id}
+                  language={uiLanguage}
+                  translationStatus={translationStatus}
                   onViewportReady={onViewportReady}
-                  onCreateAnnotation={annotationState.add}
-                  onSelectAnnotation={annotationState.select}
+                  onCreateAnnotation={addPersistentAnnotation}
+                  onSelectAnnotation={(annotationId) => {
+                    setTranslationStatus((status) => (
+                      status.has(annotationId) ? status : new Map()
+                    ));
+                    annotationState.select(annotationId);
+                  }}
+                  onUpdateAnnotation={(annotationId, patch) => annotationState.update(annotationId, patch)}
+                  onDeleteAnnotation={(annotationId) => {
+                    setTranslationStatus((status) => {
+                      const next = new Map(status);
+                      next.delete(annotationId);
+                      return next;
+                    });
+                    return annotationState.remove(annotationId);
+                  }}
                   forceRender={renderAll}
                 />;
               })}
             </div>
           </div>
-          <AnnotationInspector
+          {!isMarkupAnnotation(annotationState.selected) && <AnnotationInspector
             annotation={annotationState.selected}
             language={uiLanguage}
-            onClose={() => annotationState.select(undefined)}
+            onClose={() => {
+              const annotationId = annotationState.selected?.id;
+              if (annotationId) {
+                setTranslationStatus((status) => {
+                  const next = new Map(status);
+                  next.delete(annotationId);
+                  return next;
+                });
+              }
+              annotationState.select(undefined);
+            }}
             onUpdate={(patch) => annotationState.update(annotationState.selected!.id, patch)}
-            onDelete={() => annotationState.remove(annotationState.selected!.id)}
-          />
+            onDelete={() => {
+              const annotationId = annotationState.selected!.id;
+              setTranslationStatus((status) => {
+                const next = new Map(status);
+                next.delete(annotationId);
+                return next;
+              });
+              return annotationState.remove(annotationId);
+            }}
+          />}
         </>}
       </section>
       {assistantOpen && <><div className="reader-divider" role="separator" aria-orientation="vertical" onPointerDown={startResize} /><aside className="reader-assistant"><WorkspaceSurface /></aside></>}
     </div>
     {selectionToolbar && <SelectionToolbar x={selectionToolbar.x} y={selectionToolbar.y} language={uiLanguage} onAction={(action) => void useSelectedText(action)} />}
+    {libraryDialogOpen && paper && <SaveToLibraryDialog
+      paperId={paper.id}
+      paperTitle={paper.title}
+      language={uiLanguage}
+      saved={paper.libraryState === 'saved'}
+      offlineAvailable={Boolean(activeDocument)}
+      onClose={() => setLibraryDialogOpen(false)}
+      onConfirm={async (collectionIds, cacheOffline) => {
+        await persistToLibrary(collectionIds, cacheOffline);
+      }}
+      onRemove={async () => {
+        await movePaperToTrash(paper.id);
+        setPaper({
+          ...paper,
+          libraryState: 'trashed',
+          favorite: false,
+          deletedAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+      }}
+    />}
   </main>;
 }

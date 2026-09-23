@@ -36,7 +36,7 @@ export function OnboardingView() {
   };
 
   return <main className="onboarding">
-    <div className="onboarding-brand"><BrandMark /><span>PaperFlow AI</span></div>
+    <div className="onboarding-brand"><BrandMark /><span>PaperFlow</span></div>
     <div className="onboarding-copy"><p className="eyebrow">{text(uiLanguage, 'GET STARTED', '开始使用')}</p><h1>{text(uiLanguage, 'Your paper, understood.', '读懂你的每一篇论文。')}</h1><p>{text(uiLanguage, 'Connect an AI provider and let PaperFlow identify the paper beside this panel.', '连接 AI 服务，让 PaperFlow 识别此面板旁的论文。')}</p></div>
     <div className="setup-steps">
       <section className="setup-card">

@@ -6,6 +6,26 @@ export type MetadataPatch = Partial<Pick<
   'title' | 'shortTitle' | 'authors' | 'year' | 'abstract' | 'journal' | 'doi' | 'arxivId' | 'openReviewId'
 >>;
 
+function identifiersFromUrl(rawUrl: string): Pick<PaperInfo, 'doi' | 'arxivId' | 'openReviewId'> {
+  try {
+    const url = new URL(rawUrl);
+    const arxivMatch = url.pathname.match(/\/(?:abs|pdf)\/([^/?#]+?)(?:\.pdf)?$/i);
+    const doiMatch = url.hostname.toLocaleLowerCase().endsWith('doi.org')
+      ? decodeURIComponent(url.pathname.replace(/^\/+/, ''))
+      : undefined;
+    const openReviewId = /openreview\.net$/i.test(url.hostname)
+      ? url.searchParams.get('id') || undefined
+      : undefined;
+    return {
+      doi: normalizeIdentifier(doiMatch),
+      arxivId: normalizeIdentifier(arxivMatch?.[1]),
+      openReviewId: normalizeIdentifier(openReviewId),
+    };
+  } catch {
+    return {};
+  }
+}
+
 function textValue(value: unknown): string | undefined {
   if (typeof value === 'string') return value.trim() || undefined;
   if (value && typeof value === 'object' && 'value' in value) {
@@ -114,10 +134,14 @@ export async function refreshPaperMetadata(
   paper: PaperInfo,
   fetcher: typeof fetch = fetch,
 ): Promise<MetadataPatch> {
-  if (paper.doi) return refreshCrossref(normalizeIdentifier(paper.doi) || paper.doi, fetcher);
-  if (paper.arxivId) return refreshArxiv(normalizeIdentifier(paper.arxivId) || paper.arxivId, fetcher);
-  if (paper.openReviewId) {
-    return refreshOpenReview(normalizeIdentifier(paper.openReviewId) || paper.openReviewId, fetcher);
+  const inferred = identifiersFromUrl(paper.url);
+  const doi = paper.doi || inferred.doi;
+  const arxivId = paper.arxivId || inferred.arxivId;
+  const openReviewId = paper.openReviewId || inferred.openReviewId;
+  if (doi) return refreshCrossref(normalizeIdentifier(doi) || doi, fetcher);
+  if (arxivId) return refreshArxiv(normalizeIdentifier(arxivId) || arxivId, fetcher);
+  if (openReviewId) {
+    return refreshOpenReview(normalizeIdentifier(openReviewId) || openReviewId, fetcher);
   }
   throw new Error('Add a DOI, arXiv ID, or OpenReview ID before refreshing metadata.');
 }

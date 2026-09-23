@@ -40,8 +40,17 @@ describe('native host protocol', () => {
       question: 'x'.repeat(20_001),
       context: '',
       images: [],
+      model: 'gpt-5.6-sol',
       responseLanguage: 'en',
     }).success).toBe(false);
+    expect(bridgeRequestSchema.safeParse({
+      action: 'codex.chat',
+      question: 'Summarize',
+      context: '',
+      images: [],
+      model: 'gpt-5.6-sol',
+      responseLanguage: 'en',
+    }).success).toBe(true);
   });
 
   it('probes Rust protocol once and uses only v1 action names', async () => {
@@ -94,5 +103,37 @@ describe('native host protocol', () => {
 
     expect((await loginWithChatGPT()).authenticated).toBe(true);
     expect(actions).toEqual(['status', 'login']);
+  });
+
+  it('re-probes the host when the user checks status after an upgrade', async () => {
+    const actions: string[] = [];
+    const responses = [
+      { ok: true, authenticated: true, detail: 'Legacy host' },
+      {
+        ok: true,
+        protocolVersion: 1,
+        codexAvailable: true,
+        credentialStoreAvailable: true,
+        apiKeyConfigured: false,
+      },
+      { ok: true, authenticated: true, detail: 'Rust host' },
+    ];
+    vi.stubGlobal('chrome', {
+      runtime: {
+        lastError: undefined,
+        sendNativeMessage: (
+          _host: string,
+          payload: { action: string },
+          callback: (response: unknown) => void,
+        ) => {
+          actions.push(payload.action);
+          callback(responses.shift());
+        },
+      },
+    });
+
+    expect((await getBridgeStatus()).detail).toBe('Legacy host');
+    expect((await getBridgeStatus()).detail).toBe('Rust host');
+    expect(actions).toEqual(['status', 'status', 'codex.auth_status']);
   });
 });

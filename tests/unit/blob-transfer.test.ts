@@ -6,10 +6,20 @@ import type {
   SyncObjectRef,
   SyncObjectStore,
 } from '../../src/services/google/driveObjects';
-import { readEncryptedUpload, writeStoredPdf } from '../../src/services/storage/opfs';
+import {
+  readEncryptedUpload,
+  readStoredPdf,
+  writeStoredPdf,
+} from '../../src/services/storage/opfs';
 import { BlobTransfer } from '../../src/sync/blobTransfer';
 import { SyncBudget } from '../../src/sync/checkpoint';
-import { opaqueDriveFileName } from '../../src/crypto/objectCipher';
+import {
+  encryptObject,
+  opaqueDriveFileName,
+  serializeEncryptedObject,
+} from '../../src/crypto/objectCipher';
+import { vaultSession } from '../../src/crypto/vault';
+import { downloadCloudDocumentForPaper } from '../../src/services/storage/documentStore';
 
 class MemoryFileHandle {
   private bytes = new Uint8Array();
@@ -129,6 +139,46 @@ class InterruptingRemote implements SyncObjectStore {
   }
 }
 
+class DownloadRemote implements SyncObjectStore {
+  constructor(private readonly bytes: Uint8Array) {}
+
+  async downloadBytes(): Promise<Uint8Array> {
+    return this.bytes.slice();
+  }
+
+  async findOpaqueObject(): Promise<DriveFile | null> {
+    return null;
+  }
+
+  async createResumableObjectUpload(): Promise<string> {
+    throw new Error('Unexpected upload.');
+  }
+
+  async uploadResumableChunk() {
+    throw new Error('Unexpected upload.');
+  }
+
+  async putImmutableSyncObject(): Promise<DriveFile> {
+    throw new Error('Unexpected metadata upload.');
+  }
+
+  async getSyncObject(): Promise<Uint8Array> {
+    throw new Error('Unexpected metadata download.');
+  }
+
+  async listSyncObjects(): Promise<SyncObjectRef[]> {
+    return [];
+  }
+
+  async getStartPageToken(): Promise<string> {
+    return '0';
+  }
+
+  async listChangedSyncObjects() {
+    return { objects: [], removedFileIds: [], newStartPageToken: '0' };
+  }
+}
+
 const databaseName = 'paperflow-blob-transfer-test';
 const originalStorage = Object.getOwnPropertyDescriptor(navigator, 'storage');
 let database: PaperFlowDatabase;
@@ -148,6 +198,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  vaultSession.lock();
   database.close();
   await Dexie.delete(databaseName);
   if (originalStorage) Object.defineProperty(navigator, 'storage', originalStorage);
@@ -214,6 +265,47 @@ describe('resumable encrypted PDF transfer', () => {
     expect((await database.documents.get(document.id))?.remoteObjectId).toBe('remote-pdf');
     expect(await database.syncCheckpoints.get(`blob-upload:${document.id}`)).toBeUndefined();
     expect((await database.syncOps.get('device-a:1'))?.payload).toMatchObject({
+      remoteState: 'available',
+      remoteObjectId: 'remote-pdf',
+    });
+  });
+
+  it('decrypts a remote PDF into OPFS when another device opens it', async () => {
+    const hash = 'b'.repeat(64);
+    const key = new Uint8Array(32).fill(4);
+    const vaultId = crypto.randomUUID();
+    const plaintext = new Uint8Array([37, 80, 68, 70, 45, 49, 46, 55]);
+    const encrypted = await encryptObject(key, vaultId, 'blob', hash, plaintext);
+    const remote = new DownloadRemote(
+      new TextEncoder().encode(serializeEncryptedObject(encrypted)),
+    );
+    const document = {
+      id: `document:paper-2:${hash}`,
+      paperId: 'paper-2',
+      contentHash: hash,
+      name: 'restored.pdf',
+      mimeType: 'application/pdf' as const,
+      size: plaintext.byteLength,
+      localState: 'missing' as const,
+      remoteState: 'available' as const,
+      remoteObjectId: 'remote-pdf',
+      createdAt: 1,
+      updatedAt: 1,
+      version: { counter: 2, deviceId: 'device-b' },
+    };
+    await database.documents.put(document);
+
+    vaultSession.unlock(vaultId, key);
+    const restored = await downloadCloudDocumentForPaper(
+      document.paperId,
+      remote,
+      database,
+    );
+
+    expect([...restored?.data || []]).toEqual([...plaintext]);
+    expect([...await readStoredPdf(hash)]).toEqual([...plaintext]);
+    expect(await database.documents.get(document.id)).toMatchObject({
+      localState: 'available',
       remoteState: 'available',
       remoteObjectId: 'remote-pdf',
     });

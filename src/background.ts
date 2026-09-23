@@ -1,6 +1,8 @@
 import { importPaperToLibrary } from './repositories/libraryRepository';
 import {
+  arxivReaderHostUrl,
   hasRecentRedirectLoop,
+  isArxivPdfUrl,
   isDirectPdfUrl,
   parseBackgroundRequest,
   readerPath,
@@ -18,6 +20,8 @@ const OPEN_READER_MENU = 'paperflow-open-reader';
 const SAVE_PAPER_MENU = 'paperflow-save-paper';
 const OPEN_LIBRARY_MENU = 'paperflow-open-library';
 const REDIRECT_GUARD_PREFIX = 'paperflow:reader-redirect:';
+const EMBEDDED_READER_PREFIX = 'paperflow:embedded-reader:';
+const EMBEDDED_READER_SETTLE_MS = 1_000;
 
 function readerUrl(
   rawUrl: string,
@@ -81,7 +85,25 @@ async function savePaper(rawUrl: string, title: string, tabId?: number): Promise
   }
 }
 
-async function handleBackgroundRequest(request: BackgroundRequest): Promise<unknown> {
+async function handleBackgroundRequest(
+  request: BackgroundRequest,
+  sender?: chrome.runtime.MessageSender,
+): Promise<unknown> {
+  if (
+    request.type === 'paperflow:reader-mounted'
+    || request.type === 'paperflow:reader-unmounting'
+  ) {
+    if (sender?.tab?.id === undefined) throw new Error('The embedded Reader tab is unavailable.');
+    const key = `${EMBEDDED_READER_PREFIX}${sender.tab.id}`;
+    if (request.type === 'paperflow:reader-mounted') {
+      await chrome.storage.session.set({
+        [key]: redirectGuardFor(request.sourceUrl, Date.now()),
+      });
+    } else {
+      await chrome.storage.session.remove(key);
+    }
+    return { ok: true };
+  }
   if (request.type === 'paperflow:sync-now') {
     const report = await syncEngine.run({ force: true });
     return { ok: true, report };
@@ -96,6 +118,36 @@ async function handleBackgroundRequest(request: BackgroundRequest): Promise<unkn
   }
   const paper = await importPaperToLibrary(paperFromUrl(request.url, request.title));
   return { ok: true, paperId: paper.id };
+}
+
+async function hasEmbeddedReader(
+  tabId: number,
+  rawUrl: string,
+  changeInfo: { status?: string; url?: string },
+): Promise<boolean> {
+  const key = `${EMBEDDED_READER_PREFIX}${tabId}`;
+  const stored = await chrome.storage.session.get(key);
+  const mountedAt = typeof stored[key] === 'object'
+    && stored[key] !== null
+    && 'redirectedAt' in stored[key]
+    && typeof stored[key].redirectedAt === 'number'
+    ? stored[key].redirectedAt
+    : 0;
+  if (
+    changeInfo.status === 'loading'
+    && !changeInfo.url
+    && Date.now() - mountedAt > EMBEDDED_READER_SETTLE_MS
+  ) {
+    await chrome.storage.session.remove(key);
+    return false;
+  }
+  return hasRecentRedirectLoop(rawUrl, stored[key], Date.now());
+}
+
+async function openArxivReader(tabId: number, rawUrl: string, title: string): Promise<void> {
+  const hostUrl = arxivReaderHostUrl(rawUrl, title);
+  if (!hostUrl) return;
+  await chrome.tabs.update(tabId, { url: hostUrl });
 }
 
 async function redirectDirectPdf(tabId: number, rawUrl: string, title: string): Promise<void> {
@@ -142,18 +194,31 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return;
   }
   void chrome.tabs.create({
-    url: readerUrl(paper.url, paper.title, 'context-menu'),
+    url: arxivReaderHostUrl(paper.url, paper.title)
+      || readerUrl(paper.url, paper.title, 'context-menu'),
   });
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (!changeInfo.url && changeInfo.status !== 'loading') return;
   const rawUrl = changeInfo.url || tab.url;
   if (!rawUrl || !isDirectPdfUrl(rawUrl)) return;
   void chrome.storage.local.get('defaultOpenReader').then(({ defaultOpenReader }) => {
-    if (defaultOpenReader) {
-      void redirectDirectPdf(tabId, rawUrl, tab.title || '');
-    }
+    if (defaultOpenReader === false) return;
+    void (async () => {
+      if (await hasEmbeddedReader(tabId, rawUrl, changeInfo)) return;
+      if (isArxivPdfUrl(rawUrl)) {
+        await openArxivReader(tabId, rawUrl, tab.title || '');
+        return;
+      }
+      await redirectDirectPdf(tabId, rawUrl, tab.title || '');
+    })();
   });
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  void chrome.storage.session.remove(`${EMBEDDED_READER_PREFIX}${tabId}`);
+  void chrome.storage.session.remove(`${REDIRECT_GUARD_PREFIX}${tabId}`);
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -162,10 +227,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
   const request = parseBackgroundRequest(message);
   if (!request) return undefined;
-  void handleBackgroundRequest(request)
+  void handleBackgroundRequest(request, sender)
     .then(sendResponse)
     .catch((error: unknown) => sendResponse({
       ok: false,

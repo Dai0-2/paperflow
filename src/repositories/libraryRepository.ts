@@ -10,7 +10,10 @@ import type {
   Tag,
 } from '../types';
 import { normalizeTagName } from '../services/library/paperIdentity';
-import { queuePaperWorkspaceForSync } from '../services/database';
+import {
+  queuePaperWorkspaceForSync,
+  savePaperMemory,
+} from '../services/database';
 import { queueStoredDocumentsForSync } from '../services/storage/documentStore';
 import { queueAnnotationsForSync } from './annotationRepository';
 import { versionAndRecord } from './versioning';
@@ -53,6 +56,7 @@ export async function savePaperToLibrary(paperId: string): Promise<PaperInfo> {
       ...current,
       libraryState: 'saved',
       favorite: true,
+      deletedAt: undefined,
       createdAt: current.createdAt || now,
       accessedAt: now,
       updatedAt: now,
@@ -69,16 +73,31 @@ export async function savePaperToLibrary(paperId: string): Promise<PaperInfo> {
   return paper;
 }
 
+export async function savePaperMemoryToLibrary(
+  paperId: string,
+  content: string,
+): Promise<PaperInfo> {
+  const db = await openPaperFlowDatabase();
+  const current = await db.papers.get(paperId);
+  if (!current) throw new Error('Paper workspace was not found.');
+  const paper = current.libraryState === 'saved'
+    ? current
+    : await savePaperToLibrary(paperId);
+  await savePaperMemory(paper.id, content);
+  return paper;
+}
+
 export async function updatePaperMetadata(
   paperId: string,
   patch: Partial<Pick<PaperInfo, 'title' | 'shortTitle' | 'authors' | 'year' | 'abstract' | 'journal' | 'doi' | 'arxivId' | 'openReviewId' | 'favorite' | 'readStatus'>>,
+  source: NonNullable<PaperInfo['metadataSource']> = 'manual',
 ): Promise<PaperInfo> {
   const db = await openPaperFlowDatabase();
   return db.transaction('rw', db.papers, db.syncState, db.syncOps, async () => {
     const current = await db.papers.get(paperId);
     if (!current) throw new Error('Paper was not found.');
     const now = Date.now();
-    const next = { ...current, ...patch, metadataSource: 'manual' as const, updatedAt: now };
+    const next = { ...current, ...patch, metadataSource: source, updatedAt: now };
     const { version, operation } = await versionAndRecord(db, 'paper', paperId, 'put', next);
     const fields = (['favorite', 'readStatus'] as const)
       .filter((field) => field in patch);
@@ -455,6 +474,26 @@ export async function saveNote(
     await db.syncOps.update(operation.id, { payload: note });
     return note;
   });
+}
+
+export async function saveAiAnswerAsNote(
+  paperId: string,
+  messageId: string,
+  title: string,
+  content: string,
+): Promise<{ paper: PaperInfo; note: PaperNote }> {
+  const db = await openPaperFlowDatabase();
+  const current = await db.papers.get(paperId);
+  if (!current) throw new Error('Paper workspace was not found.');
+  const paper = current.libraryState === 'saved'
+    ? current
+    : await savePaperToLibrary(paperId);
+  const note = await saveNote(paperId, {
+    id: `ai-note:${messageId}`,
+    title,
+    content,
+  });
+  return { paper, note };
 }
 
 export async function deleteNote(noteId: string): Promise<void> {

@@ -6,7 +6,7 @@ export type ProviderMode = 'chatgpt' | 'api';
 export type Language = 'en' | 'zh';
 export type PromptLanguage = Language | 'auto';
 export type ApiProtocol = 'responses' | 'chat-completions';
-export type ReaderSidebar = 'thumbnails' | 'outline';
+export type ReaderSidebar = 'thumbnails' | 'annotations' | 'outline';
 export type LibraryState = 'temporary' | 'saved' | 'trashed';
 export type ReadStatus = 'unread' | 'reading' | 'read';
 export type AnnotationType = 'highlight' | 'underline' | 'strikeout' | 'text' | 'area' | 'ink';
@@ -31,6 +31,9 @@ export interface Message {
   threadId?: string;
   role: 'user' | 'assistant';
   content: string;
+  model?: string;
+  firstTokenMs?: number;
+  durationMs?: number;
   citation?: Citation;
   citations?: Citation[];
   createdAt?: number;
@@ -175,6 +178,7 @@ export interface Annotation {
   strokes?: Array<{ points: PdfPoint[]; width: number }>;
   anchor?: TextAnchor;
   comment?: string;
+  translation?: string;
 }
 
 export interface Collection extends SyncMetadata {

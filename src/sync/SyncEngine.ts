@@ -8,6 +8,10 @@ import {
 import { DriveRequestError } from '../services/google/driveClient';
 import { googleAuth } from '../services/google/googleAuth';
 import { vaultController } from '../services/sync/vaultController';
+import {
+  isPdfCloudSyncEnabled,
+  setPdfCloudSyncEnabled,
+} from '../services/storage/documentStore';
 import type { EntityVersion, SyncEntityType, SyncOperation } from '../types';
 import { versionAndRecord } from '../repositories/versioning';
 import { BlobTransfer } from './blobTransfer';
@@ -170,7 +174,10 @@ export class SyncEngine {
         attempt: 0,
         updatedAt: Date.now(),
       });
-      if (budget.hasTime(2_000)) {
+      const syncPdfDocuments = await isPdfCloudSyncEnabled(database);
+      if (!syncPdfDocuments) {
+        await setPdfCloudSyncEnabled(false, database);
+      } else if (budget.hasTime(2_000)) {
         report.uploadedDocuments = await new BlobTransfer(database, this.remote)
           .uploadQueuedDocuments(vault.key, vault.vaultId, budget);
       }
@@ -374,7 +381,11 @@ export class SyncEngine {
     append('collectionItem', await database.collectionItems.toArray());
     append('tag', await database.tags.toArray());
     append('paperTag', await database.paperTags.toArray());
-    append('document', await database.documents.toArray());
+    append(
+      'document',
+      (await database.documents.toArray()).filter((document) =>
+        document.remoteState === 'available' && Boolean(document.remoteObjectId)),
+    );
     append('note', await database.notes.toArray());
     append('annotation', await database.annotations.toArray());
     append('thread', await database.threads.toArray());

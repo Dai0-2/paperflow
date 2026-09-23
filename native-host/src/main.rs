@@ -67,10 +67,18 @@ fn handle(request: Request, emit: &mut impl FnMut(Response)) -> Response {
             question,
             context,
             images,
+            model,
             response_language,
         } => {
             emit(Response::event("progress", "accepted"));
-            match codex::chat(&question, &context, &images, response_language, emit) {
+            match codex::chat(
+                &question,
+                &context,
+                &images,
+                model.as_deref(),
+                response_language,
+                emit,
+            ) {
                 Ok(answer) => complete(answer),
                 Err(error) => Response::error(error.to_string()),
             }

@@ -1,4 +1,5 @@
 use std::io::{BufRead, BufReader};
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use reqwest::{
@@ -15,6 +16,8 @@ use crate::{
 };
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(300);
+const POOL_IDLE_TIMEOUT: Duration = Duration::from_secs(90);
+static API_CLIENT: OnceLock<Client> = OnceLock::new();
 
 pub struct ChatRequest<'a> {
     pub question: &'a str,
@@ -60,10 +63,7 @@ pub fn chat(request: ChatRequest<'_>, emit: &mut impl FnMut(Response)) -> Result
         request.protocol,
         request.language,
     );
-    let client = Client::builder()
-        .timeout(REQUEST_TIMEOUT)
-        .build()
-        .map_err(|_| ApiError::Network)?;
+    let client = api_client()?;
     emit(Response::event("progress", "accepted"));
     let response = client
         .post(endpoint)
@@ -78,6 +78,20 @@ pub fn chat(request: ChatRequest<'_>, emit: &mut impl FnMut(Response)) -> Result
     }
     emit(Response::event("progress", "connected"));
     parse_response(response, request.protocol, emit)
+}
+
+fn api_client() -> Result<&'static Client, ApiError> {
+    if let Some(client) = API_CLIENT.get() {
+        return Ok(client);
+    }
+    let client = Client::builder()
+        .timeout(REQUEST_TIMEOUT)
+        .pool_idle_timeout(POOL_IDLE_TIMEOUT)
+        .tcp_nodelay(true)
+        .build()
+        .map_err(|_| ApiError::Network)?;
+    let _ = API_CLIENT.set(client);
+    API_CLIENT.get().ok_or(ApiError::Network)
 }
 
 fn normalize_endpoint(base_url: &str, protocol: ApiProtocol) -> Result<Url, ApiError> {

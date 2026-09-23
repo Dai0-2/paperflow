@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { TextLayer } from 'pdfjs-dist';
 import type { PDFDocumentProxy, PageViewport, RenderTask } from 'pdfjs-dist';
 import type { AnnotationTool } from '../../hooks/useAnnotationTool';
 import type { AnnotationDraft } from '../../repositories/annotationRepository';
-import type { Annotation } from '../../types';
+import type { Annotation, Language } from '../../types';
 import { AnnotationLayer } from '../annotations/AnnotationLayer';
 
 interface PdfPageProps {
@@ -15,9 +16,16 @@ interface PdfPageProps {
   annotationTool: AnnotationTool;
   annotationColor: string;
   selectedAnnotationId?: string;
+  language: Language;
+  translationStatus?: ReadonlyMap<string, string>;
   onViewportReady: (page: number, viewport: PageViewport) => void;
   onCreateAnnotation: (draft: AnnotationDraft) => Promise<Annotation>;
   onSelectAnnotation: (id: string) => void;
+  onUpdateAnnotation: (
+    annotationId: string,
+    patch: Partial<Pick<Annotation, 'comment' | 'color'>>,
+  ) => Promise<unknown>;
+  onDeleteAnnotation: (annotationId: string) => Promise<void>;
   forceRender?: boolean;
 }
 
@@ -30,9 +38,13 @@ export function PdfPage({
   annotationTool,
   annotationColor,
   selectedAnnotationId,
+  language,
+  translationStatus,
   onViewportReady,
   onCreateAnnotation,
   onSelectAnnotation,
+  onUpdateAnnotation,
+  onDeleteAnnotation,
   forceRender = false,
 }: PdfPageProps) {
   const root = useRef<HTMLDivElement>(null);
@@ -42,6 +54,7 @@ export function PdfPage({
   const [size, setSize] = useState({ width: 612 * scale, height: 792 * scale });
   const [viewport, setViewport] = useState<PageViewport>();
   const [error, setError] = useState('');
+  const totalScaleFactor = (viewport?.scale ?? scale) * (viewport?.userUnit ?? 1);
 
   useEffect(() => {
     if (forceRender) {
@@ -119,7 +132,15 @@ export function PdfPage({
     className="pdf-page"
     data-page={pageNumber}
     aria-label={`Page ${pageNumber}`}
-    style={{ width: size.width, height: size.height }}
+    style={{
+      width: size.width,
+      height: size.height,
+      '--scale-factor': viewport?.scale ?? scale,
+      '--user-unit': viewport?.userUnit ?? 1,
+      '--total-scale-factor': totalScaleFactor,
+      '--scale-round-x': '1px',
+      '--scale-round-y': '1px',
+    } as CSSProperties}
   >
     {nearViewport ? <>
       <canvas ref={canvas} />
@@ -130,8 +151,12 @@ export function PdfPage({
         tool={annotationTool}
         color={annotationColor}
         selectedId={selectedAnnotationId}
+        language={language}
+        translationStatus={translationStatus}
         onCreate={(draft) => onCreateAnnotation({ ...draft, page: pageNumber })}
         onSelect={onSelectAnnotation}
+        onUpdate={onUpdateAnnotation}
+        onDelete={onDeleteAnnotation}
       />}
       {searchQuery && <div className="page-search-marker" title={`Search active: ${searchQuery}`} />}
       {error && <div className="page-render-error">{error}</div>}

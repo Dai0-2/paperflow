@@ -55,15 +55,21 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  view: 'chat', theme: (localStorage.getItem('paperflow:theme') as Theme) || 'system', chatState: 'empty', model: localStorage.getItem('paperflow:provider') === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini') : 'ChatGPT via Codex',
+  view: 'chat', theme: (localStorage.getItem('paperflow:theme') as Theme) || 'system', chatState: 'empty', model: localStorage.getItem('paperflow:provider') === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini') : (localStorage.getItem('paperflow:codex-model') || 'ChatGPT via Codex'),
   initialized: false, detecting: true, paper: null, paperText: '', paperChunks: [], readingPaper: false,
-  activeThreadId: null, selection: null, defaultOpenReader: localStorage.getItem('paperflow:default-reader') === 'true',
+  activeThreadId: null, selection: null, defaultOpenReader: localStorage.getItem('paperflow:default-reader') !== 'false',
   bridgeState: 'checking', bridgeDetail: '', providerMode: (localStorage.getItem('paperflow:provider') as ProviderMode) || 'chatgpt', apiState: 'checking', apiDetail: '',
   uiLanguage: (localStorage.getItem('paperflow:ui-language') as Language) || 'en', promptLanguage: (localStorage.getItem('paperflow:prompt-language') as PromptLanguage) || 'auto',
   apiBaseUrl: localStorage.getItem('paperflow:api-base-url') || 'https://api.openai.com/v1', apiProtocol: (localStorage.getItem('paperflow:api-protocol') as ApiProtocol) || 'responses',
   messages: [], attachments: [], sending: false, draft: '',
   setView: (view) => set({ view }), setTheme: (theme) => { localStorage.setItem('paperflow:theme', theme); set({ theme }); },
-  setChatState: (chatState) => set({ chatState }), setModel: (model) => set((state) => { if (state.providerMode === 'api') localStorage.setItem('paperflow:api-model', model); return { model }; }),
+  setChatState: (chatState) => set({ chatState }), setModel: (model) => set((state) => {
+    localStorage.setItem(
+      state.providerMode === 'api' ? 'paperflow:api-model' : 'paperflow:codex-model',
+      model,
+    );
+    return { model };
+  }),
   setInitialized: (initialized) => set({ initialized }), setDetecting: (detecting) => set({ detecting }),
   setPaper: (paper) => set({ paper }),
   updatePaper: (patch) => set((state) => ({ paper: state.paper ? { ...state.paper, ...patch } : null })),
@@ -76,7 +82,13 @@ export const useAppStore = create<AppState>((set) => ({
     set({ defaultOpenReader });
   },
   setBridge: (bridgeState, bridgeDetail = '') => set({ bridgeState, bridgeDetail }),
-  setProviderMode: (providerMode) => { localStorage.setItem('paperflow:provider', providerMode); const model = providerMode === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini') : 'ChatGPT via Codex'; set({ providerMode, model }); },
+  setProviderMode: (providerMode) => {
+    localStorage.setItem('paperflow:provider', providerMode);
+    const model = providerMode === 'api'
+      ? (localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini')
+      : (localStorage.getItem('paperflow:codex-model') || 'ChatGPT via Codex');
+    set({ providerMode, model });
+  },
   setApiState: (apiState, apiDetail = '') => set({ apiState, apiDetail }),
   setUiLanguage: (uiLanguage) => {
     localStorage.setItem('paperflow:ui-language', uiLanguage);

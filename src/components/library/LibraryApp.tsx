@@ -1,6 +1,6 @@
 import {
   ArchiveRestore,
-  BookOpen,
+  Cloud,
   Copy,
   Database,
   FileDown,
@@ -10,6 +10,7 @@ import {
   Moon,
   LoaderCircle,
   Search,
+  Settings2,
   Star,
   Sun,
   Tags,
@@ -35,7 +36,6 @@ import {
   removeTagFromPaper,
   restorePaper,
   saveNote,
-  setPaperReadStatus,
   updateCollection,
   updatePaperMetadata,
   updateTag,
@@ -44,14 +44,16 @@ import { mergeDuplicatePapers } from '../../services/library/duplicateMerge';
 import { refreshPaperMetadata } from '../../services/library/metadata';
 import type { CitationFormat } from '../../services/library/citations';
 import type { AiOrganizeProposal } from '../../services/library/aiOrganize';
-import type { PaperInfo, ReadStatus, Theme } from '../../types';
+import type { PaperInfo, Theme } from '../../types';
 import { AiOrganizeReview } from './AiOrganizeReview';
 import { DuplicateReview } from './DuplicateReview';
 import { LibrarySidebar, collectionLabel } from './LibrarySidebar';
+import { LibrarySettingsDialog } from './LibrarySettingsDialog';
 import { PaperInspector } from './PaperInspector';
 import { PaperTable } from './PaperTable';
 import { TagManagerDialog } from './TagManagerDialog';
 import { SyncStatus } from '../sync/SyncStatus';
+import { VaultSetup } from '../sync/VaultSetup';
 
 const ImportExportDialog = lazy(async () => {
   const module = await import('./ImportExportDialog');
@@ -85,7 +87,9 @@ export function LibraryApp() {
   } = useLibraryQuery();
   const [theme, setTheme] = useState<Theme>(currentTheme);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 850);
-  const [dialog, setDialog] = useState<'import' | 'duplicates' | 'ai' | 'tags' | null>(null);
+  const [dialog, setDialog] = useState<
+    'import' | 'duplicates' | 'ai' | 'tags' | 'cloud' | 'settings' | null
+  >(null);
   const [bulkTag, setBulkTag] = useState('');
   const [bulkCollection, setBulkCollection] = useState('');
   const [error, setError] = useState('');
@@ -127,6 +131,13 @@ export function LibraryApp() {
     localStorage.setItem('paperflow:theme', value);
     setTheme(value);
   };
+  const closeSidebarOnNarrowScreen = () => {
+    if (window.innerWidth <= 850) setSidebarOpen(false);
+  };
+  const changeScope = (scope: Parameters<typeof store.setScope>[0]) => {
+    store.setScope(scope);
+    closeSidebarOnNarrowScreen();
+  };
   const addTag = async (paperIds: string[], name: string) => {
     const tag = await createOrGetTag(name);
     for (const paperId of paperIds) await addTagToPaper(paperId, tag.id);
@@ -149,9 +160,23 @@ export function LibraryApp() {
         <button className="library-menu-button" title={text(language, 'Toggle navigation', '切换导航栏')} onClick={() => setSidebarOpen((open) => !open)}><Menu /></button>
         <div className="library-brand"><BrandMark /><strong>PaperFlow</strong><span>{text(language, 'Library', '资料库')}</span></div>
       </div>
-      <label className="library-search"><Search /><input value={store.searchQuery} onChange={(event) => store.setSearchQuery(event.target.value)} placeholder={text(language, 'Search papers, author:, tag:, collection:, year:, status:', '搜索论文，支持 author:、tag:、collection:、year:、status:')} aria-label={text(language, 'Search library', '搜索资料库')} />{store.searchQuery && <button title={text(language, 'Clear search', '清除搜索')} onClick={() => store.setSearchQuery('')}><X /></button>}</label>
+      <label className="library-search"><Search /><input value={store.searchQuery} onChange={(event) => store.setSearchQuery(event.target.value)} placeholder={text(language, 'Search papers, author:, tag:, collection:, year:', '搜索论文，支持 author:、tag:、collection:、year:')} aria-label={text(language, 'Search library', '搜索资料库')} />{store.searchQuery && <button title={text(language, 'Clear search', '清除搜索')} onClick={() => store.setSearchQuery('')}><X /></button>}</label>
       <div className="library-header-actions">
-        <SyncStatus language={language} compact />
+        <SyncStatus
+          language={language}
+          compact
+          onNeedsAttention={() => setDialog('cloud')}
+        />
+        <button
+          className="header-command"
+          title={text(language, 'Google cloud library', 'Google 云端资料库')}
+          onClick={() => setDialog('cloud')}
+        ><Cloud /><span>{text(language, 'Google cloud library', 'Google 云端资料库')}</span></button>
+        <button
+          className="header-command"
+          title={text(language, 'Settings', '设置')}
+          onClick={() => setDialog('settings')}
+        ><Settings2 /><span>{text(language, 'Settings', '设置')}</span></button>
         <button title={dark ? text(language, 'Use light theme', '使用浅色主题') : text(language, 'Use dark theme', '使用深色主题')} onClick={() => setThemeValue(dark ? 'light' : 'dark')}>{dark ? <Sun /> : <Moon />}</button>
         <button
           title={indexStatus.state === 'building'
@@ -162,35 +187,48 @@ export function LibraryApp() {
           data-active={indexStatus.state === 'building'}
           onClick={() => indexStatus.state === 'building' ? cancelIndexRebuild() : void rebuildIndex()}
         >{indexStatus.state === 'building' ? <LoaderCircle className="spin" /> : <Database />}</button>
-        <button className="header-command" onClick={() => setDialog('import')}><FileDown /><span>{text(language, 'Import / Export', '导入 / 导出')}</span></button>
+        <button
+          className="header-command"
+          title={text(language, 'Import / Export', '导入 / 导出')}
+          onClick={() => setDialog('import')}
+        ><FileDown /><span>{text(language, 'Import / Export', '导入 / 导出')}</span></button>
       </div>
     </header>
     {(error || loadError) && <div className="library-error">{error || loadError}<button title={text(language, 'Dismiss error', '关闭错误')} onClick={() => setError('')}><X /></button></div>}
     <div className="library-workspace" data-sidebar={sidebarOpen}>
+      {sidebarOpen && <button
+        type="button"
+        className="library-sidebar-backdrop"
+        aria-label={text(language, 'Close navigation', '关闭导航栏')}
+        onClick={() => setSidebarOpen(false)}
+      />}
       {sidebarOpen && <LibrarySidebar
         language={language}
         snapshot={snapshot}
         scope={store.scope}
-        onScopeChange={store.setScope}
+        onScopeChange={changeScope}
         onCreateCollection={async (name, parentId) => mutate(async () => { await createCollection(name, parentId); })}
         onUpdateCollection={async (id, name, parentId) => mutate(async () => { await updateCollection(id, { name, parentId }); })}
         onDeleteCollection={async (id) => {
           if (!window.confirm(text(language, `Delete “${collectionLabel(snapshot.collections, id)}”? Papers will stay in the library.`, `删除“${collectionLabel(snapshot.collections, id)}”？论文仍会保留在资料库中。`))) return;
           await mutate(async () => { await deleteCollection(id); });
         }}
-        onManageTags={() => setDialog('tags')}
+        onDropPapers={async (collectionId, paperIds) => mutate(async () => {
+          for (const paperId of paperIds) await addPaperToCollection(paperId, collectionId);
+        })}
+        onManageTags={() => {
+          closeSidebarOnNarrowScreen();
+          setDialog('tags');
+        }}
       />}
       <main className="library-main">
         <div className="library-view-bar">
-          <div><h1>{store.scope.startsWith('collection:') ? collectionLabel(snapshot.collections, store.scope.slice(11)) : store.scope === 'all' ? text(language, 'All papers', '全部论文') : text(language, store.scope.replace(/^status:/, '').replace(/^\w/, (value) => value.toUpperCase()), ({ recent: '最近添加', favorite: '已加星标', unread: '未读', reading: '阅读中', read: '已读', duplicates: '重复项', trash: '废纸篓' } as Record<string, string>)[store.scope.replace(/^status:/, '')] || store.scope)}</h1><span>{text(language, `${papers.length} items`, `${papers.length} 项`)}</span></div>
+          <div><h1>{store.scope.startsWith('collection:') ? collectionLabel(snapshot.collections, store.scope.slice(11)) : store.scope === 'all' ? text(language, 'All papers', '全部论文') : text(language, ({ recent: 'Recently read', favorite: 'Starred', duplicates: 'Duplicates', trash: 'Trash' } as Record<string, string>)[store.scope] || store.scope, ({ recent: '最近阅读', favorite: '已加星标', duplicates: '重复项', trash: '废纸篓' } as Record<string, string>)[store.scope] || store.scope)}</h1><span>{text(language, `${papers.length} items`, `${papers.length} 项`)}</span></div>
           {store.scope === 'duplicates' && <button className="secondary-command" onClick={() => setDialog('duplicates')}><Copy /> {text(language, 'Review duplicates', '检查重复项')}</button>}
         </div>
         {selected.length > 0 && <div className="bulk-toolbar">
           <span>{text(language, `${selected.length} selected`, `已选择 ${selected.length} 项`)}</span>
           <button title={text(language, 'Toggle star', '切换星标')} onClick={() => void applyToSelected((paper) => updatePaperMetadata(paper.id, { favorite: !paper.favorite }).then(() => undefined))}><Star /> {text(language, 'Star', '星标')}</button>
-          <select value="" aria-label={text(language, 'Set reading status', '设置阅读状态')} onChange={(event) => event.target.value && void applyToSelected((paper) => setPaperReadStatus(paper.id, event.target.value as ReadStatus).then(() => undefined))}>
-            <option value="">{text(language, 'Reading status…', '阅读状态…')}</option><option value="unread">{text(language, 'Unread', '未读')}</option><option value="reading">{text(language, 'Reading', '阅读中')}</option><option value="read">{text(language, 'Read', '已读')}</option>
-          </select>
           <select value={bulkCollection} aria-label={text(language, 'Add selected papers to collection', '将所选论文添加到集合')} onChange={(event) => {
             const value = event.target.value;
             setBulkCollection('');
@@ -222,7 +260,6 @@ export function LibraryApp() {
           onSelectAll={store.selectPapers}
           onOpen={(paper) => window.open(readerUrl(paper), '_blank', 'noopener')}
           onFavorite={async (paper) => mutate(async () => { await updatePaperMetadata(paper.id, { favorite: !paper.favorite }); })}
-          onReadStatus={async (paper, status) => mutate(async () => { await setPaperReadStatus(paper.id, status); })}
         />
       </main>
       <PaperInspector
@@ -251,7 +288,7 @@ export function LibraryApp() {
           if (!activePaper) return;
           await mutate(async () => {
             const patch = await refreshPaperMetadata(activePaper);
-            await updatePaperMetadata(activePaper.id, patch);
+            await updatePaperMetadata(activePaper.id, patch, 'automatic');
           });
         }}
       />
@@ -260,5 +297,36 @@ export function LibraryApp() {
     {dialog === 'duplicates' && <DuplicateReview language={language} papers={snapshot.papers.filter((paper) => paper.libraryState === 'saved')} onClose={() => setDialog(null)} onMerge={async (canonicalId, duplicateId) => mutate(async () => { await mergeDuplicatePapers(canonicalId, duplicateId); })} />}
     {dialog === 'tags' && <TagManagerDialog language={language} tags={snapshot.tags} onClose={() => setDialog(null)} onUpdate={async (tagId, patch) => mutate(async () => { await updateTag(tagId, patch); })} onMerge={async (sourceId, targetId) => mutate(async () => { await mergeTags(sourceId, targetId); })} />}
     {dialog === 'ai' && activePaper && <AiOrganizeReview language={language} paper={activePaper} snapshot={snapshot} onClose={() => setDialog(null)} onApply={applyAiProposal} />}
+    {dialog === 'settings' && <LibrarySettingsDialog
+      language={language}
+      theme={theme}
+      onClose={() => setDialog(null)}
+      onThemeChange={setThemeValue}
+    />}
+    {dialog === 'cloud' && <div className="dialog-backdrop" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) setDialog(null);
+    }}>
+      <section className="library-dialog cloud-library-dialog" role="dialog" aria-modal="true" aria-labelledby="cloud-library-title">
+        <header>
+          <div>
+            <h2 id="cloud-library-title">{text(language, 'Google cloud library', 'Google 云端资料库')}</h2>
+            <p>{text(
+              language,
+              'Sync this library across your devices with the same Google account.',
+              '使用同一 Google 账号在多台设备间同步这份资料库。',
+            )}</p>
+          </div>
+          <button title={text(language, 'Close', '关闭')} onClick={() => setDialog(null)}><X /></button>
+        </header>
+        <div className="cloud-library-content">
+          <VaultSetup language={language} />
+          <p>{text(
+            language,
+            'Library records are encrypted before upload. This is a private account library; it does not create a public Drive sharing link.',
+            '资料库记录会在上传前加密。这是账号私有资料库，不会生成公开的 Drive 分享链接。',
+          )}</p>
+        </div>
+      </section>
+    </div>}
   </div>;
 }

@@ -34,7 +34,7 @@ export async function createAnnotation(
 
 export async function updateAnnotation(
   annotationId: string,
-  patch: Partial<Pick<Annotation, 'color' | 'comment' | 'text' | 'quadPoints' | 'rect' | 'strokes' | 'anchor'>>,
+  patch: Partial<Pick<Annotation, 'color' | 'comment' | 'translation' | 'text' | 'quadPoints' | 'rect' | 'strokes' | 'anchor'>>,
 ): Promise<Annotation> {
   const db = await openPaperFlowDatabase();
   const current = await db.annotations.get(annotationId);

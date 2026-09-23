@@ -88,6 +88,10 @@ Release builds additionally require:
 
 ```bash
 PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID="<production client id>" \
-  pnpm exec vite build --mode release
-pnpm audit:release
+  pnpm package:release
 ```
+
+`package:release` rejects missing or malformed Google OAuth client IDs, audits
+the resulting extension, and writes `paperflow-ai-release.zip` with its SHA-256
+file. Never publish the credential-free `paperflow-ai.zip` as a Google Drive
+enabled build.

@@ -47,6 +47,10 @@ export function AnnotationInspector({
       <button title={text(language, 'Close inspector', '关闭批注详情')} aria-label={text(language, 'Close inspector', '关闭批注详情')} onClick={onClose}><X /></button>
     </header>
     {annotation.text && <blockquote>{annotation.text}</blockquote>}
+    {annotation.translation && <section className="annotation-inspector-translation">
+      <span>{text(language, 'Translation', '翻译')}</span>
+      <p>{annotation.translation}</p>
+    </section>}
     <div className="annotation-inspector-colors" aria-label={text(language, 'Annotation color', '批注颜色')}>
       {COLORS.map((value) => <button
         key={value}

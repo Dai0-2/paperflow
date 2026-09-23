@@ -32,15 +32,26 @@ function statusLabel(language: Language, snapshot: StatusSnapshot): string {
   return text(language, 'Ready to sync', '可以开始同步');
 }
 
+function actionErrorText(language: Language, error: unknown): string {
+  const message = error instanceof Error ? error.message : '';
+  if (message.includes('Unlock the encrypted vault')) {
+    return text(language, 'Unlock the encrypted vault before synchronizing.', '请先解锁加密保险库再同步。');
+  }
+  return message || text(language, 'Sync could not start.', '无法启动同步。');
+}
+
 export function SyncStatus({
   language,
   compact = false,
+  onNeedsAttention,
 }: {
   language: Language;
   compact?: boolean;
+  onNeedsAttention?: (message: string) => void;
 }) {
   const [snapshot, setSnapshot] = useState<StatusSnapshot>({ pending: 0, conflicts: 0 });
   const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   const refresh = useCallback(async () => {
     const database = await openPaperFlowDatabase();
@@ -60,10 +71,13 @@ export function SyncStatus({
 
   const synchronize = async () => {
     setBusy(true);
+    setActionError('');
     try {
       await syncEngine.run({ force: true });
-    } catch {
-      // The persisted state contains the actionable error.
+    } catch (reason) {
+      const message = actionErrorText(language, reason);
+      setActionError(message);
+      onNeedsAttention?.(message);
     } finally {
       await refresh();
       setBusy(false);
@@ -71,7 +85,8 @@ export function SyncStatus({
   };
 
   const hasProblem = Boolean(
-    snapshot.state?.lastError
+    actionError
+    || snapshot.state?.lastError
     || snapshot.conflicts
     || snapshot.state?.status === 'paused'
     || snapshot.state?.status === 'auth-required',
@@ -88,7 +103,7 @@ export function SyncStatus({
     return <button
       type="button"
       className="library-sync-button"
-      title={statusLabel(language, snapshot)}
+      title={actionError || statusLabel(language, snapshot)}
       data-problem={hasProblem}
       disabled={busy}
       onClick={() => void synchronize()}
@@ -101,8 +116,8 @@ export function SyncStatus({
     <div className="sync-status-line">
       <StatusIcon className={busy || snapshot.state?.status === 'syncing' ? 'spin' : ''} />
       <span><strong>{statusLabel(language, snapshot)}</strong>
-        {(snapshot.state?.lastError || snapshot.conflicts > 0) && <small>
-          {snapshot.state?.lastError || text(
+        {(actionError || snapshot.state?.lastError || snapshot.conflicts > 0) && <small>
+          {actionError || snapshot.state?.lastError || text(
             language,
             `${snapshot.conflicts} note conflicts`,
             `${snapshot.conflicts} 个笔记冲突`,
