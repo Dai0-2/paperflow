@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 - 2026-09-23
+
+### Fixed
+
+- Preserve the browser receiver when the Google Drive client invokes `fetch`,
+  preventing `Illegal invocation` during vault connection.
+
 ## 1.0.0 - 2026-09-22
 
 ### Added

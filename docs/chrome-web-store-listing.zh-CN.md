@@ -5,7 +5,7 @@
 ## 当前发布信息
 
 - 商店商品 ID：`dffiahjmpkmellmjijffpcofoahbccoc`
-- 版本：`1.0.0`
+- 版本：`1.0.1`
 - 价格：免费
 - 初始公开范围：非公开
 

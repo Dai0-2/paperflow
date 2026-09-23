@@ -2,6 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { DriveClient, type DriveFetch } from '../../src/services/google/driveClient';
 
 describe('Google Drive client', () => {
+  it('calls the browser fetch implementation with the global receiver', async () => {
+    const originalFetch = globalThis.fetch;
+    let receiver: unknown;
+    globalThis.fetch = (function (this: unknown) {
+      receiver = this;
+      return Promise.resolve(new Response(JSON.stringify({ files: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }));
+    }) as DriveFetch;
+
+    try {
+      const client = new DriveClient(async () => 'ephemeral-token');
+      await expect(client.listByName(undefined, 'PaperFlow')).resolves.toEqual([]);
+      expect(receiver).toBe(globalThis);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('uses bearer tokens, escapes queries, and follows list pagination', async () => {
     const requests: Array<{ url: string; authorization: string | null }> = [];
     const fetcher: DriveFetch = async (input, init) => {

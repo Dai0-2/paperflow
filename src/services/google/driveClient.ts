@@ -34,6 +34,8 @@ export type DriveChange = z.infer<typeof changesResponseSchema>['changes'][numbe
 export type AccessTokenProvider = () => Promise<string>;
 export type DriveFetch = typeof fetch;
 
+const defaultDriveFetch: DriveFetch = (input, init) => globalThis.fetch(input, init);
+
 export interface DriveGateway {
   listByName(parentId: string | undefined, name: string, mimeType?: string): Promise<DriveFile[]>;
   createFolder(name: string): Promise<DriveFile>;
@@ -105,7 +107,7 @@ async function errorMessage(response: Response): Promise<string> {
 export class DriveClient implements DriveGateway {
   constructor(
     private readonly tokenProvider: AccessTokenProvider,
-    private readonly fetcher: DriveFetch = fetch,
+    private readonly fetcher: DriveFetch = defaultDriveFetch,
   ) {}
 
   async listByName(parentId: string | undefined, name: string, mimeType?: string): Promise<DriveFile[]> {
