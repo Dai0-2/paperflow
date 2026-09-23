@@ -10,6 +10,8 @@
   sync data without re-encrypting historical objects.
 - Updated privacy and store disclosures to describe the Google account security
   boundary accurately.
+- Replaced the warm paper tint with a Zotero-inspired white and neutral-gray
+  interface palette across the Library, Reader, and side panel.
 
 ## 1.0.1 - 2026-09-23
 

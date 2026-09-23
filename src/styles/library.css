@@ -176,7 +176,7 @@
 .primary-button { color: var(--accent-contrast); background: var(--accent); }
 .primary-button:disabled { color: var(--faint); background: var(--hover); cursor: default; }
 .danger-text { color: #a34848; }
-.dialog-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(20, 20, 18, .38); }
+.dialog-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(20, 20, 20, .38); }
 .library-dialog { width: min(720px, 100%); max-height: min(720px, calc(100vh - 48px)); display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); }
 .library-dialog > header { flex: 0 0 auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 17px 18px 14px; border-bottom: 1px solid var(--border); }
 .library-dialog h2 { margin: 0; font-size: 15px; font-weight: 640; }
@@ -386,7 +386,7 @@
 .inspector-section > select, .inline-add, .relation-chips > span, .citation-buttons button,
 .note-list > button, .note-fields > input, .note-fields > textarea, .primary-button,
 .danger-text { border-radius: 4px; }
-.dialog-backdrop { background: rgb(31 31 28 / 30%); backdrop-filter: blur(1px); }
+.dialog-backdrop { background: rgb(31 31 31 / 30%); backdrop-filter: blur(1px); }
 .library-dialog { border-color: var(--border-strong); border-radius: 6px; }
 .library-dialog > header { padding: 14px 16px 12px; }
 .library-dialog h2 { font-size: 14px; font-weight: 580; }
@@ -415,7 +415,7 @@
     z-index: 29;
     inset: 48px 0 0;
     display: block;
-    background: rgb(20 20 18 / 28%);
+    background: rgb(20 20 20 / 28%);
   }
   .library-workspace[data-sidebar="false"] .library-sidebar { display: none; }
   .library-paper-grid { grid-template-columns: 34px 30px minmax(220px, 1fr) 74px 100px; }
