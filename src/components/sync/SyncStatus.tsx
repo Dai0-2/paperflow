@@ -34,8 +34,8 @@ function statusLabel(language: Language, snapshot: StatusSnapshot): string {
 
 function actionErrorText(language: Language, error: unknown): string {
   const message = error instanceof Error ? error.message : '';
-  if (message.includes('Unlock the encrypted vault')) {
-    return text(language, 'Unlock the encrypted vault before synchronizing.', '请先解锁加密保险库再同步。');
+  if (message.includes('Connect your Google account')) {
+    return text(language, 'Connect your Google account before synchronizing.', '请先连接 Google 账号再同步。');
   }
   return message || text(language, 'Sync could not start.', '无法启动同步。');
 }
@@ -52,14 +52,17 @@ export function SyncStatus({
   const [snapshot, setSnapshot] = useState<StatusSnapshot>({ pending: 0, conflicts: 0 });
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [syncEnabled, setSyncEnabled] = useState(false);
 
   const refresh = useCallback(async () => {
     const database = await openPaperFlowDatabase();
-    const [state, pending, conflicts] = await Promise.all([
+    const [enabled, state, pending, conflicts] = await Promise.all([
+      vaultController.isSyncEnabled(),
       database.syncState.get(LOCAL_SYNC_STATE_KEY),
       database.syncOps.where('state').equals('pending').count(),
       database.syncConflicts.filter((conflict) => !conflict.resolvedAt).count(),
     ]);
+    setSyncEnabled(enabled);
     setSnapshot({ state, pending, conflicts });
   }, []);
 
@@ -98,7 +101,7 @@ export function SyncStatus({
       : snapshot.pending
         ? Cloud
         : CheckCircle2;
-  if (!vaultController.isConfigured()) return null;
+  if (!vaultController.isConfigured() || !syncEnabled) return null;
   if (compact) {
     return <button
       type="button"

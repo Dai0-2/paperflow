@@ -96,7 +96,7 @@ upgrade transaction. If opening the final schema fails, all main surfaces stop
 and redirect to the read-only `recovery.html` exporter. Schemas are never
 automatically downgraded.
 
-## Google Drive vault
+## Google Drive synchronization
 
 `manifest.base.json` is the checked-in source of extension permissions. A Vite
 plugin generates `dist/manifest.json` and injects the non-secret Chrome Extension
@@ -106,13 +106,10 @@ owns access-token persistence; PaperFlow requests a token per Drive operation
 and never writes it to application storage.
 
 The Drive adapter creates a user-visible `PaperFlow` folder. `vault.json` is the
-only readable protocol file and contains no paper data. It stores a randomly
-generated 256-bit Vault Master Key wrapped independently by:
-
-- a password-derived AES key using PBKDF2-HMAC-SHA-256, a random 128-bit salt,
-  and 600,000 iterations;
-- a recovery-derived AES key using HKDF-SHA-256 and a random 256-bit Base32
-  recovery key shown once.
+only readable protocol file and contains no paper data. For new connections it
+stores a randomly generated 256-bit library encryption key so another device
+signed in to the same Google account can restore the library without a separate
+password.
 
 Every business object gets a separate random 256-bit key. Content is split into
 independently authenticated AES-256-GCM chunks with unique 96-bit nonces. AAD
@@ -122,12 +119,17 @@ domain-separated HMAC key derives the opaque `*.pfo` Drive filename, so paper
 titles, DOI values, authors, notes, and attachment names do not appear in Drive
 metadata.
 
-The VMK is held in memory for the unlocked browser session. If the user
-explicitly enables **Remember this device**, the Native Host stores the VMK in
-the operating-system credential store under the vault UUID. Browser storage and
-Drive never receive the plaintext VMK, password, recovery key, API key, or OAuth
-token. Changing the vault password replaces only the password wrapper and does
-not re-encrypt historical objects.
+The key is loaded into memory while synchronization is active. It is not stored
+in browser local storage or IndexedDB. Because the key is available in the
+PaperFlow-created Drive header, this is account-protected encryption rather than
+zero-knowledge encryption: access to the Google account and all PaperFlow files
+is sufficient to restore content. OAuth tokens remain under Chrome Identity and
+API keys remain in the operating-system credential store.
+
+Version 1 password/recovery headers remain readable for migration. PaperFlow
+requires one successful legacy unlock, then writes a version 2 account-managed
+header with the same UUID and key. Historical encrypted objects are not
+re-encrypted.
 
 ## Incremental synchronization
 
@@ -147,8 +149,8 @@ soft budget and checkpoints each network stage.
 
 Encrypted PDF objects use Drive resumable uploads. The encrypted temporary
 payload remains in OPFS, while the resumable session URL, confirmed byte offset,
-and current chunk hash are checkpointed in IndexedDB. OAuth tokens and plaintext
-vault keys are never checkpointed. HTTP 401 requires user reauthorization,
+and current chunk hash are checkpointed in IndexedDB. OAuth tokens and library
+encryption keys are never checkpointed. HTTP 401 requires user reauthorization,
 403 pauses uploads, and 429 honors `Retry-After` with full-jitter backoff.
 
 ## ChatGPT subscription authentication

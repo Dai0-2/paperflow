@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createVault, unlockVaultWithPassword } from '../../src/crypto/vault';
+import {
+  createAccountManagedVault,
+  createVault,
+  unlockAccountManagedVault,
+  unlockVaultWithPassword,
+} from '../../src/crypto/vault';
 import type { DriveFile, DriveGateway } from '../../src/services/google/driveClient';
 import {
   GoogleDriveObjectStore,
@@ -53,6 +58,33 @@ class MemoryDrive implements DriveGateway {
 }
 
 describe('Google Drive encrypted object store', () => {
+  it('restores account-managed sync on another device without another credential', async () => {
+    const drive = new MemoryDrive();
+    const firstDevice = new GoogleDriveObjectStore(drive);
+    const created = createAccountManagedVault();
+    await firstDevice.writeVaultHeader(created.header);
+    await firstDevice.putObject(
+      created.vaultMasterKey,
+      created.header.vaultId,
+      'note',
+      'note:cross-device',
+      new TextEncoder().encode('restored with the Google account'),
+    );
+
+    const secondDevice = new GoogleDriveObjectStore(drive);
+    const restoredHeader = await secondDevice.readVaultHeader();
+    const restoredKey = unlockAccountManagedVault(restoredHeader);
+    const restored = await secondDevice.getObject(
+      restoredKey,
+      created.header.vaultId,
+      'note',
+      'note:cross-device',
+    );
+
+    expect(restoredHeader?.version).toBe(2);
+    expect(new TextDecoder().decode(restored)).toBe('restored with the Google account');
+  });
+
   it('creates a visible PaperFlow folder but uploads only opaque business objects', async () => {
     const drive = new MemoryDrive();
     const store = new GoogleDriveObjectStore(drive);

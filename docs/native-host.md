@@ -1,12 +1,13 @@
 # PaperFlow Native Host
 
-PaperFlow uses the separately installed `com.paperflow.ai` Native Messaging host for three operations that must remain outside Chrome extension storage:
+PaperFlow uses the separately installed `com.paperflow.ai` Native Messaging host for operations that must remain outside Chrome extension storage:
 
 - calling an already installed and authenticated official Codex CLI;
-- storing an OpenAI-compatible API key in the operating-system credential store and making API requests without returning the key to Chrome;
-- optionally remembering a vault device key in the operating-system credential store.
+- storing an OpenAI-compatible API key in the operating-system credential store and making API requests without returning the key to Chrome.
 
-Google Drive sync and password or recovery-key vault unlock continue to work without the host.
+Google Drive sync works without the host. Legacy `vault.*` actions remain in
+protocol version 1 only so older extension builds can access previously stored
+device keys during the upgrade period.
 
 ## Security boundary
 
@@ -39,7 +40,14 @@ The host does not log prompts, responses, paper text, API keys, vault keys, OAut
 | Windows | Credential Manager |
 | Linux | Secret Service |
 
-The current service name is `com.paperflow.ai`, with API-key account `openai_api_key` and vault accounts named `vault_device_key:<vault UUID>`. On first access, the Rust host imports a matching credential from the legacy macOS service `PaperFlow AI` into the new service without exposing it to extension storage. It retains the old item until the user explicitly deletes that credential. Uninstallers preserve credentials by default.
+The current service name is `com.paperflow.ai`, with API-key account
+`openai_api_key`. Older builds may also have vault accounts named
+`vault_device_key:<vault UUID>`; current one-click Google sync does not create or
+read them. On first API-key access, the Rust host imports a matching credential
+from the legacy macOS service `PaperFlow AI` into the new service without
+exposing it to extension storage. It retains the old item until the user
+explicitly deletes that credential. Uninstallers preserve credentials by
+default.
 
 If Secret Service is unavailable on Linux, the host reports that persistent credential storage is unavailable. PaperFlow does not fall back to a plaintext file.
 

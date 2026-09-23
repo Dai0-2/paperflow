@@ -1,13 +1,13 @@
-# PaperFlow Sync Protocol v1
+# PaperFlow Sync Protocol
 
 ## Scope
 
-Protocol version `1` synchronizes one personal PaperFlow library through the
-user's Google Drive. It covers saved papers, aliases, collections, tags,
-documents, notes, annotations, conversations, paper memory, selections,
-reading state, and an allowlist of non-sensitive settings. Temporary workspaces,
-search indexes, OCR caches, OAuth tokens, API keys, and plaintext vault keys are
-not synchronized. PDF bytes are synchronized only when the device-local
+PaperFlow synchronizes one personal library through the user's Google Drive. It
+covers saved papers, aliases, collections, tags, documents, notes, annotations,
+conversations, paper memory, selections, reading state, and an allowlist of
+non-sensitive settings. Temporary workspaces, search indexes, OCR caches, OAuth
+tokens, and API keys are not synchronized. PDF bytes are synchronized only when
+the device-local
 **Back up offline PDFs** setting is explicitly enabled; it is off by default.
 
 The implementation constants and runtime schemas are in
@@ -21,7 +21,7 @@ a visible folder named `PaperFlow`.
 
 | Object | Visibility | Purpose |
 |---|---|---|
-| `vault.json` | Readable protocol header | Vault UUID, KDF parameters, and two encrypted VMK wrappers |
+| `vault.json` | Readable sync header | Sync UUID, key-management mode, and account-managed encryption key material |
 | Opaque `.pfo` objects | AES-256-GCM ciphertext | Operation batches, snapshots, and PDFs |
 
 Opaque names are HMAC-derived. Drive metadata for batches and snapshots contains
@@ -39,10 +39,16 @@ nonce. Additional authenticated data binds:
 vault format + protocol version + vault UUID + object type + logical ID + chunk index
 ```
 
-The object key is wrapped by a domain-separated key derived from the Vault
-Master Key (VMK). A separate domain-derived HMAC key creates the opaque Drive
+The object key is wrapped by a domain-separated key derived from the library
+encryption key. A separate domain-derived HMAC key creates the opaque Drive
 name. Authentication failure aborts the entire object; partial plaintext is not
 applied.
+
+The encryption key is stored in `vault.json` so a second device signed in to the
+same Google account can restore the library without another password. This
+prevents ordinary Drive browsing from exposing content, but is not a
+zero-knowledge boundary: access to the Google account and all PaperFlow-created
+files is sufficient to restore synchronized data.
 
 ## Operation log
 
@@ -104,7 +110,10 @@ soft budget and checkpoints each stage.
 
 ## Compatibility
 
-All protocol objects contain `version: 1`. Runtime schemas accept exactly the
-current version. A client receiving a newer unknown version stops before
-decrypting or applying it; it must not overwrite the vault. Database schemas are
-separate from the cloud protocol and are never automatically downgraded.
+Encrypted objects, batches, and snapshots remain at protocol version `1`.
+Account-managed headers use version `2`. Runtime schemas validate both the
+legacy password header and the account-managed header; unknown versions stop
+before decryption or mutation. A legacy header is replaced only after its
+password or recovery key has successfully unlocked the existing key, preserving
+the sync UUID and all historical objects. Database schemas are separate from the
+cloud protocol and are never automatically downgraded.

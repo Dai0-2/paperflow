@@ -144,7 +144,9 @@ test('virtualizes and filters a 10,000-paper library', async ({ page }, testInfo
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   const settingsDialog = page.getByRole('dialog', { name: 'Library settings' });
   await expect(settingsDialog).toBeVisible();
-  await expect(settingsDialog).toContainText('Chrome browser sync is limited to small preferences');
+  await expect(settingsDialog).toContainText(
+    'Sign in with Google to sync library records, notes, annotations, conversations, and optional PDFs',
+  );
   await expect(settingsDialog.getByRole('checkbox', { name: /Open direct PDFs/ })).toBeChecked();
   await settingsDialog.getByTitle('Close').click();
 

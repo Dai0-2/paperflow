@@ -72,7 +72,7 @@ Open the same paper days later—from a different source when identity can be re
 - Live answer progress for ChatGPT subscription mode and token streaming for API mode
 - Low-latency reasoning configuration and bounded conversation history to prevent progressive slowdowns
 - Per-paper IndexedDB storage for papers, aliases, threads, messages, memory, selections, annotations, settings, and reading state
-- Google Drive `drive.file` adapter and end-to-end encrypted vault setup with password, recovery key, and optional OS credential-store unlock
+- One-click Google account sign-in and encrypted Drive sync using the minimum `drive.file` scope
 - Encrypted incremental sync for library data, notes, annotations, and conversations; creating a persistent annotation automatically saves the paper so it enters the sync queue
 - One-time migration of legacy `localStorage` conversations and notes
 - First-run setup and connection diagnostics
@@ -174,7 +174,9 @@ The local bridge invokes the official Codex CLI for subscription access. API key
 
 Google Drive access is separate from AI providers. Chrome Identity manages the
 OAuth token with the `drive.file` scope. PaperFlow encrypts each cloud object
-before upload; the vault password and recovery key are not sent to Google.
+before upload and stores account-managed key material in its Drive folder so
+the same Google account can restore data on another device without a separate
+sync password.
 
 ## Privacy and security
 
@@ -190,7 +192,7 @@ before upload; the vault password and recovery key are not sent to Google.
 - Database upgrade failure enters a read-only recovery export flow
 
 Read the [privacy notice](docs/privacy.md), [security policy](SECURITY.md),
-[vault recovery guide](docs/vault-recovery.md), and
+[Google Drive sync recovery guide](docs/vault-recovery.md), and
 [migration/rollback guide](docs/migration-and-rollback.md). Release validation
 is recorded in the [v1.0.0 acceptance report](docs/acceptance-report-v1.0.0.md)
 and [release checklist](docs/release-checklist.md).

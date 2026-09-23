@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.2 - 2026-09-24
+
+- Replaced the default password-based vault setup with one-click Google account
+  sign-in and automatic cross-device sync.
+- Added automatic account-managed key recovery for library records, notes,
+  annotations, conversations, reading progress, and optional PDFs.
+- Added a one-time compatibility migration for existing password/recovery-key
+  sync data without re-encrypting historical objects.
+- Updated privacy and store disclosures to describe the Google account security
+  boundary accurately.
+
 ## 1.0.1 - 2026-09-23
 
 ### Fixed

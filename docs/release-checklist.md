@@ -6,11 +6,11 @@ account, device, or signing service.
 
 ## Repository gate
 
-- [x] `package.json` and generated manifest use `1.0.1`.
+- [x] `package.json` and generated manifest use `1.0.2`.
 - [x] TypeScript strict check passes.
 - [x] Unit and integration tests pass.
 - [x] Chromium E2E suite passes for Side Panel-sized UI, Reader, Library,
-  annotations, offline PDF, vault UI, and bilingual entry points.
+  annotations, offline PDF, Google sync UI, and bilingual entry points.
 - [x] Production build and extension ZIP complete.
 - [x] `pnpm audit:release` rejects source maps, dynamic code, remote dependency
   URLs, credential patterns, logs, tests, and local absolute paths.

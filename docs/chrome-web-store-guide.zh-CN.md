@@ -133,7 +133,7 @@ Requests Google authorization for the optional encrypted Google Drive synchroniz
 #### alarms
 
 ```text
-Schedules bounded background synchronization and retry work for the optional Google Drive vault.
+Schedules bounded background synchronization and retry work for optional Google Drive sync.
 ```
 
 #### arXiv 主机权限
@@ -206,10 +206,10 @@ No account is required to test the core Reader and Library.
 
 AI features are optional and require either the separately installed PaperFlow Native Host with Codex authentication or a user-provided OpenAI-compatible API endpoint.
 
-Google Drive synchronization is optional and requires Google authorization plus a user-created encrypted vault password.
+Google Drive synchronization is optional. The user signs in with Google once; PaperFlow then synchronizes library records, notes, annotations, conversations, reading progress, and optional offline PDFs.
 ```
 
-不要提供个人 Google 账号、API Key、保险库密码或恢复密钥。
+不要提供个人 Google 账号或 API Key。
 
 ## 五、分发
 

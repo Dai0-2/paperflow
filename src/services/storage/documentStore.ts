@@ -233,7 +233,7 @@ export async function downloadCloudDocumentForPaper(
   if (!document) return undefined;
   const vaultId = vaultSession.getVaultId();
   if (!vaultId) {
-    throw new Error('Unlock the encrypted Google Drive vault to restore this PDF.');
+    throw new Error('Connect your Google account to restore this PDF.');
   }
   const key = vaultSession.getKey();
   try {

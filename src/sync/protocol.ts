@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const VAULT_PROTOCOL_VERSION = 1 as const;
+export const ACCOUNT_SYNC_HEADER_VERSION = 2 as const;
 export const VAULT_FORMAT = 'paperflow-vault' as const;
 export const ENCRYPTED_OBJECT_FORMAT = 'paperflow-object' as const;
 export const SYNC_BATCH_FORMAT = 'paperflow-sync-batch' as const;
@@ -12,7 +13,7 @@ const wrappedKeySchema = z.object({
   ciphertext: z.string().min(1),
 });
 
-export const vaultHeaderSchema = z.object({
+export const legacyVaultHeaderSchema = z.object({
   format: z.literal(VAULT_FORMAT),
   version: z.literal(VAULT_PROTOCOL_VERSION),
   vaultId: z.string().uuid(),
@@ -28,6 +29,21 @@ export const vaultHeaderSchema = z.object({
   }),
   recoveryWrappedVmk: wrappedKeySchema,
 });
+
+export const accountVaultHeaderSchema = z.object({
+  format: z.literal(VAULT_FORMAT),
+  version: z.literal(ACCOUNT_SYNC_HEADER_VERSION),
+  vaultId: z.string().uuid(),
+  keyManagement: z.object({
+    mode: z.literal('google-account'),
+    keyMaterial: z.string().length(44),
+  }),
+});
+
+export const vaultHeaderSchema = z.discriminatedUnion('version', [
+  legacyVaultHeaderSchema,
+  accountVaultHeaderSchema,
+]);
 
 export const encryptedObjectSchema = z.object({
   format: z.literal(ENCRYPTED_OBJECT_FORMAT),
@@ -111,6 +127,8 @@ export const syncSnapshotSchema = z.object({
 });
 
 export type WrappedKey = z.infer<typeof wrappedKeySchema>;
+export type LegacyVaultHeader = z.infer<typeof legacyVaultHeaderSchema>;
+export type AccountVaultHeader = z.infer<typeof accountVaultHeaderSchema>;
 export type VaultHeader = z.infer<typeof vaultHeaderSchema>;
 export type EncryptedObject = z.infer<typeof encryptedObjectSchema>;
 export type SyncBatch = z.infer<typeof syncBatchSchema>;
@@ -118,6 +136,14 @@ export type SyncSnapshot = z.infer<typeof syncSnapshotSchema>;
 
 export function parseVaultHeader(input: unknown): VaultHeader {
   return vaultHeaderSchema.parse(input);
+}
+
+export function parseLegacyVaultHeader(input: unknown): LegacyVaultHeader {
+  return legacyVaultHeaderSchema.parse(input);
+}
+
+export function parseAccountVaultHeader(input: unknown): AccountVaultHeader {
+  return accountVaultHeaderSchema.parse(input);
 }
 
 export function parseEncryptedObject(input: unknown): EncryptedObject {

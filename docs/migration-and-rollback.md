@@ -54,7 +54,7 @@ client to overwrite them.
 
 ## Fresh installation
 
-A fresh v1.0 profile creates the latest schema directly and has no
-`v1-pre-upgrade` backup because there is no legacy data. To recover an existing
-encrypted library, connect the same Google account and unlock it with the vault
-password or recovery key.
+A fresh profile creates the latest schema directly and has no `v1-pre-upgrade`
+backup because there is no legacy data. To recover an existing library, connect
+the same Google account. A legacy password/recovery header requires one
+successful unlock before PaperFlow upgrades it to account-managed sync.

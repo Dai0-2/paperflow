@@ -6,8 +6,11 @@ import {
   opaqueDriveFileName,
 } from '../../src/crypto/objectCipher';
 import {
+  accountManagedHeader,
+  createAccountManagedVault,
   createVault,
   rewrapVaultPassword,
+  unlockAccountManagedVault,
   unlockVaultWithPassword,
   unlockVaultWithRecoveryKey,
 } from '../../src/crypto/vault';
@@ -20,6 +23,16 @@ function cloneObject(value: EncryptedObject): EncryptedObject {
 }
 
 describe('vault key wrapping', () => {
+  it('restores an account-managed sync key without a separate password', () => {
+    const created = createAccountManagedVault();
+    const restored = unlockAccountManagedVault(created.header);
+
+    expect(created.header.version).toBe(2);
+    expect(created.header.keyManagement.mode).toBe('google-account');
+    expect(restored).toEqual(created.vaultMasterKey);
+    expect(accountManagedHeader(created.header.vaultId, restored)).toEqual(created.header);
+  });
+
   it('unlocks with password or recovery key and fails closed for a wrong password', async () => {
     const created = await createVault(password);
     const fromPassword = await unlockVaultWithPassword(created.header, password);

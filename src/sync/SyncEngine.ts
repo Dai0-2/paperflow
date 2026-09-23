@@ -128,7 +128,7 @@ export class SyncEngine {
       header = connection.header;
     }
     if (!header || !vaultSession.isUnlocked(header.vaultId)) {
-      throw new Error('Unlock the encrypted vault before synchronizing.');
+      throw new Error('Connect your Google account before synchronizing.');
     }
     const key = vaultSession.getKey();
     try {

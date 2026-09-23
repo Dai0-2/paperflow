@@ -1,62 +1,53 @@
-# Encrypted Vault Recovery
-
-## What is required
-
-Access to the Google account is necessary but not sufficient. To decrypt a
-PaperFlow vault, a device also needs one of:
-
-- the independent vault password;
-- the recovery key shown once when the vault is created;
-- a previously saved device key in the operating-system credential store.
-
-PaperFlow, Google, and the AI provider do not have a recovery bypass. If all
-three are unavailable, the encrypted Drive data cannot be recovered.
+# Google Drive Sync Recovery
 
 ## New computer
 
 1. Install the same or a newer compatible PaperFlow version.
-2. Connect the same Google account in **Settings > Encrypted Google Drive vault**.
-3. When PaperFlow finds `PaperFlow/vault.json`, choose password or recovery key.
-4. Optionally enable **Remember this device**. This requires the Rust Native
-   Host and stores only the VMK in Keychain, Credential Manager, or Secret
-   Service.
-5. Keep Chrome open until the first sync finishes. PDFs are available from the
-   vault only when **Back up offline PDFs** was enabled; backed-up PDFs are
-   downloaded lazily when opened.
+2. Open **Settings > Google Drive sync**.
+3. Select **Sign in with Google** and use the same Google account.
+4. Keep Chrome open until the first sync finishes.
 
-## Recovery key handling
+Library records, notes, annotations, conversations, and reading progress restore
+automatically. PDFs restore only when **Back up offline PDFs** was enabled on
+the source device; backed-up PDFs are downloaded lazily when opened.
 
-The key is a random 256-bit value encoded for human storage and shown only
-during vault creation. Store it in a password manager or another protected
-offline location. Do not place it in a paper note, browser sync, source control,
-or the same Google Drive folder.
+## Security boundary
 
-Unlocking with the recovery key does not rotate it. To regain password access,
-unlock with the recovery key and set a new vault password. Password changes
-rewrap the VMK; they do not re-encrypt every historical object.
+PaperFlow encrypts business objects before uploading them and uses opaque Drive
+filenames. The account-managed encryption key is stored in
+`PaperFlow/vault.json` so another device can restore data without a separate
+password.
+
+This is not zero-knowledge encryption. Anyone who can access the Google account
+and all PaperFlow-created Drive files can restore synchronized content. Protect
+the Google account with a strong password, multi-factor authentication, and
+appropriate device controls.
+
+## Upgrading legacy encrypted data
+
+Data created by an older PaperFlow version may use a separate password and
+recovery key. When PaperFlow detects that header, it asks for either credential
+once. A successful unlock replaces only the header with the account-managed
+format; the library identifier, encryption key, and historical encrypted
+objects do not change.
+
+Do not delete the old Drive folder when migrating. If neither legacy credential
+is available, that older encrypted data cannot be recovered.
 
 ## Lost or replaced device
 
-Use **Forget device** before disposal when possible. This removes the remembered
-VMK from that operating-system account but does not delete the Drive vault.
-Disconnecting Google only removes Chrome's cached authorization and locks the
-current session.
+1. Remove the device from the Google account.
+2. Revoke PaperFlow's Google authorization if the device may still be active.
+3. Change the Google account password and review active sessions.
 
-If a device was lost while unlocked:
-
-1. Revoke PaperFlow's Google authorization from the Google account.
-2. Change the vault password from a trusted device.
-3. Remove the old OS account or credential-store entry when remote device
-   management permits.
-
-Changing the password does not invalidate an already remembered VMK. Device
-revocation therefore depends on controlling or wiping the lost OS account.
-PaperFlow v1 has no server-side device registry.
+Disconnecting inside PaperFlow disables background synchronization on that
+browser profile and clears its cached Google authorization token. It does not
+delete local data or the `PaperFlow` Drive folder.
 
 ## Damaged cloud objects
 
 AES-GCM authentication failures stop object application. Keep a local export
-and any original PDFs until recovery is complete. If a valid local PDF remains,
+and original PDFs until recovery is complete. If a valid local PDF remains,
 remove the damaged remote object and allow PaperFlow to upload it again. Do not
 edit `vault.json` or encrypted `.pfo` files manually.
 
@@ -66,12 +57,9 @@ If IndexedDB migration or version opening fails, Side Panel, Reader, and Library
 redirect to `recovery.html`. The page is read-only and can export every
 accessible IndexedDB store as `paperflow-recovery-<timestamp>.json`.
 
-The export intentionally excludes:
-
-- OPFS PDF and encrypted-upload binary files;
-- OAuth tokens managed by Chrome;
-- API keys and remembered vault keys held by the OS credential store;
-- Codex credentials.
+The export intentionally excludes OPFS PDF and encrypted-upload binary files,
+OAuth tokens managed by Chrome, API keys held by the OS credential store, and
+Codex credentials.
 
 Before reinstalling or clearing site data, preserve the recovery JSON and
 original PDFs. Reinstalling an older extension over a newer database is not a

@@ -128,7 +128,7 @@ Requests Google authorization for the optional encrypted Google Drive synchroniz
 #### alarms
 
 ```text
-Schedules bounded background synchronization and retry work for the optional Google Drive vault.
+Schedules bounded background synchronization and retry work for optional Google Drive sync.
 ```
 
 #### arXiv host access
@@ -165,10 +165,10 @@ device when the user explicitly uses AI or encrypted Drive sync:
 - Personal communications: user prompts, AI conversation history, and notes.
 - Authentication information: user-provided API credentials handled through
   the Native Host and OAuth authorization managed by Chrome Identity.
-- User activity: reading state and recently read research items included in the
-  optional encrypted vault.
+- User activity: reading state and recently read research items included in
+  optional Google Drive sync.
 - Web history: source URLs and access timestamps for research papers included
-  in the optional encrypted vault.
+  in optional Google Drive sync.
 
 Do not select personally identifiable information, health information,
 financial information, location, or payment information. PaperFlow does not
@@ -208,11 +208,13 @@ No account is required to test the core Reader and Library.
 
 AI features are optional and require either the separately installed PaperFlow Native Host with Codex authentication or a user-provided OpenAI-compatible API endpoint.
 
-Google Drive synchronization is optional and requires Google authorization plus a user-created encrypted vault password.
+Google Drive synchronization is optional. The user signs in with Google once;
+PaperFlow then synchronizes library records, notes, annotations, conversations,
+reading progress, and optional offline PDFs.
 ```
 
-Do not provide reviewer credentials, API keys, recovery keys, or personal
-Google account access.
+Do not provide reviewer credentials, API keys, or personal Google account
+access.
 
 ## Distribution
 

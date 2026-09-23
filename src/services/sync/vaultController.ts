@@ -1,178 +1,185 @@
-import { base64ToBytes, bytesToBase64 } from '../../crypto/encoding';
 import {
-  createVault,
-  rewrapVaultPassword,
+  accountManagedHeader,
+  createAccountManagedVault,
+  unlockAccountManagedVault,
   unlockVaultWithPassword,
   unlockVaultWithRecoveryKey,
   vaultSession,
 } from '../../crypto/vault';
 import {
-  deleteDeviceVaultKey,
-  loadDeviceVaultKey,
-  storeDeviceVaultKey,
-} from '../bridge';
-import {
   createGoogleDriveObjectStore,
   type GoogleDriveObjectStore,
 } from '../google/driveObjects';
 import { googleAuth } from '../google/googleAuth';
-import type { VaultHeader } from '../../sync/protocol';
+import type { LegacyVaultHeader, VaultHeader } from '../../sync/protocol';
+
+const SYNC_ENABLED_KEY = 'paperflowGoogleDriveSyncEnabled';
+
+interface GoogleAuthGateway {
+  isConfigured(): boolean;
+  connect(): Promise<string>;
+  disconnect(): Promise<void>;
+}
+
+export interface SyncPreferenceGateway {
+  read(): Promise<boolean>;
+  write(enabled: boolean): Promise<void>;
+}
 
 export interface VaultConnection {
   header: VaultHeader | null;
   unlocked: boolean;
-  remembered: boolean;
+  legacyMigrationRequired: boolean;
 }
+
+async function readSyncEnabled(): Promise<boolean> {
+  if (typeof chrome === 'undefined' || !chrome.storage?.local) return false;
+  const stored = await chrome.storage.local.get(SYNC_ENABLED_KEY);
+  return stored[SYNC_ENABLED_KEY] === true;
+}
+
+async function writeSyncEnabled(enabled: boolean): Promise<void> {
+  if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+  await chrome.storage.local.set({ [SYNC_ENABLED_KEY]: enabled });
+}
+
+const browserSyncPreference: SyncPreferenceGateway = {
+  read: readSyncEnabled,
+  write: writeSyncEnabled,
+};
 
 export class VaultController {
   private header: VaultHeader | null = null;
-  private readonly objectStore: GoogleDriveObjectStore;
-  private failedUnlocks = 0;
-  private unlockAllowedAt = 0;
 
-  constructor(objectStore = createGoogleDriveObjectStore()) {
-    this.objectStore = objectStore;
-  }
+  constructor(
+    private readonly objectStore: GoogleDriveObjectStore = createGoogleDriveObjectStore(),
+    private readonly auth: GoogleAuthGateway = googleAuth,
+    private readonly syncPreference: SyncPreferenceGateway = browserSyncPreference,
+  ) {}
 
   isConfigured(): boolean {
-    return googleAuth.isConfigured();
+    return this.auth.isConfigured();
+  }
+
+  async isSyncEnabled(): Promise<boolean> {
+    return this.isConfigured() && await this.syncPreference.read();
   }
 
   async connect(): Promise<VaultConnection> {
-    await googleAuth.connect();
-    return this.inspect();
+    await this.auth.connect();
+    await this.syncPreference.write(true);
+    return this.loadOrCreate();
   }
 
   async inspect(): Promise<VaultConnection> {
-    this.header = await this.objectStore.readVaultHeader();
-    if (!this.header) return { header: null, unlocked: false, remembered: false };
-    const remembered = await this.tryRememberedKey(this.header);
-    return {
-      header: this.header,
-      unlocked: vaultSession.isUnlocked(this.header.vaultId),
-      remembered,
-    };
+    if (!await this.isSyncEnabled()) return this.disconnected();
+    return this.loadExisting();
   }
 
-  async create(password: string, rememberDevice: boolean): Promise<{
-    header: VaultHeader;
-    recoveryKey: string;
-    remembered: boolean;
-  }> {
-    const created = await createVault(password);
-    await this.objectStore.writeVaultHeader(created.header);
-    this.header = created.header;
-    vaultSession.unlock(created.header.vaultId, created.vaultMasterKey);
-    const remembered = rememberDevice
-      ? await this.remember(created.header.vaultId, created.vaultMasterKey)
-      : false;
-    created.vaultMasterKey.fill(0);
-    return { header: created.header, recoveryKey: created.recoveryKey, remembered };
+  async migrateLegacyWithPassword(password: string): Promise<VaultConnection> {
+    const header = this.requireLegacyHeader();
+    const key = await unlockVaultWithPassword(header, password);
+    return this.completeLegacyMigration(header, key);
   }
 
-  async unlockWithPassword(password: string, rememberDevice: boolean): Promise<boolean> {
-    const header = this.requireHeader();
-    this.assertUnlockAllowed();
-    try {
-      const key = await unlockVaultWithPassword(header, password);
-      vaultSession.unlock(header.vaultId, key);
-      const remembered = rememberDevice ? await this.remember(header.vaultId, key) : false;
-      key.fill(0);
-      this.resetUnlockRateLimit();
-      return remembered;
-    } catch (error) {
-      this.recordUnlockFailure();
-      throw error;
-    }
-  }
-
-  async unlockWithRecoveryKey(recoveryKey: string, rememberDevice: boolean): Promise<boolean> {
-    const header = this.requireHeader();
-    this.assertUnlockAllowed();
-    try {
-      const key = await unlockVaultWithRecoveryKey(header, recoveryKey);
-      vaultSession.unlock(header.vaultId, key);
-      const remembered = rememberDevice ? await this.remember(header.vaultId, key) : false;
-      key.fill(0);
-      this.resetUnlockRateLimit();
-      return remembered;
-    } catch (error) {
-      this.recordUnlockFailure();
-      throw error;
-    }
-  }
-
-  async changePassword(newPassword: string): Promise<void> {
-    const header = this.requireHeader();
-    const key = vaultSession.getKey();
-    try {
-      this.header = await rewrapVaultPassword(header, key, newPassword);
-      await this.objectStore.writeVaultHeader(this.header);
-    } finally {
-      key.fill(0);
-    }
-  }
-
-  async forgetDevice(): Promise<void> {
-    const header = this.requireHeader();
-    const result = await deleteDeviceVaultKey(header.vaultId);
-    if (!result.ok) throw new Error(result.error || 'Could not remove the saved device key.');
-  }
-
-  lock(): void {
-    vaultSession.lock();
+  async migrateLegacyWithRecoveryKey(recoveryKey: string): Promise<VaultConnection> {
+    const header = this.requireLegacyHeader();
+    const key = await unlockVaultWithRecoveryKey(header, recoveryKey);
+    return this.completeLegacyMigration(header, key);
   }
 
   async disconnect(): Promise<void> {
     vaultSession.lock();
     this.header = null;
-    await googleAuth.disconnect();
+    await this.syncPreference.write(false);
+    await this.auth.disconnect();
   }
 
   getHeader(): VaultHeader | null {
     return this.header;
   }
 
-  private requireHeader(): VaultHeader {
-    if (!this.header) throw new Error('No PaperFlow vault was found in Google Drive.');
+  private async loadOrCreate(): Promise<VaultConnection> {
+    const existing = await this.objectStore.readVaultHeader();
+    if (existing) return this.activate(existing);
+
+    const created = createAccountManagedVault();
+    try {
+      await this.objectStore.writeVaultHeader(created.header);
+      this.header = created.header;
+      vaultSession.unlock(created.header.vaultId, created.vaultMasterKey);
+      return {
+        header: created.header,
+        unlocked: true,
+        legacyMigrationRequired: false,
+      };
+    } finally {
+      created.vaultMasterKey.fill(0);
+    }
+  }
+
+  private async loadExisting(): Promise<VaultConnection> {
+    const existing = await this.objectStore.readVaultHeader();
+    if (!existing) return this.disconnected();
+    return this.activate(existing);
+  }
+
+  private activate(header: VaultHeader): VaultConnection {
+    this.header = header;
+    if (header.version === 1) {
+      return {
+        header,
+        unlocked: false,
+        legacyMigrationRequired: true,
+      };
+    }
+    const key = unlockAccountManagedVault(header);
+    try {
+      vaultSession.unlock(header.vaultId, key);
+    } finally {
+      key.fill(0);
+    }
+    return {
+      header,
+      unlocked: true,
+      legacyMigrationRequired: false,
+    };
+  }
+
+  private requireLegacyHeader(): LegacyVaultHeader {
+    if (!this.header || this.header.version !== 1) {
+      throw new Error('No legacy PaperFlow encrypted sync data was found.');
+    }
     return this.header;
   }
 
-  private async tryRememberedKey(header: VaultHeader): Promise<boolean> {
-    const result = await loadDeviceVaultKey(header.vaultId);
-    if (!result.ok || !result.authenticated || !result.vaultKey) return false;
+  private async completeLegacyMigration(
+    legacyHeader: LegacyVaultHeader,
+    key: Uint8Array,
+  ): Promise<VaultConnection> {
     try {
-      const key = base64ToBytes(result.vaultKey);
-      if (key.byteLength !== 32) return false;
+      const header = accountManagedHeader(legacyHeader.vaultId, key);
+      await this.objectStore.writeVaultHeader(header);
+      this.header = header;
       vaultSession.unlock(header.vaultId, key);
+      return {
+        header,
+        unlocked: true,
+        legacyMigrationRequired: false,
+      };
+    } finally {
       key.fill(0);
-      return true;
-    } catch {
-      return false;
     }
   }
 
-  private async remember(vaultId: string, key: Uint8Array): Promise<boolean> {
-    const result = await storeDeviceVaultKey(vaultId, bytesToBase64(key));
-    return result.ok;
-  }
-
-  private assertUnlockAllowed(): void {
-    const remaining = this.unlockAllowedAt - Date.now();
-    if (remaining > 0) {
-      throw new Error(`Wait ${Math.ceil(remaining / 1000)} seconds before trying to unlock again.`);
-    }
-  }
-
-  private recordUnlockFailure(): void {
-    this.failedUnlocks += 1;
-    const delay = Math.min(30_000, 1000 * (2 ** Math.min(this.failedUnlocks - 1, 5)));
-    this.unlockAllowedAt = Date.now() + delay;
-  }
-
-  private resetUnlockRateLimit(): void {
-    this.failedUnlocks = 0;
-    this.unlockAllowedAt = 0;
+  private disconnected(): VaultConnection {
+    vaultSession.lock();
+    this.header = null;
+    return {
+      header: null,
+      unlocked: false,
+      legacyMigrationRequired: false,
+    };
   }
 }
 

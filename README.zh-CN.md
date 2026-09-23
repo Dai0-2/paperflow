@@ -68,7 +68,7 @@ Paper
 - ChatGPT 订阅模式显示实时运行阶段，API 模式逐字流式生成回答
 - 订阅模式采用低推理延迟配置，并限制累计历史上下文，避免对话越长越慢
 - 通过 IndexedDB 按论文保存 papers、aliases、threads、messages、memory、selections、annotations、settings 和阅读状态
-- Google Drive `drive.file` 适配器与端到端加密保险库，支持独立密码、恢复密钥和可选的系统凭据库解锁
+- Google 账号一键登录与加密 Drive 同步，仅申请最小 `drive.file` 权限
 - 加密增量同步：不可变操作批次、快照、Drive Changes 游标、笔记冲突副本及 PDF 断点续传
 - 自动迁移旧版 `localStorage` 对话与笔记
 - 首次初始化与连接诊断页面
@@ -171,7 +171,9 @@ PaperFlow Rust Native Host
 独立安装的本地 Bridge 将调用官方 Codex CLI，凭据由 Codex CLI 或操作系统凭据存储管理。详见[架构文档](docs/architecture.md)。
 
 Google Drive 授权与 AI Provider 相互独立。OAuth Token 由 Chrome Identity
-按 `drive.file` 范围管理；所有业务对象在上传前完成加密，保险库密码和恢复密钥不会发送给 Google。
+按 `drive.file` 范围管理；所有业务对象在上传前完成加密，同步密钥由
+PaperFlow 创建的 Drive 文件托管，因此同一 Google 账号可在新设备直接恢复，
+无需另设同步密码。
 
 ## 隐私与安全
 
@@ -186,7 +188,7 @@ Google Drive 授权与 AI Provider 相互独立。OAuth Token 由 Chrome Identit
 - 数据库升级失败时进入只读恢复导出流程
 
 请阅读[隐私说明](docs/privacy.md)、[安全策略](SECURITY.md)、
-[保险库恢复指南](docs/vault-recovery.md)和
+[Google Drive 同步恢复指南](docs/vault-recovery.md)和
 [迁移与回滚指南](docs/migration-and-rollback.md)。发布验证结果见
 [v1.0.0 验收报告](docs/acceptance-report-v1.0.0.md)和
 [发布检查清单](docs/release-checklist.md)。

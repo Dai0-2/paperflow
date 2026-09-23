@@ -13,9 +13,13 @@ import {
 } from './kdf';
 import { createRecoveryKey, parseRecoveryKey } from './recoveryKey';
 import {
-  parseVaultHeader,
+  ACCOUNT_SYNC_HEADER_VERSION,
+  parseAccountVaultHeader,
+  parseLegacyVaultHeader,
   VAULT_FORMAT,
   VAULT_PROTOCOL_VERSION,
+  type AccountVaultHeader,
+  type LegacyVaultHeader,
   type VaultHeader,
   type WrappedKey,
 } from '../sync/protocol';
@@ -70,9 +74,45 @@ async function unwrapVmk(
 }
 
 export interface CreatedVault {
-  header: VaultHeader;
+  header: LegacyVaultHeader;
   vaultMasterKey: Uint8Array;
   recoveryKey: string;
+}
+
+export interface CreatedAccountManagedVault {
+  header: AccountVaultHeader;
+  vaultMasterKey: Uint8Array;
+}
+
+export function accountManagedHeader(
+  vaultId: string,
+  vaultMasterKey: Uint8Array,
+): AccountVaultHeader {
+  if (vaultMasterKey.byteLength !== VMK_BYTES) throw new Error('Invalid vault master key length.');
+  return parseAccountVaultHeader({
+    format: VAULT_FORMAT,
+    version: ACCOUNT_SYNC_HEADER_VERSION,
+    vaultId,
+    keyManagement: {
+      mode: 'google-account',
+      keyMaterial: bytesToBase64(vaultMasterKey),
+    },
+  });
+}
+
+export function createAccountManagedVault(): CreatedAccountManagedVault {
+  const vaultMasterKey = randomBytes(VMK_BYTES);
+  return {
+    header: accountManagedHeader(crypto.randomUUID(), vaultMasterKey),
+    vaultMasterKey,
+  };
+}
+
+export function unlockAccountManagedVault(input: VaultHeader | unknown): Uint8Array {
+  const header = parseAccountVaultHeader(input);
+  const key = base64ToBytes(header.keyManagement.keyMaterial);
+  if (key.byteLength !== VMK_BYTES) throw new Error('Invalid Google Drive sync key length.');
+  return key;
 }
 
 export async function createVault(password: string): Promise<CreatedVault> {
@@ -92,7 +132,7 @@ export async function createVault(password: string): Promise<CreatedVault> {
     wrapVmk(vaultMasterKey, recoveryWrappingKey, wrappingAad(vaultId, 'recovery')),
   ]);
   recovery.bytes.fill(0);
-  const header = parseVaultHeader({
+  const header = parseLegacyVaultHeader({
     format: VAULT_FORMAT,
     version: VAULT_PROTOCOL_VERSION,
     vaultId,
@@ -112,10 +152,10 @@ export async function createVault(password: string): Promise<CreatedVault> {
 }
 
 export async function unlockVaultWithPassword(
-  input: VaultHeader | unknown,
+  input: LegacyVaultHeader | unknown,
   password: string,
 ): Promise<Uint8Array> {
-  const header = parseVaultHeader(input);
+  const header = parseLegacyVaultHeader(input);
   const wrappingKey = await derivePasswordWrappingKey(
     password,
     base64ToBytes(header.passwordKdf.salt),
@@ -129,10 +169,10 @@ export async function unlockVaultWithPassword(
 }
 
 export async function unlockVaultWithRecoveryKey(
-  input: VaultHeader | unknown,
+  input: LegacyVaultHeader | unknown,
   recoveryKey: string,
 ): Promise<Uint8Array> {
-  const header = parseVaultHeader(input);
+  const header = parseLegacyVaultHeader(input);
   const recoveryBytes = parseRecoveryKey(recoveryKey);
   try {
     const wrappingKey = await deriveRecoveryWrappingKey(recoveryBytes, header.vaultId);
@@ -147,11 +187,11 @@ export async function unlockVaultWithRecoveryKey(
 }
 
 export async function rewrapVaultPassword(
-  input: VaultHeader | unknown,
+  input: LegacyVaultHeader | unknown,
   vaultMasterKey: Uint8Array,
   newPassword: string,
-): Promise<VaultHeader> {
-  const header = parseVaultHeader(input);
+): Promise<LegacyVaultHeader> {
+  const header = parseLegacyVaultHeader(input);
   if (vaultMasterKey.byteLength !== VMK_BYTES) throw new Error('Invalid vault master key length.');
   assertStrongVaultPassword(newPassword);
   const passwordSalt = randomBytes(16);
@@ -160,7 +200,7 @@ export async function rewrapVaultPassword(
     passwordSalt,
     PASSWORD_KDF_ITERATIONS,
   );
-  return parseVaultHeader({
+  return parseLegacyVaultHeader({
     ...header,
     passwordKdf: {
       algorithm: 'PBKDF2-HMAC-SHA-256',

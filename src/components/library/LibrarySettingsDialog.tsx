@@ -130,8 +130,8 @@ export function LibrarySettingsDialog(props: {
           <h3><CloudUpload />{text(props.language, 'Cross-device sync', '跨设备同步')}</h3>
           <p className="library-sync-explanation">{text(
             props.language,
-            'Chrome browser sync is limited to small preferences and does not sync IndexedDB or offline files. PaperFlow uses an encrypted Google Drive vault for library records, notes, annotations, and optional PDFs.',
-            'Chrome 浏览器同步只能承载少量偏好设置，不能同步 IndexedDB 或离线文件。PaperFlow 使用加密的 Google Drive 保险库同步资料库、笔记、批注和可选 PDF。',
+            'Sign in with Google to sync library records, notes, annotations, conversations, and optional PDFs across devices.',
+            '登录 Google 账号，即可在设备间同步资料库、笔记、批注、对话和可选 PDF。',
           )}</p>
           <label className="library-setting-row">
             <span>

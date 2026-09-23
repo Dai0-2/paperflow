@@ -1,6 +1,6 @@
 # PaperFlow AI Privacy Notice
 
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
 PaperFlow AI is a local-first Chrome extension. It does not operate a PaperFlow
 account service, analytics service, advertising service, or telemetry backend.
@@ -13,24 +13,28 @@ the extension's IndexedDB. Saved PDFs and rebuildable OCR resources are stored
 in Origin Private File System (OPFS). Lightweight interface preferences use
 extension local storage.
 
-API keys and optionally remembered vault keys are stored through the separately
-installed Native Host in the operating-system credential store. Codex CLI owns
-its own authentication data. PaperFlow does not read ChatGPT cookies or Codex
-credential files.
+API keys are stored through the separately installed Native Host in the
+operating-system credential store. Codex CLI owns its own authentication data.
+PaperFlow does not read ChatGPT cookies or Codex credential files.
 
 ## Google Drive synchronization
 
-Synchronization is disabled until the user connects Google Drive and creates or
-unlocks a vault. PaperFlow requests only the `drive.file` scope, which limits it
-to files created or explicitly opened by PaperFlow.
+Synchronization is disabled until the user signs in with Google. PaperFlow
+requests only the `drive.file` scope, which limits it to files created or
+explicitly opened by PaperFlow.
 
-The readable `vault.json` file contains protocol and key-derivation parameters
-plus encrypted VMK wrappers. Library records are encrypted locally before
-upload. Offline PDF backup is a separate setting and is disabled by default; if
-enabled, those PDFs are also encrypted locally before upload. Drive object names
-are opaque. Google receives ciphertext, object sizes, timestamps, the PaperFlow
-folder name, and limited protocol metadata; it does not receive plaintext paper
-titles, notes, annotations, conversations, or PDF bytes from PaperFlow sync.
+The readable `vault.json` file contains the synchronization identifier and
+account-managed encryption key material. Library records are encrypted locally
+before upload. Offline PDF backup is a separate setting and is disabled by
+default; if enabled, those PDFs are also encrypted locally before upload. Drive
+object names are opaque. Plaintext paper titles, notes, annotations,
+conversations, and PDF bytes are not written directly to Drive objects.
+
+This encryption prevents ordinary Drive browsing from revealing synchronized
+content, but it is not zero-knowledge encryption: anyone who can access the
+Google account and its PaperFlow-created Drive files can obtain the key material
+and restore the data. The Google account's sign-in and security controls protect
+cross-device recovery.
 
 OAuth access tokens remain managed by Chrome Identity and are not written to
 IndexedDB, OPFS, logs, exports, or Drive.
@@ -84,12 +88,12 @@ Drive folder. Tombstones may remain in encrypted sync history so older devices
 cannot restore deleted records.
 
 Uninstalling the extension can remove browser-local IndexedDB and OPFS data.
-Native Host uninstallers preserve credential-store entries by default. Removing
-the `PaperFlow` Drive folder removes the cloud copy but does not erase local
-devices.
+Native Host uninstallers preserve API-key credential-store entries by default.
+Removing the `PaperFlow` Drive folder removes the cloud copy but does not erase
+local devices.
 
 ## Contact
 
 Security-sensitive reports should use the repository's private vulnerability
-reporting channel. Do not include real credentials, recovery keys, or private
-paper content in reports.
+reporting channel. Do not include real credentials or private paper content in
+reports.
