@@ -1,5 +1,27 @@
 import { expect, test } from '@playwright/test';
 
+test('centers the initial prompts in the available chat area', async ({ page }) => {
+  await page.setViewportSize({ width: 420, height: 900 });
+  await page.addInitScript(() => {
+    localStorage.setItem('paperflow:initialized', 'true');
+    localStorage.setItem('paperflow:provider', 'api');
+    localStorage.setItem('paperflow:api-model', 'gpt-4.1-mini');
+  });
+  await page.goto('/');
+  await expect(page.getByText('Ask anything about this paper')).toBeVisible();
+
+  const chatBox = await page.locator('.chat-scroll').boundingBox();
+  const glyphBox = await page.locator('.empty-glyph').boundingBox();
+  const actionsBox = await page.locator('.quick-actions').boundingBox();
+  expect(chatBox).toBeTruthy();
+  expect(glyphBox).toBeTruthy();
+  expect(actionsBox).toBeTruthy();
+
+  const chatCenter = chatBox!.y + chatBox!.height / 2;
+  const contentCenter = (glyphBox!.y + actionsBox!.y + actionsBox!.height) / 2;
+  expect(Math.abs(contentCenter - chatCenter)).toBeLessThan(40);
+});
+
 test('keeps assistant actions visible and saves an answer as a library note', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 420, height: 900 });
   await page.addInitScript(() => {
