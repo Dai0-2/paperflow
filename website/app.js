@@ -12,8 +12,8 @@ function applyLanguage(nextLanguage) {
   document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
   document.title =
     language === "zh"
-      ? "PaperFlow AI - 读懂每一篇论文"
-      : "PaperFlow AI - Your papers, understood";
+      ? "PaperFlow AI - 为浏览器而生的 PDF 阅读器"
+      : "PaperFlow AI - The PDF reader built for your browser";
 
   translations.forEach((element) => {
     element.innerHTML = element.dataset[language];

@@ -1,8 +1,8 @@
 <div align="center">
   <img src="public/icons/paperflow-128.png" width="78" height="78" alt="PaperFlow AI 图标">
   <h1>PaperFlow AI</h1>
-  <p><strong>陪伴每一篇论文的持久化 AI 研究助手。</strong></p>
-  <p>阅读、批注、提问、记忆与同步，同时保留你的数据主权。</p>
+  <p><strong>为浏览器而生的 PDF 阅读器。</strong></p>
+  <p>在发现论文的地方直接阅读、批注和提问，并在不同电脑上继续研究。</p>
   <p>
     <a href="https://dai0-2.github.io/paperflow/"><strong>产品网站</strong></a>
     ·
@@ -28,8 +28,8 @@
 </p>
 
 > [!IMPORTANT]
-> PaperFlow AI 1.0.10 是本地优先的个人文献库、PDF 阅读与批注工作台和
-> AI 研究助手。登录 Google 后即可通过用户自己的云盘同步加密研究数据；
+> PaperFlow AI 1.0.10 是运行在 Chrome 中的浏览器原生 PDF 阅读器，集成
+> 批注、页码感知 AI、个人文献库与用户自有 Google Drive 加密同步。
 > PaperFlow 不运营文档后端。
 
 ## 产品概览
@@ -120,7 +120,6 @@ Paper
 - 尚未实现 Citation 原文范围高亮。
 - OCR 采用用户按需触发模式，单次最多处理 50 页。
 - 登录墙或严格 CORS 限制的远程 PDF 需要先下载，再本地打开。
-- 真实 Google Drive 双设备发布验收仍需要生产 OAuth Client ID；自动化测试使用内存双设备 Drive 适配器。
 - 暂不包含团队协作、向量数据库和账号付费系统。
 
 ## 安装
@@ -148,17 +147,6 @@ sh native-host/install/install-linux.sh
 # Windows PowerShell
 .\native-host\install\install-windows.ps1
 ```
-
-Google Drive 开发构建需要 Chrome Extension OAuth Client ID：
-
-```bash
-cp .env.example .env.local
-# 在 .env.local 中设置 PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID
-pnpm build
-```
-
-未设置 Client ID 时，本地开发构建仍可加载，但会明确显示 Drive
-同步“未配置”；`vite build --mode release` 会直接失败。
 
 然后：
 
@@ -233,23 +221,6 @@ pnpm package
 ```
 
 欢迎贡献代码，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-
-## Roadmap
-
-- [x] Phase 1 — 高完成度 UI 原型
-- [x] Phase 2 Alpha — 当前论文识别、本地存储和 PDF 附件
-- [x] Phase 3 Alpha — Codex CLI Bridge 与 ChatGPT 登录
-- [x] Phase 3.1 — 流式进度、API Provider 与双语提示词
-- [x] Phase 4 MVP — Selection、Current Page、结构化 Paper Context
-- [x] Phase 5 MVP — IndexedDB Memory、Citation、页码跳转
-- [x] Phase 6 — PaperFlow Bridge 与 Codex CLI 登录
-- [x] Phase 7 MVP — 集成式 PDF.js Reader
-
-## 致谢
-
-PaperFlow 的 Provider 与本地 Bridge 架构研究参考了开源项目 [AIdea for Zotero](https://github.com/Visterainer/aidea-zotero)。PaperFlow 是面向 Chrome 的独立实现，没有复制 AIdea 的源代码。
-
-集成式 Reader 使用 Apache License 2.0 许可的 Mozilla PDF.js（`pdfjs-dist`），扩展包内包含 `pdfjs-LICENSE.txt`。Google Scholar PDF Reader 仅作为交互参考，本项目不包含 Google 扩展代码或资源。
 
 ## License
 

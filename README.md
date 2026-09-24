@@ -1,8 +1,8 @@
 <div align="center">
   <img src="public/icons/paperflow-128.png" width="78" height="78" alt="PaperFlow AI logo">
   <h1>PaperFlow AI</h1>
-  <p><strong>A persistent AI research companion beside every paper.</strong></p>
-  <p>Read, annotate, ask, remember, and sync without giving up your data.</p>
+  <p><strong>A PDF reader built for the browser.</strong></p>
+  <p>Read papers where you find them, annotate the source, ask with page context, and continue on any computer.</p>
   <p>
     <a href="https://dai0-2.github.io/paperflow/"><strong>Website</strong></a>
     ·
@@ -28,10 +28,9 @@
 </p>
 
 > [!IMPORTANT]
-> PaperFlow AI 1.0.10 is a local-first personal research library, PDF reader,
-> annotation workspace, and AI companion. Sign in with Google to sync encrypted
-> research data through your own Drive. PaperFlow does not operate a document
-> backend.
+> PaperFlow AI 1.0.10 is a browser-native PDF reader for Chrome with annotation,
+> page-aware AI, a personal research library, and encrypted sync through your
+> own Google Drive. PaperFlow does not operate a document backend.
 
 ## Product at a glance
 
@@ -125,7 +124,6 @@ Open the same paper days later—from a different source when identity can be re
 - Citation-range highlighting is not yet rendered.
 - OCR is intentionally on demand and limited to 50 pages per run.
 - Remote PDFs behind login walls or restrictive CORS must be downloaded and opened locally.
-- Real Google Drive two-device release validation still requires a production OAuth client ID; automated tests use an in-memory two-device Drive adapter.
 - No collaboration, vector database, or account/payment system.
 
 ## Install
@@ -153,17 +151,6 @@ sh native-host/install/install-linux.sh
 # Windows PowerShell
 .\native-host\install\install-windows.ps1
 ```
-
-Google Drive development builds require a Chrome Extension OAuth client ID:
-
-```bash
-cp .env.example .env.local
-# Set PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID in .env.local
-pnpm build
-```
-
-Without a client ID, local development builds remain loadable and show Drive
-sync as unconfigured. `vite build --mode release` fails closed when it is absent.
 
 Then:
 
@@ -259,24 +246,6 @@ src/
 ```
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Roadmap
-
-- [x] Phase 1 — production-quality UI prototype
-- [x] Phase 2 alpha — active-paper detection, local persistence, and PDF attachments
-- [x] Phase 3 alpha — Codex CLI bridge and ChatGPT sign-in
-- [x] Phase 3.1 — OpenAI API-key provider adapter
-- [x] Phase 3.2 — streaming progress, bilingual prompts, and provider compatibility controls
-- [x] Phase 4 MVP — selection, current page, and structured paper context
-- [x] Phase 5 MVP — IndexedDB memory, citations, and page navigation
-- [x] Phase 6 alpha — Native Messaging bridge and Codex CLI sign-in
-- [x] Phase 7 MVP — integrated PDF.js Reader
-
-## Acknowledgements
-
-PaperFlow's provider and local-bridge research was informed by the open-source [AIdea for Zotero](https://github.com/Visterainer/aidea-zotero) project. PaperFlow is an independent implementation for Chrome and does not copy AIdea's source code.
-
-The integrated Reader uses Mozilla PDF.js (`pdfjs-dist`) under the Apache License 2.0. The license is shipped as `pdfjs-LICENSE.txt` in the extension package. Google Scholar PDF Reader is an interaction reference only; no Google extension code or assets are included.
 
 ## License
 
