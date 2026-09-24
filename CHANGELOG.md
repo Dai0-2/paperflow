@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.9 - 2026-09-24
+
+- Reworked the product website around a Paper-inspired editorial system with a
+  centered 1080px canvas, warm grid background, lighter type hierarchy, and
+  self-hosted Inter fonts.
+- Rebuilt the product walkthrough as a 15-second H.264 video covering browser
+  reading, annotations, contextual AI, project-based paper organization, and
+  encrypted Google Drive sync.
+- Made research projects and nested collection management explicit in the
+  website's library story.
+
 ## 1.0.8 - 2026-09-24
 
 - Rebuilt the product website around five concrete workflows: browser reading,
