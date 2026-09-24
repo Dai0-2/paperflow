@@ -217,6 +217,7 @@
   border-radius: 7px;
 }
 .library-setting-segmented.three { width: min(360px, 100%); grid-template-columns: repeat(3, 1fr); }
+.library-setting-segmented.four { width: min(440px, 100%); grid-template-columns: repeat(4, 1fr); }
 .library-setting-segmented button {
   height: 29px;
   display: inline-flex;

@@ -15,6 +15,7 @@ afterEach(() => {
 describe('native host protocol', () => {
   it('accepts only allow-listed actions and exact fields', () => {
     expect(bridgeRequestSchema.safeParse({ action: 'status' }).success).toBe(true);
+    expect(bridgeRequestSchema.safeParse({ action: 'codex.login' }).success).toBe(true);
     expect(bridgeRequestSchema.safeParse({
       action: 'vault.load_device_key',
       vaultId: '18ea83a8-49f8-4e32-970f-02cbf129d4c2',
@@ -105,6 +106,36 @@ describe('native host protocol', () => {
     expect(actions).toEqual(['status', 'login']);
   });
 
+  it('starts the allow-listed Codex login action with the Rust host', async () => {
+    const actions: string[] = [];
+    const responses = [
+      {
+        ok: true,
+        protocolVersion: 1,
+        codexAvailable: true,
+        credentialStoreAvailable: true,
+        apiKeyConfigured: false,
+      },
+      { ok: true, authenticated: true, detail: 'Codex CLI sign-in completed.' },
+    ];
+    vi.stubGlobal('chrome', {
+      runtime: {
+        lastError: undefined,
+        sendNativeMessage: (
+          _host: string,
+          payload: { action: string },
+          callback: (response: unknown) => void,
+        ) => {
+          actions.push(payload.action);
+          callback(responses.shift());
+        },
+      },
+    });
+
+    expect((await loginWithChatGPT()).authenticated).toBe(true);
+    expect(actions).toEqual(['status', 'codex.login']);
+  });
+
   it('re-probes the host when the user checks status after an upgrade', async () => {
     const actions: string[] = [];
     const responses = [
@@ -135,5 +166,22 @@ describe('native host protocol', () => {
     expect((await getBridgeStatus()).detail).toBe('Legacy host');
     expect((await getBridgeStatus()).detail).toBe('Rust host');
     expect(actions).toEqual(['status', 'status', 'codex.auth_status']);
+  });
+
+  it('turns Chrome native-host failures into installation guidance', async () => {
+    vi.stubGlobal('chrome', {
+      runtime: {
+        lastError: { message: 'Specified native messaging host not found.' },
+        sendNativeMessage: (
+          _host: string,
+          _payload: { action: string },
+          callback: (response: unknown) => void,
+        ) => callback(undefined),
+      },
+    });
+
+    const result = await getBridgeStatus();
+    expect(result.error).toContain('Native Host is not installed');
+    expect(result.error).toContain('device-test package');
   });
 });

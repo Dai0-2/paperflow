@@ -22,6 +22,8 @@ pub enum Request {
     Status,
     #[serde(rename = "codex.auth_status")]
     CodexAuthStatus,
+    #[serde(rename = "codex.login")]
+    CodexLogin,
     #[serde(rename = "codex.chat")]
     CodexChat {
         question: String,
@@ -353,7 +355,7 @@ fn validate_object_shape(value: &Value) -> Result<(), ProtocolError> {
         .and_then(Value::as_str)
         .ok_or(ProtocolError::InvalidJson)?;
     let allowed: &[&str] = match action {
-        "status" | "codex.auth_status" | "api_key.delete" => &["action"],
+        "status" | "codex.auth_status" | "codex.login" | "api_key.delete" => &["action"],
         "codex.chat" => &[
             "action",
             "question",
@@ -419,6 +421,11 @@ mod tests {
         assert!(matches!(
             read_request(&mut Cursor::new(codex)).unwrap(),
             Some(Request::CodexChat { model: Some(_), .. })
+        ));
+        let login = frame(br#"{"action":"codex.login"}"#);
+        assert!(matches!(
+            read_request(&mut Cursor::new(login)).unwrap(),
+            Some(Request::CodexLogin)
         ));
     }
 

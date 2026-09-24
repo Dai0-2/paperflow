@@ -1,4 +1,5 @@
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'zotero' | 'light' | 'dark' | 'system';
+export type UiFontFamily = 'system' | 'sans' | 'serif';
 export type View = 'chat' | 'history' | 'settings' | 'memory';
 export type ChatState = 'conversation' | 'empty' | 'returning';
 export type BridgeState = 'checking' | 'connected' | 'signed-out' | 'unavailable';

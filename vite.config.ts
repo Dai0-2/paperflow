@@ -49,9 +49,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const googleOAuthClientId = env.PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID?.trim() || '';
   const releaseBuild = mode === 'release' || env.PAPERFLOW_RELEASE === 'true';
+  const deviceTestBuild = mode === 'device-test';
   const storeBuild = releaseBuild || mode === 'store-draft';
-  if (releaseBuild && !googleOAuthClientId) {
-    throw new Error('PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID is required for release builds.');
+  if ((releaseBuild || deviceTestBuild) && !googleOAuthClientId) {
+    throw new Error(`PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID is required for ${mode} builds.`);
   }
   if (googleOAuthClientId && !GOOGLE_OAUTH_CLIENT_ID_PATTERN.test(googleOAuthClientId)) {
     throw new Error('PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID is not a valid Google OAuth client ID.');

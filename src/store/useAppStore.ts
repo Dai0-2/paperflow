@@ -12,11 +12,17 @@ import type {
   PromptLanguage,
   ProviderMode,
   Theme,
+  UiFontFamily,
   View,
 } from '../types';
 
+function storedFontScale(): number {
+  const value = Number(localStorage.getItem('paperflow:font-scale') || '100');
+  return Number.isFinite(value) ? Math.max(90, Math.min(120, value)) : 100;
+}
+
 interface AppState {
-  view: View; theme: Theme; chatState: ChatState; model: string;
+  view: View; theme: Theme; fontFamily: UiFontFamily; fontScale: number; chatState: ChatState; model: string;
   initialized: boolean; detecting: boolean; paper: PaperInfo | null; paperText: string; paperChunks: PaperChunk[]; readingPaper: boolean;
   activeThreadId: string | null; selection: PaperSelection | null; defaultOpenReader: boolean;
   bridgeState: BridgeState; bridgeDetail: string;
@@ -25,6 +31,8 @@ interface AppState {
   messages: Message[]; attachments: Attachment[]; sending: boolean; draft: string;
   setView: (view: View) => void;
   setTheme: (theme: Theme) => void;
+  setFontFamily: (fontFamily: UiFontFamily) => void;
+  setFontScale: (fontScale: number) => void;
   setChatState: (state: ChatState) => void;
   setModel: (model: string) => void;
   setInitialized: (initialized: boolean) => void;
@@ -55,7 +63,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  view: 'chat', theme: (localStorage.getItem('paperflow:theme') as Theme) || 'system', chatState: 'empty', model: localStorage.getItem('paperflow:provider') === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini') : (localStorage.getItem('paperflow:codex-model') || 'ChatGPT via Codex'),
+  view: 'chat', theme: (localStorage.getItem('paperflow:theme') as Theme) || 'zotero', fontFamily: (localStorage.getItem('paperflow:font-family') as UiFontFamily) || 'system', fontScale: storedFontScale(), chatState: 'empty', model: localStorage.getItem('paperflow:provider') === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini') : (localStorage.getItem('paperflow:codex-model') || 'ChatGPT via Codex'),
   initialized: false, detecting: true, paper: null, paperText: '', paperChunks: [], readingPaper: false,
   activeThreadId: null, selection: null, defaultOpenReader: localStorage.getItem('paperflow:default-reader') !== 'false',
   bridgeState: 'checking', bridgeDetail: '', providerMode: (localStorage.getItem('paperflow:provider') as ProviderMode) || 'chatgpt', apiState: 'checking', apiDetail: '',
@@ -63,6 +71,15 @@ export const useAppStore = create<AppState>((set) => ({
   apiBaseUrl: localStorage.getItem('paperflow:api-base-url') || 'https://api.openai.com/v1', apiProtocol: (localStorage.getItem('paperflow:api-protocol') as ApiProtocol) || 'responses',
   messages: [], attachments: [], sending: false, draft: '',
   setView: (view) => set({ view }), setTheme: (theme) => { localStorage.setItem('paperflow:theme', theme); set({ theme }); },
+  setFontFamily: (fontFamily) => {
+    localStorage.setItem('paperflow:font-family', fontFamily);
+    set({ fontFamily });
+  },
+  setFontScale: (value) => {
+    const fontScale = Math.max(90, Math.min(120, Math.round(value / 5) * 5));
+    localStorage.setItem('paperflow:font-scale', String(fontScale));
+    set({ fontScale });
+  },
   setChatState: (chatState) => set({ chatState }), setModel: (model) => set((state) => {
     localStorage.setItem(
       state.providerMode === 'api' ? 'paperflow:api-model' : 'paperflow:codex-model',

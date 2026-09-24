@@ -103,6 +103,48 @@ pub fn auth_status() -> Result<(bool, String), CodexError> {
     Ok((result.status.success(), detail))
 }
 
+pub fn login() -> Result<(bool, String), CodexError> {
+    let codex = find_executable().ok_or(CodexError::NotFound)?;
+    let mut child = Command::new(codex)
+        .arg("login")
+        .current_dir(std::env::temp_dir())
+        .env("NO_COLOR", "1")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|_| CodexError::Start)?;
+    let stdout = child.stdout.take().ok_or(CodexError::Start)?;
+    let stderr = child.stderr.take().ok_or(CodexError::Start)?;
+    let stdout_thread = thread::spawn(move || {
+        let mut value = Vec::new();
+        let _ = BufReader::new(stdout).take(32_768).read_to_end(&mut value);
+        value
+    });
+    let stderr_thread = thread::spawn(move || {
+        let mut value = Vec::new();
+        let _ = BufReader::new(stderr).take(32_768).read_to_end(&mut value);
+        value
+    });
+    let deadline = Instant::now() + CODEX_TIMEOUT;
+    let status = loop {
+        if let Some(status) = child.try_wait().map_err(|_| CodexError::Start)? {
+            break status;
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = stdout_thread.join();
+            let _ = stderr_thread.join();
+            return Err(CodexError::Timeout);
+        }
+        thread::sleep(Duration::from_millis(100));
+    };
+    let stdout = stdout_thread.join().map_err(|_| CodexError::Start)?;
+    let stderr = stderr_thread.join().map_err(|_| CodexError::Start)?;
+    Ok((status.success(), first_nonempty(&stdout, &stderr)))
+}
+
 pub fn chat(
     question: &str,
     context: &str,

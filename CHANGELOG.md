@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.3 - 2026-09-24
+
+- Added first-run ChatGPT sign-in through the fixed, allow-listed
+  `codex login` Native Host action.
+- Added a complete macOS device-test package with a stable extension ID,
+  Google Drive OAuth, Native Host installer, and installation guide.
+- Made remote PDFs display as soon as PDF.js can render the first page instead
+  of waiting for a full-file download and content hash.
+- Preserved the selected text or viewport focus while zooming.
+- Added an onboarding settings entry, Zotero white theme, interface font
+  family and text-size controls.
+- Made the Reader AI panel resize continuously with container-aware narrow
+  layouts and safe width limits across viewport changes.
+
 ## 1.0.2 - 2026-09-24
 
 - Replaced the default password-based vault setup with one-click Google account

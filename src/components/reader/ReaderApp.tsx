@@ -47,6 +47,7 @@ import { ReaderToolbar } from './ReaderToolbar';
 export function ReaderApp() {
   useWorkspaceBootstrap();
   const fileInput = useRef<HTMLInputElement>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 1100);
   const [sidebarView, setSidebarView] = useState<ReaderSidebar>('thumbnails');
   const [assistantOpen, setAssistantOpen] = useState(() => window.innerWidth > 760);
@@ -84,7 +85,6 @@ export function ReaderApp() {
   const {
     pdfDocument,
     source,
-    documentData,
     activeDocument,
     pendingUrl,
     urlDraft,
@@ -100,6 +100,7 @@ export function ReaderApp() {
     selectFile,
     grantAccess,
     saveOffline,
+    ensureDocumentData,
     applyOcrPage,
   } = usePdfDocument();
   const {
@@ -301,11 +302,12 @@ export function ReaderApp() {
   };
 
   const exportAnnotations = async () => {
-    if (!documentData || !annotationState.annotations.length) return;
+    if (!annotationState.annotations.length) return;
     setOperationError('');
     const exporter = await import('../../services/annotations/exportPdf');
     try {
-      const output = await exporter.exportAnnotatedPdf(documentData, annotationState.annotations);
+      const bytes = await ensureDocumentData();
+      const output = await exporter.exportAnnotatedPdf(bytes, annotationState.annotations);
       downloadBlob(
         new Blob([output.slice().buffer], { type: 'application/pdf' }),
         exporter.annotatedPdfName(source?.name || 'paper.pdf'),
@@ -413,7 +415,7 @@ export function ReaderApp() {
   }
 
   const persistOffline = async () => {
-    if (!paper || !documentData || savingOffline) return activeDocument;
+    if (!paper || savingOffline) return activeDocument;
     setSavingOffline(true);
     setOperationError('');
     try {
@@ -483,6 +485,29 @@ export function ReaderApp() {
   useEffect(() => {
     void recoverStaleOcrJobs();
   }, []);
+  const clampAssistantWidth = useCallback((width: number) => {
+    const workspaceWidth = workspaceRef.current?.clientWidth || window.innerWidth;
+    if (workspaceWidth <= 760) return width;
+    const sidebarWidth = sidebarOpen && window.innerWidth > 1100 ? 232 : 0;
+    const maximum = Math.max(280, workspaceWidth - sidebarWidth - 360);
+    const minimum = Math.min(320, maximum);
+    return Math.round(Math.max(minimum, Math.min(maximum, width)));
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    const workspace = workspaceRef.current;
+    if (!workspace) return;
+    const clamp = () => setAssistantWidth((width) => clampAssistantWidth(width));
+    clamp();
+    const observer = new ResizeObserver(clamp);
+    observer.observe(workspace);
+    window.addEventListener('resize', clamp);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', clamp);
+    };
+  }, [clampAssistantWidth]);
+
   useEffect(() => {
     const annotationId = annotationState.selected?.id;
     if (!annotationId) return;
@@ -521,17 +546,25 @@ export function ReaderApp() {
 
   const startResize = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const startX = event.clientX;
-    const startWidth = assistantWidth;
+    if (window.innerWidth <= 760) return;
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+    document.body.classList.add('reader-resizing');
     const move = (moveEvent: PointerEvent) => {
-      setAssistantWidth(Math.max(320, Math.min(window.innerWidth - 520, startWidth + startX - moveEvent.clientX)));
+      const workspace = workspaceRef.current;
+      if (!workspace) return;
+      setAssistantWidth(clampAssistantWidth(workspace.getBoundingClientRect().right - moveEvent.clientX));
     };
-    const up = () => {
+    const up = (upEvent: PointerEvent) => {
+      if (handle.hasPointerCapture(upEvent.pointerId)) handle.releasePointerCapture(upEvent.pointerId);
+      document.body.classList.remove('reader-resizing');
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   };
 
   return <main className="reader-app" style={{ '--assistant-width': `${assistantWidth}px` } as React.CSSProperties}>
@@ -565,7 +598,7 @@ export function ReaderApp() {
       onStartOcr={(fromPage, toPage, language) => void runOcr(fromPage, toPage, language)}
       onCancelOcr={() => ocrJob.current?.cancel()}
     />
-    <div className="reader-workspace">
+    <div ref={workspaceRef} className="reader-workspace">
       {sidebarOpen && pdfDocument && <ReaderSidebarPanel
         document={pdfDocument}
         language={uiLanguage}

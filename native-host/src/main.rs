@@ -63,6 +63,23 @@ fn handle(request: Request, emit: &mut impl FnMut(Response)) -> Response {
             }
             Err(error) => unavailable(error.to_string()),
         },
+        Request::CodexLogin => match codex::login() {
+            Ok((authenticated, detail)) => {
+                let mut response = Response::success();
+                response.authenticated = Some(authenticated);
+                response.detail = Some(if detail.is_empty() {
+                    if authenticated {
+                        "Codex CLI sign-in completed.".to_owned()
+                    } else {
+                        "Codex CLI sign-in was not completed.".to_owned()
+                    }
+                } else {
+                    detail
+                });
+                response
+            }
+            Err(error) => unavailable(error.to_string()),
+        },
         Request::CodexChat {
             question,
             context,

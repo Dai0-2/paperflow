@@ -16,6 +16,7 @@ The Rust host accepts only these schema-validated actions:
 ```text
 status
 codex.auth_status
+codex.login
 codex.chat
 api_key.set
 api_key.delete
@@ -28,7 +29,7 @@ vault.delete_device_key
 
 Messages are length-prefixed JSON with a 1 MiB limit. Unknown actions, unknown fields, malformed JSON, invalid UUIDs, oversized prompts, and invalid key encodings are rejected. The protocol does not accept shell commands, executable paths, file paths, CLI argument arrays, environment variables, or log payloads.
 
-Codex is discovered using fixed platform locations or the `codex` executable on the host `PATH`. Paper chat always runs with a fixed argument list, an ephemeral session, a read-only sandbox, and a temporary working directory. Temporary image files are decoded only from allow-listed image data URLs and are removed automatically.
+Codex is discovered using fixed platform locations or the `codex` executable on the host `PATH`. The login action runs only the fixed official `codex login` command and waits up to five minutes for browser authorization. Paper chat always runs with a fixed argument list, an ephemeral session, a read-only sandbox, and a temporary working directory. Temporary image files are decoded only from allow-listed image data URLs and are removed automatically.
 
 The host does not log prompts, responses, paper text, API keys, vault keys, OAuth tokens, or local paths.
 
@@ -93,7 +94,7 @@ Pass a binary path as the first shell argument or `-BinaryPath` in PowerShell wh
 
 `bridge/paperflow_bridge.py` and `bridge/install.sh` remain available for one compatibility release. The extension probes `status`; a response with `protocolVersion: 1` enables the Rust action names, while a response without a protocol version uses the legacy Python action names. New installations should use the Rust host.
 
-The Rust host intentionally does not launch interactive Codex login. Install the official Codex CLI and run `codex login` in a terminal, then use PaperFlow's check action.
+Install the official Codex CLI first. PaperFlow can then launch its official browser sign-in through the fixed `codex login` action; it never receives or stores the resulting token.
 
 ## Release signing
 

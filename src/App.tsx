@@ -17,9 +17,9 @@ export function ChatWorkspace() {
 
 export function WorkspaceSurface() {
   const { view, initialized } = useAppStore();
+  if (view === 'settings') return <SettingsView />;
   if (!initialized) return <OnboardingView />;
   if (view === 'history') return <HistoryView />;
-  if (view === 'settings') return <SettingsView />;
   if (view === 'memory') return <MemoryView />;
   return <ChatWorkspace />;
 }

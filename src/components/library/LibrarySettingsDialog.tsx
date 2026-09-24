@@ -4,6 +4,7 @@ import {
   Languages,
   Laptop,
   Moon,
+  Palette,
   Settings2,
   Sun,
   X,
@@ -84,7 +85,12 @@ export function LibrarySettingsDialog(props: {
 
         <section>
           <h3><Sun />{text(props.language, 'Appearance', '外观')}</h3>
-          <div className="library-setting-segmented three">
+          <div className="library-setting-segmented four">
+            <button
+              type="button"
+              data-active={props.theme === 'zotero'}
+              onClick={() => props.onThemeChange('zotero')}
+            ><Palette />{text(props.language, 'Zotero', 'Zotero 白')}</button>
             <button
               type="button"
               data-active={props.theme === 'light'}

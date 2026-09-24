@@ -1,4 +1,4 @@
-import { ArrowRight, Check, FileSearch, KeyRound, LoaderCircle, LogIn, RefreshCw, Server, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Check, FileSearch, KeyRound, LoaderCircle, LogIn, RefreshCw, Server, Settings, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { BrandMark } from '../common/BrandMark';
 import { useAppStore } from '../../store/useAppStore';
@@ -8,7 +8,7 @@ import { text } from '../../i18n';
 
 export function OnboardingView() {
   const [apiKey, setApiKey] = useState('');
-  const { paper, detecting, model, providerMode, bridgeState, bridgeDetail, apiState, apiDetail, apiBaseUrl, apiProtocol, uiLanguage, setPaper, setDetecting, setModel, setBridge, setApiState, setProviderMode, setApiBaseUrl, setApiProtocol, setInitialized } = useAppStore();
+  const { paper, detecting, model, providerMode, bridgeState, bridgeDetail, apiState, apiDetail, apiBaseUrl, apiProtocol, uiLanguage, setPaper, setDetecting, setModel, setBridge, setApiState, setProviderMode, setApiBaseUrl, setApiProtocol, setInitialized, setView } = useAppStore();
 
   const detect = async () => {
     setDetecting(true);
@@ -30,13 +30,14 @@ export function OnboardingView() {
   const ready = providerMode === 'api' ? apiState === 'connected' : bridgeState === 'connected';
 
   const connect = async () => {
-    setBridge('checking', text(uiLanguage, 'Checking Codex sign-in…', '正在检查 Codex 登录…'));
+    setBridge('checking', text(uiLanguage, 'Opening Codex sign-in…', '正在打开 Codex 登录…'));
     const result = await loginWithChatGPT();
     setBridge(result.ok && result.authenticated ? 'connected' : result.ok ? 'signed-out' : 'unavailable', result.detail || result.error || '');
   };
 
   return <main className="onboarding">
     <div className="onboarding-brand"><BrandMark /><span>PaperFlow</span></div>
+    <button className="onboarding-settings" aria-label={text(uiLanguage, 'Open settings', '打开设置')} title={text(uiLanguage, 'Settings', '设置')} onClick={() => setView('settings')}><Settings size={17} /></button>
     <div className="onboarding-copy"><p className="eyebrow">{text(uiLanguage, 'GET STARTED', '开始使用')}</p><h1>{text(uiLanguage, 'Your paper, understood.', '读懂你的每一篇论文。')}</h1><p>{text(uiLanguage, 'Connect an AI provider and let PaperFlow identify the paper beside this panel.', '连接 AI 服务，让 PaperFlow 识别此面板旁的论文。')}</p></div>
     <div className="setup-steps">
       <section className="setup-card">
@@ -50,8 +51,8 @@ export function OnboardingView() {
       </div>
       {providerMode === 'chatgpt' ? <section className="setup-card">
           <span className="setup-icon">{bridgeState === 'checking' ? <LoaderCircle className="spin" size={18} /> : bridgeState === 'connected' ? <Check size={18} /> : <LogIn size={18} />}</span>
-          <div><strong>{bridgeState === 'connected' ? text(uiLanguage, 'ChatGPT connected', 'ChatGPT 已连接') : text(uiLanguage, 'Check Codex sign-in', '检查 Codex 登录')}</strong><p>{bridgeState === 'connected' ? text(uiLanguage, 'Using your official Codex sign-in.', '正在使用官方 Codex 登录。') : bridgeDetail || text(uiLanguage, 'Install Codex, run `codex login` in a terminal, then check again.', '安装 Codex，在终端运行 `codex login`，然后重新检查。')}</p></div>
-          {bridgeState !== 'connected' && <button className="setup-action" onClick={connect}>{text(uiLanguage, 'Check', '检查')}</button>}
+          <div><strong>{bridgeState === 'connected' ? text(uiLanguage, 'ChatGPT connected', 'ChatGPT 已连接') : text(uiLanguage, 'Sign in with ChatGPT', '登录 ChatGPT')}</strong><p>{bridgeState === 'connected' ? text(uiLanguage, 'Using your official Codex sign-in.', '正在使用官方 Codex 登录。') : bridgeDetail || text(uiLanguage, 'PaperFlow opens the official Codex browser sign-in and never reads ChatGPT cookies.', 'PaperFlow 会打开官方 Codex 浏览器登录，且不会读取 ChatGPT Cookie。')}</p></div>
+          {bridgeState !== 'connected' && <button className="setup-action" disabled={bridgeState === 'checking'} onClick={connect}>{bridgeState === 'checking' ? text(uiLanguage, 'Opening…', '打开中…') : text(uiLanguage, 'Sign in', '登录')}</button>}
         </section> : <section className="api-setup-card">
           <div><strong>{apiState === 'connected' ? text(uiLanguage, 'API connected', 'API 已连接') : text(uiLanguage, 'Configure API provider', '配置 API 服务')}</strong><p>{apiState === 'connected' ? apiDetail : apiDetail || text(uiLanguage, 'The key stays in the OS credential store. Relay settings stay in this browser profile.', '密钥保存在系统凭据库；中转站设置仅保存在当前浏览器配置中。')}</p></div>
           <div className="endpoint-settings">

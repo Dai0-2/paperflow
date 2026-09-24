@@ -9,6 +9,7 @@
 }
 
 :root[data-theme="dark"] .reader-app { background: #181818; }
+:root[data-theme="zotero"] .reader-app { background: #e9e9e9; }
 
 .reader-toolbar {
   position: relative;
@@ -201,7 +202,7 @@
   font-size: 11.5px;
 }
 
-.reader-workspace { flex: 1; min-height: 0; display: flex; }
+.reader-workspace { flex: 1; min-width: 0; min-height: 0; display: flex; overflow: hidden; }
 .reader-sidebar {
   flex: 0 0 232px;
   min-width: 0;
@@ -646,21 +647,25 @@
   margin-left: -2px;
   margin-right: -2px;
   cursor: col-resize;
+  touch-action: none;
 }
 .reader-divider::after { content: ''; position: absolute; inset: 0 2px; background: var(--border); transition: background 140ms ease; }
 .reader-divider:hover::after { background: #4b70a5; }
 .reader-assistant {
   flex: 0 0 var(--assistant-width);
-  min-width: 320px;
-  max-width: 58vw;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
   background: var(--surface);
   border-left: 1px solid var(--border);
+  container-name: reader-assistant;
+  container-type: inline-size;
 }
 .reader-assistant .panel-shell,
 .reader-assistant .view,
-.reader-assistant .onboarding { height: 100%; }
+.reader-assistant .onboarding { min-width: 0; height: 100%; }
 .reader-assistant .paper-header { display: none; }
+body.reader-resizing { cursor: col-resize; user-select: none; }
 
 .reader-open-state {
   width: min(560px, calc(100% - 40px));
@@ -998,7 +1003,7 @@
 .reader-divider { flex-basis: 3px; margin-inline: -1px; }
 .reader-divider::after { inset-inline: 1px; }
 .reader-divider:hover::after { background: var(--brand); }
-.reader-assistant { min-width: 316px; background: var(--surface); }
+.reader-assistant { min-width: 0; background: var(--surface); }
 .reader-open-state h1 { font-size: 18px; font-weight: 560; }
 .reader-open-state form input, .reader-open-state form button,
 .reader-local-file, .reader-error { border-radius: 4px; }
@@ -1024,7 +1029,15 @@
   .reader-toolbar { grid-template-columns: auto 1fr auto; }
   .reader-title { display: none; }
   .reader-sidebar { display: none; }
-  .reader-assistant { max-width: 52vw; }
+}
+
+@container reader-assistant (max-width: 350px) {
+  .reader-assistant .onboarding { padding-inline: 14px; }
+  .reader-assistant .provider-choice { grid-template-columns: 1fr; }
+  .reader-assistant .setup-card { grid-template-columns: 30px minmax(0, 1fr); }
+  .reader-assistant .setup-card > button { grid-column: 2; justify-self: start; }
+  .reader-assistant .app-header { padding-inline: 10px 7px; }
+  .reader-assistant .header-actions { gap: 0; }
 }
 
 @media (max-width: 760px) {

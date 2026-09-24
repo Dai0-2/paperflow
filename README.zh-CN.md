@@ -14,7 +14,7 @@
   <p>
     <a href="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml/badge.svg" alt="构建状态"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 许可证"></a>
-    <img src="https://img.shields.io/badge/version-1.0.2-5b7fa6" alt="版本 1.0.2">
+    <img src="https://img.shields.io/badge/version-1.0.3-5b7fa6" alt="版本 1.0.3">
     <img src="https://img.shields.io/badge/Chrome-MV3-5f9d75" alt="Chrome Manifest V3">
   </p>
 </div>
@@ -24,7 +24,7 @@
 </a>
 
 > [!IMPORTANT]
-> PaperFlow AI 1.0.2 是本地优先的个人文献库、PDF 阅读与批注工作台和
+> PaperFlow AI 1.0.3 是本地优先的个人文献库、PDF 阅读与批注工作台和
 > AI 研究助手。登录 Google 后即可通过用户自己的云盘同步加密研究数据；
 > PaperFlow 不运营文档后端。
 
@@ -165,7 +165,7 @@ pnpm build
 5. 固定 PaperFlow AI，点击工具栏图标打开 Side Panel
 6. 右键 PDF 链接或 PDF 页面，选择“使用 PaperFlow 打开”进入集成式 Reader
 
-安装脚本会为固定扩展 ID 注册 Rust Native Messaging Host。订阅模式仅使用固定参数调用官方 Codex CLI；API 密钥存入 macOS 钥匙串、Windows 凭据管理器或 Linux Secret Service。它不会读取 ChatGPT Cookie 或 Codex 认证文件。使用订阅模式前，请先在终端执行 `codex login`。
+安装脚本会为固定扩展 ID 注册 Rust Native Messaging Host。订阅模式仅使用固定参数调用官方 Codex CLI；API 密钥存入 macOS 钥匙串、Windows 凭据管理器或 Linux Secret Service。它不会读取 ChatGPT Cookie 或 Codex 认证文件。安装官方 Codex CLI 后，在 PaperFlow 中点击“登录 ChatGPT”即可启动浏览器授权。
 
 重新构建或安装后，请在 `chrome://extensions` 中点击 PaperFlow AI 的“重新加载”。如果 Chrome 找不到 Host，请重新运行对应平台安装器并重新加载扩展。安装路径、卸载命令和保留一个版本的 Python 回退说明见 [Native Host 文档](docs/native-host.md)。
 

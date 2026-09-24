@@ -68,6 +68,10 @@ async function requestOriginPermission(rawUrl: string) {
 
 export function usePdfDocument() {
   const loadGeneration = useRef(0);
+  const pdfDocumentRef = useRef<PDFDocumentProxy | undefined>(undefined);
+  const sourceRef = useRef<ReaderSource | undefined>(undefined);
+  const documentDataRef = useRef<Uint8Array | undefined>(undefined);
+  const documentDataPromiseRef = useRef<Promise<Uint8Array> | undefined>(undefined);
   const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy>();
   const [source, setSource] = useState<ReaderSource>();
   const [documentData, setDocumentData] = useState<Uint8Array>();
@@ -89,13 +93,47 @@ export function usePdfDocument() {
     setReadingPaper,
   } = useAppStore();
 
+  const ensureDocumentData = useCallback(async () => {
+    if (documentDataRef.current) return documentDataRef.current;
+    if (documentDataPromiseRef.current) return documentDataPromiseRef.current;
+    const currentDocument = pdfDocumentRef.current;
+    const currentSource = sourceRef.current;
+    const generation = loadGeneration.current;
+    if (!currentDocument || !currentSource) {
+      throw new Error(text(uiLanguage, 'The PDF is not ready yet.', 'PDF 尚未准备好。'));
+    }
+    const promise = (async () => {
+      const bytes = Uint8Array.from(currentSource.data || await currentDocument.getData());
+      if (generation !== loadGeneration.current) {
+        throw new Error(text(uiLanguage, 'The open PDF changed while its data was loading.', '读取 PDF 数据时，当前文档已发生变化。'));
+      }
+      documentDataRef.current = bytes;
+      setDocumentData(bytes);
+      return bytes;
+    })();
+    documentDataPromiseRef.current = promise;
+    try {
+      return await promise;
+    } finally {
+      if (documentDataPromiseRef.current === promise) {
+        documentDataPromiseRef.current = undefined;
+      }
+    }
+  }, [uiLanguage]);
+
   const loadSource = useCallback(async (nextSource: ReaderSource) => {
     const generation = ++loadGeneration.current;
+    let documentReady = false;
     setLoading(true);
     setError('');
     setLoadProgress(0);
     setPageTexts([]);
+    setOutline([]);
     setDocumentData(undefined);
+    documentDataRef.current = undefined;
+    documentDataPromiseRef.current = undefined;
+    pdfDocumentRef.current = undefined;
+    sourceRef.current = undefined;
     setActiveDocument(undefined);
     setPaperChunks([]);
     setReadingPaper(true);
@@ -118,22 +156,25 @@ export function usePdfDocument() {
       const metadataTitle = typeof info?.Title === 'string' ? info.Title.trim() : '';
       const metadataAuthor = typeof info?.Author === 'string' ? info.Author.trim() : '';
       const title = metadataTitle || nextSource.name.replace(/\.pdf$/i, '') || 'Untitled paper';
-      const bytes = Uint8Array.from(nextSource.data || await nextDocument.getData());
-      const hash = await contentHash(bytes.slice().buffer);
+      const bytes = nextSource.data ? Uint8Array.from(nextSource.data) : undefined;
+      const hash = bytes ? await contentHash(bytes.slice().buffer) : undefined;
       const db = await openPaperFlowDatabase();
       const storedPaper = nextSource.paperId ? await db.papers.get(nextSource.paperId) : undefined;
       const detectedPaper = paperFromUrl(nextSource.url || storedPaper?.url || `local:${nextSource.name}`, title);
       const basePaper = storedPaper ? { ...detectedPaper, ...storedPaper } : detectedPaper;
-      const hashAlias = await db.paperAliases.get(`content-hash:${hash}`);
+      const hashAlias = hash ? await db.paperAliases.get(`content-hash:${hash}`) : undefined;
       const nextPaper: PaperInfo = {
         ...basePaper,
-        id: nextSource.paperId || hashAlias?.paperId || (nextSource.data ? `content:${hash}` : basePaper.id),
+        id: nextSource.paperId || hashAlias?.paperId || (hash ? `content:${hash}` : basePaper.id),
         authors: metadataAuthor || basePaper.authors,
-        contentHash: hash,
+        contentHash: hash || basePaper.contentHash,
         source: nextSource.documentId || nextSource.data ? 'Local PDF' : basePaper.source,
         pageCount: nextDocument.numPages,
         currentPage: 1,
       };
+      pdfDocumentRef.current = nextDocument;
+      sourceRef.current = nextSource;
+      if (bytes) documentDataRef.current = bytes;
       setPdfDocument(nextDocument);
       setSource(nextSource);
       setDocumentData(bytes);
@@ -143,10 +184,13 @@ export function usePdfDocument() {
         const stored = await db.documents.get(nextSource.documentId);
         if (stored) setActiveDocument(stored);
       }
-      const rawOutline = await nextDocument.getOutline().catch(() => null);
-      setOutline(flattenOutline((rawOutline || []) as OutlineItem[]));
+      documentReady = true;
       setLoading(false);
 
+      await new Promise((resolve) => window.setTimeout(resolve, 250));
+      const rawOutline = await nextDocument.getOutline().catch(() => null);
+      if (generation !== loadGeneration.current) return;
+      setOutline(flattenOutline((rawOutline || []) as OutlineItem[]));
       const pages: string[] = [];
       for (let pageNumber = 1; pageNumber <= nextDocument.numPages; pageNumber += 1) {
         if (generation !== loadGeneration.current) return;
@@ -183,8 +227,12 @@ export function usePdfDocument() {
       }
     } catch (reason) {
       if (generation !== loadGeneration.current) return;
-      setPdfDocument(undefined);
-      setPageCount(0);
+      if (!documentReady) {
+        pdfDocumentRef.current = undefined;
+        sourceRef.current = undefined;
+        setPdfDocument(undefined);
+        setPageCount(0);
+      }
       setError(errorMessage(reason, uiLanguage));
     } finally {
       if (generation === loadGeneration.current) {
@@ -195,18 +243,16 @@ export function usePdfDocument() {
   }, [setPaper, setPaperChunks, setPaperText, setReadingPaper, uiLanguage]);
 
   const saveOffline = useCallback(async (paper: PaperInfo) => {
-    if (!documentData) {
-      throw new Error(text(uiLanguage, 'The PDF bytes are not available yet.', 'PDF 数据尚未准备好。'));
-    }
+    const bytes = await ensureDocumentData();
     const document = await storePdfDocument({
       paper,
-      data: documentData,
+      data: bytes,
       name: source?.name || 'paper.pdf',
       pageCount,
     });
     setActiveDocument(document);
     return document;
-  }, [documentData, pageCount, source?.name, uiLanguage]);
+  }, [ensureDocumentData, pageCount, source?.name]);
 
   const applyOcrPage = useCallback(async (record: OcrPage) => {
     const db = await openPaperFlowDatabase();
@@ -327,6 +373,7 @@ export function usePdfDocument() {
     pdfDocument,
     source,
     documentData,
+    ensureDocumentData,
     activeDocument,
     pendingUrl,
     urlDraft,

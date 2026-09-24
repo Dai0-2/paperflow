@@ -32,6 +32,7 @@ const chatFields = {
 export const bridgeRequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('status') }).strict(),
   z.object({ action: z.literal('codex.auth_status') }).strict(),
+  z.object({ action: z.literal('codex.login') }).strict(),
   z.object({
     action: z.literal('codex.chat'),
     ...chatFields,
@@ -67,6 +68,17 @@ type HostMode = { kind: 'rust'; status: BridgeResponse } | { kind: 'legacy'; sta
 
 let hostModePromise: Promise<HostMode> | undefined;
 
+function nativeHostError(message?: string): string {
+  const detail = message || 'Could not connect to the PaperFlow native host.';
+  if (/native messaging host.*not found|specified native messaging host.*not found/i.test(detail)) {
+    return 'PaperFlow Native Host is not installed. Install it from the device-test package, reload the extension, then sign in.';
+  }
+  if (/native messaging host.*forbidden|access to the specified native messaging host/i.test(detail)) {
+    return 'Chrome blocked the PaperFlow Native Host because the extension ID does not match. Install the stable-ID device-test build.';
+  }
+  return detail;
+}
+
 function parseResponse(response: unknown): BridgeResponse {
   const parsed = bridgeResponseSchema.safeParse(response);
   return parsed.success
@@ -82,7 +94,7 @@ function nativeMessageUnchecked(payload: LegacyRequest): Promise<BridgeResponse>
     chrome.runtime.sendNativeMessage(HOST_NAME, payload, (response: unknown) => {
       const runtimeError = chrome.runtime.lastError;
       if (runtimeError) {
-        resolve({ ok: false, error: runtimeError.message });
+        resolve({ ok: false, error: nativeHostError(runtimeError.message) });
         return;
       }
       resolve(parseResponse(response));
@@ -141,7 +153,7 @@ function nativeStream(payload: BridgeRequest | LegacyRequest, onEvent?: (event: 
       settled = true;
       resolve(lastEvent?.ok === false
         ? lastEvent
-        : { ok: false, error: chrome.runtime.lastError?.message || 'The PaperFlow native host disconnected before completing the response.' });
+        : { ok: false, error: nativeHostError(chrome.runtime.lastError?.message || 'The PaperFlow native host disconnected before completing the response.') });
     });
     port.postMessage(validatedPayload);
   });
@@ -184,7 +196,7 @@ export async function getBridgeStatus(): Promise<BridgeResponse> {
   if (host.kind === 'legacy') return host.status;
   if (!host.status.ok) return host.status;
   if (!host.status.codexAvailable) {
-    return { ok: false, authenticated: false, error: 'Codex CLI was not found. Install it and run `codex login` in a terminal.' };
+    return { ok: false, authenticated: false, error: 'Codex CLI was not found. Install the official Codex CLI, then use Sign in with ChatGPT.' };
   }
   return nativeMessage({ action: 'codex.auth_status' });
 }
@@ -192,11 +204,15 @@ export async function getBridgeStatus(): Promise<BridgeResponse> {
 export async function loginWithChatGPT(): Promise<BridgeResponse> {
   const host = await hostMode();
   if (host.kind === 'legacy') return nativeMessageUnchecked({ action: 'login' });
-  const result = await nativeMessage({ action: 'codex.auth_status' });
-  if (result.ok && !result.authenticated) {
-    return { ...result, detail: result.detail || 'Run `codex login` in a terminal, then check again.' };
+  if (!host.status.ok) return host.status;
+  if (!host.status.codexAvailable) {
+    return {
+      ok: false,
+      authenticated: false,
+      error: 'Codex CLI was not found. Install the official Codex CLI, then try again.',
+    };
   }
-  return result;
+  return nativeMessage({ action: 'codex.login' });
 }
 
 export async function sendToCodex(

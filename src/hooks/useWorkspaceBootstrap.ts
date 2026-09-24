@@ -18,6 +18,8 @@ export function useWorkspaceBootstrap({
   const workspaceReady = useRef(false);
   const {
     theme,
+    fontFamily,
+    fontScale,
     initialized,
     paper,
     messages,
@@ -37,12 +39,15 @@ export function useWorkspaceBootstrap({
     const media = matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
       const dark = theme === 'dark' || (theme === 'system' && media.matches);
-      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      document.documentElement.dataset.theme = dark ? 'dark' : theme === 'zotero' ? 'zotero' : 'light';
+      document.documentElement.dataset.fontFamily = fontFamily;
+      document.documentElement.style.setProperty('--ui-font-scale', String(fontScale / 100));
+      document.documentElement.style.fontSize = `${fontScale}%`;
     };
     apply();
     media.addEventListener('change', apply);
     return () => media.removeEventListener('change', apply);
-  }, [theme]);
+  }, [fontFamily, fontScale, theme]);
 
   useEffect(() => {
     setInitialized(localStorage.getItem('paperflow:initialized') === 'true');

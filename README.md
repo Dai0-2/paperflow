@@ -14,7 +14,7 @@
   <p>
     <a href="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml/badge.svg" alt="Build status"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 license"></a>
-    <img src="https://img.shields.io/badge/version-1.0.2-5b7fa6" alt="Version 1.0.2">
+    <img src="https://img.shields.io/badge/version-1.0.3-5b7fa6" alt="Version 1.0.3">
     <img src="https://img.shields.io/badge/Chrome-MV3-5f9d75" alt="Chrome Manifest V3">
   </p>
 </div>
@@ -24,7 +24,7 @@
 </a>
 
 > [!IMPORTANT]
-> PaperFlow AI 1.0.2 is a local-first personal research library, PDF reader,
+> PaperFlow AI 1.0.3 is a local-first personal research library, PDF reader,
 > annotation workspace, and AI companion. Sign in with Google to sync encrypted
 > research data through your own Drive. PaperFlow does not operate a document
 > backend.
@@ -170,7 +170,7 @@ Then:
 5. Pin PaperFlow AI and click its toolbar icon for the Side Panel.
 6. Right-click a PDF link or page and choose **Open with PaperFlow** for the integrated Reader.
 
-The installer registers the Rust Native Messaging host for PaperFlow's fixed extension ID. It invokes the official Codex CLI with fixed arguments for subscription mode and stores an optional API key in macOS Keychain, Windows Credential Manager, or Linux Secret Service. It never reads ChatGPT cookies or Codex authentication files. Run `codex login` in a terminal before using subscription mode.
+The installer registers the Rust Native Messaging host for PaperFlow's fixed extension ID. It invokes the official Codex CLI with fixed arguments for subscription mode and stores an optional API key in macOS Keychain, Windows Credential Manager, or Linux Secret Service. It never reads ChatGPT cookies or Codex authentication files. After installing the official Codex CLI, use **Sign in with ChatGPT** in PaperFlow to start its browser authorization.
 
 After rebuilding or reinstalling, click **Reload** for PaperFlow AI on `chrome://extensions`. If Chrome cannot find the host, rerun the platform installer and reload the extension. See [Native Host setup](docs/native-host.md) for paths, uninstall commands, and the one-release Python fallback.
 

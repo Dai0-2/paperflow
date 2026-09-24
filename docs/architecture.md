@@ -159,7 +159,7 @@ A Chrome extension cannot safely launch arbitrary local executables. It also mus
 
 1. The extension connects to the Rust PaperFlow Native Host using Chrome Native Messaging.
 2. The extension probes protocol version 1 and validates requests and responses with Zod; the host validates them again with Serde.
-3. The host checks authentication with `codex login status`. Interactive login is run explicitly by the user as `codex login` in a terminal.
+3. The host checks authentication with `codex login status`; the explicit PaperFlow sign-in button can run only the fixed `codex login` command and waits for official browser authorization.
 4. Codex CLI manages its own credentials.
 5. PaperFlow sends bounded paper context to the host.
 6. The host invokes `codex exec --json --ephemeral --sandbox read-only` with a fixed argument list and forwards sanitized JSONL events.

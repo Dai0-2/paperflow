@@ -70,12 +70,14 @@ function readerUrl(paper: PaperInfo): string {
 }
 
 function currentTheme(): Theme {
-  return (localStorage.getItem('paperflow:theme') as Theme) || 'system';
+  return (localStorage.getItem('paperflow:theme') as Theme) || 'zotero';
 }
 
 export function LibraryApp() {
   const store = useLibraryStore();
   const language = useAppStore((state) => state.uiLanguage);
+  const fontFamily = useAppStore((state) => state.fontFamily);
+  const fontScale = useAppStore((state) => state.fontScale);
   const {
     snapshot,
     papers,
@@ -103,8 +105,10 @@ export function LibraryApp() {
   const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-  }, [dark]);
+    document.documentElement.dataset.theme = dark ? 'dark' : theme === 'zotero' ? 'zotero' : 'light';
+    document.documentElement.dataset.fontFamily = fontFamily;
+    document.documentElement.style.fontSize = `${fontScale}%`;
+  }, [dark, fontFamily, fontScale, theme]);
 
   const mutate = async (action: () => Promise<void>) => {
     try {

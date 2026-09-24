@@ -1,13 +1,14 @@
 {
   "name": "paperflow-ai",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "packageManager": "pnpm@10.34.5",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "prepare:ocr": "node scripts/prepare-ocr-assets.mjs",
     "build": "pnpm prepare:ocr && tsc -b && vite build",
+    "build:device-test": "pnpm prepare:ocr && tsc -b && vite build --mode device-test --outDir work/device-test && PAPERFLOW_AUDIT_DIST=work/device-test node scripts/audit-release.mjs",
     "build:store-draft": "pnpm prepare:ocr && tsc -b && vite build --mode store-draft --outDir work/store-draft && PAPERFLOW_AUDIT_DIST=work/store-draft PAPERFLOW_STORE_BUILD=true node scripts/audit-release.mjs",
     "build:release": "pnpm prepare:ocr && tsc -b && vite build --mode release --outDir work/release && PAPERFLOW_AUDIT_DIST=work/release PAPERFLOW_STORE_BUILD=true node scripts/audit-release.mjs",
     "preview": "vite preview",
@@ -19,6 +20,7 @@
     "native:check": "cargo check --all-targets --manifest-path native-host/Cargo.toml",
     "native:test": "cargo test --manifest-path native-host/Cargo.toml",
     "native:build": "cargo build --release --manifest-path native-host/Cargo.toml",
+    "package:device-test:macos": "pnpm build:device-test && pnpm native:build && node scripts/package-device-test.mjs",
     "package": "pnpm build && pnpm audit:release && rm -f paperflow-ai.zip paperflow-ai.zip.sha256 && cd dist && zip -qr ../paperflow-ai.zip . && cd .. && node scripts/write-sha256.mjs paperflow-ai.zip",
     "package:store-draft": "pnpm build:store-draft && rm -f paperflow-ai.zip paperflow-ai.zip.sha256 && cd work/store-draft && zip -qr ../../paperflow-ai.zip . && cd ../.. && node scripts/write-sha256.mjs paperflow-ai.zip",
     "package:release": "pnpm build:release && rm -f paperflow-ai-release.zip paperflow-ai-release.zip.sha256 && cd work/release && zip -qr ../../paperflow-ai-release.zip . && cd ../.. && node scripts/write-sha256.mjs paperflow-ai-release.zip"

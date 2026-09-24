@@ -1,5 +1,7 @@
 import { buildConfig } from '../../config/buildConfig';
 
+const PRODUCTION_EXTENSION_ID = 'dffiahjmpkmellmjijffpcofoahbccoc';
+
 export type GoogleAuthErrorCode =
   | 'not-configured'
   | 'not-supported'
@@ -26,6 +28,12 @@ function assertAuthAvailable(): void {
       'Google Drive authorization is only available inside the Chrome extension.',
     );
   }
+  if (chrome.runtime?.id && chrome.runtime.id !== PRODUCTION_EXTENSION_ID) {
+    throw new GoogleAuthError(
+      'not-configured',
+      `Google Drive sign-in requires the stable PaperFlow extension ID. This build is ${chrome.runtime.id}; install the device-test or Chrome Web Store build (${PRODUCTION_EXTENSION_ID}).`,
+    );
+  }
 }
 
 export function getGoogleAuthToken(interactive: boolean): Promise<string> {
@@ -34,9 +42,12 @@ export function getGoogleAuthToken(interactive: boolean): Promise<string> {
     chrome.identity.getAuthToken({ interactive }, (token) => {
       const runtimeError = chrome.runtime.lastError;
       if (runtimeError) {
+        const detail = runtimeError.message || 'Google Drive authorization failed.';
         reject(new GoogleAuthError(
           interactive ? 'authorization-failed' : 'not-authorized',
-          runtimeError.message || 'Google Drive authorization failed.',
+          /oauth|client id|bad client/i.test(detail)
+            ? `${detail} Verify that this build uses extension ID ${PRODUCTION_EXTENSION_ID} and the configured Chrome OAuth client.`
+            : detail,
         ));
         return;
       }
