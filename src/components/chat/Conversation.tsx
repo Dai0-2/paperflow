@@ -1,12 +1,16 @@
 import { Bookmark, Check, Copy, Pencil, RefreshCw, Tag, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import 'katex/dist/katex.min.css';
 import { Citation } from './Citation';
 import { useAppStore } from '../../store/useAppStore';
 import { useChatActions } from '../../hooks/useChatActions';
 import { text } from '../../i18n';
 import { saveAiAnswerAsNote } from '../../repositories/libraryRepository';
+import { normalizeMathDelimiters } from '../../services/markdown';
 
 const tagOptions = { en: ['Key finding', 'Method', 'Limitation', 'Question'], zh: ['关键发现', '研究方法', '局限性', '待确认'] };
 const feedbackOptions = { en: ['Incorrect', 'Unclear', 'Missing context', 'Too verbose'], zh: ['内容不正确', '表述不清', '缺少上下文', '过于冗长'] };
@@ -78,7 +82,15 @@ export function Conversation() {
         )}</span>}
       </div>}
       {message.progress && <div className="message-progress"><span />{message.progress}</div>}
-      <div className="message-body"><ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown></div>
+      <div className="message-body"><ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[[rehypeKatex, {
+          output: 'htmlAndMathml',
+          strict: 'ignore',
+          throwOnError: false,
+          trust: false,
+        }]]}
+      >{normalizeMathDelimiters(message.content)}</ReactMarkdown></div>
       {(message.citations?.length || message.citation) && <div className="citations">{(message.citations || (message.citation ? [message.citation] : [])).map((citation) => <Citation key={`${message.id}-${citation.page}-${citation.label}`} citation={citation} />)}</div>}
       {!!message.tags?.length && <div className="message-tags">{message.tags.map((tag) => <button key={tag} onClick={() => toggleTag(message.id, tag, message.tags)}>{tag}<X size={10} /></button>)}</div>}
       {!message.pending && <div className="message-actions" aria-label={text(uiLanguage, 'Message actions', '消息操作')}>

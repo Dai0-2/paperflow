@@ -14,7 +14,7 @@
   <p>
     <a href="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml/badge.svg" alt="构建状态"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 许可证"></a>
-    <img src="https://img.shields.io/badge/version-1.0.3-5b7fa6" alt="版本 1.0.3">
+    <img src="https://img.shields.io/badge/version-1.0.4-5b7fa6" alt="版本 1.0.4">
     <img src="https://img.shields.io/badge/Chrome-MV3-5f9d75" alt="Chrome Manifest V3">
   </p>
 </div>
@@ -24,7 +24,7 @@
 </a>
 
 > [!IMPORTANT]
-> PaperFlow AI 1.0.3 是本地优先的个人文献库、PDF 阅读与批注工作台和
+> PaperFlow AI 1.0.4 是本地优先的个人文献库、PDF 阅读与批注工作台和
 > AI 研究助手。登录 Google 后即可通过用户自己的云盘同步加密研究数据；
 > PaperFlow 不运营文档后端。
 

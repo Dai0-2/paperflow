@@ -27,6 +27,31 @@ afterEach(async () => {
 });
 
 describe('conversation actions', () => {
+  it('renders bracket-delimited inline and display formulas with KaTeX', () => {
+    useAppStore.setState({
+      messages: [{
+        id: 'assistant:math',
+        role: 'assistant',
+        content: [
+          '## Reward calibration',
+          '',
+          '其中，\\(\\mathbf{1}[y \\equiv y^*]\\) 表示正确性。',
+          '',
+          '\\[',
+          '\\boxed{R_{\\text{RLCR}}(y,q,y^*) = \\mathbf{1}[y \\equiv y^*] - (q-\\mathbf{1}[y \\equiv y^*])^2}',
+          '\\]',
+        ].join('\n'),
+      }],
+    });
+
+    const { container } = render(<Conversation />);
+
+    expect(container.querySelector('.message-body h2')).toHaveTextContent('Reward calibration');
+    expect(container.querySelectorAll('.message-body .katex')).toHaveLength(2);
+    expect(container.querySelector('.message-body .katex-display')).toBeInTheDocument();
+    expect(container.querySelector('.message-body .katex-error')).not.toBeInTheDocument();
+  });
+
   it('saves an assistant response as a visible library note', async () => {
     const { paper } = await openPaperWorkspace({
       id: 'paper:conversation',

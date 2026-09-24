@@ -48,6 +48,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .message.user .message-actions { width: fit-content; margin-left: auto; }
 .message-runtime { display: flex; flex-wrap: wrap; gap: 8px; margin: -5px 0 9px 24px; color: var(--faint); font-size: 9.5px; }
 .message-body p { margin: 0 0 13px; }.message-body p:last-child { margin-bottom: 0; }.message-body strong { font-weight: 620; }
+.message-body h1,
+.message-body h2,
+.message-body h3,
+.message-body h4 { margin: 1.15em 0 .55em; line-height: 1.35; letter-spacing: 0; }
+.message-body h1 { font-size: 1.12rem; }
+.message-body h2 { font-size: 1.04rem; }
+.message-body h3 { font-size: .98rem; }
+.message-body h4 { font-size: .9rem; }
+.message-body .katex { max-width: 100%; font-size: 1em; overflow-wrap: normal; word-break: normal; }
+.message-body .katex-display { max-width: 100%; margin: .85em 0; padding: 2px 0 4px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.message-body .katex-display > .katex { font-size: 1.02em; }
 .message.pending .message-body { color: var(--muted); }
 .message.pending .message-body::after { content: ''; display: inline-block; width: 5px; height: 5px; margin-left: 6px; border-radius: 50%; background: var(--muted); animation: pulse 1s ease-in-out infinite; }
 .message:has(.message-progress) .message-body::after { display: none; }

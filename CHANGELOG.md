@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.4 - 2026-09-24
+
+- Added local KaTeX rendering for inline and display mathematics in AI answers.
+- Added compatibility for `$...$`, `$$...$$`, `\(...\)`, and `\[...\]`
+  delimiters while preserving literal formulas inside code blocks.
+- Reduced Markdown heading sizes inside the AI panel and made long display
+  formulas horizontally scrollable without deforming the panel.
+
 ## 1.0.3 - 2026-09-24
 
 - Added first-run ChatGPT sign-in through the fixed, allow-listed

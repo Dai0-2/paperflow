@@ -66,7 +66,15 @@ test('keeps assistant actions visible and saves an answer as a library note', as
         threadId: thread.id,
         sequence: 1,
         role: 'assistant',
-        content: '## Key contribution\n\nThe paper introduces a faster evidence retrieval workflow.',
+        content: [
+          '## Key contribution',
+          '',
+          'The paper introduces a faster evidence retrieval workflow.',
+          '',
+          '\\[',
+          '\\boxed{R_{\\text{RLCR}}(y,q,y^*) = \\mathbf{1}[y \\equiv y^*] - (q-\\mathbf{1}[y \\equiv y^*])^2}',
+          '\\]',
+        ].join('\n'),
         model: 'gpt-4.1-mini',
         firstTokenMs: 840,
         durationMs: 2100,
@@ -83,10 +91,15 @@ test('keeps assistant actions visible and saves an answer as a library note', as
 
   const actions = page.getByLabel('Message actions').last();
   await expect(actions).toBeVisible();
+  await expect(page.locator('.message.assistant .katex-display')).toBeVisible();
+  await expect(page.locator('.message.assistant .katex-error')).toHaveCount(0);
   const answerBox = await page.locator('.message.assistant .message-body').last().boundingBox();
+  const formulaBox = await page.locator('.message.assistant .katex-display').boundingBox();
   const actionsBox = await actions.boundingBox();
   expect(answerBox).toBeTruthy();
+  expect(formulaBox).toBeTruthy();
   expect(actionsBox).toBeTruthy();
+  expect(formulaBox!.width).toBeLessThanOrEqual(answerBox!.width);
   expect(actionsBox!.y).toBeGreaterThanOrEqual(answerBox!.y + answerBox!.height);
   await expect(page.getByText('First response 0.8s')).toBeVisible();
   await page.getByRole('button', { name: 'gpt-4.1-mini' }).click();
