@@ -14,7 +14,7 @@
   <p>
     <a href="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml/badge.svg" alt="构建状态"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 许可证"></a>
-    <img src="https://img.shields.io/badge/version-1.0.7-5b7fa6" alt="版本 1.0.7">
+    <img src="https://img.shields.io/badge/version-1.0.8-5b7fa6" alt="版本 1.0.8">
     <img src="https://img.shields.io/badge/Chrome-MV3-5f9d75" alt="Chrome Manifest V3">
   </p>
 </div>
@@ -23,8 +23,12 @@
   <img src="website/assets/paperflow-attention-reader.png" alt="PaperFlow Reader 中打开 Attention Is All You Need，包含页面缩略图、批注工具与 AI 总结">
 </a>
 
+<p align="center">
+  <strong><a href="https://dai0-2.github.io/paperflow/assets/paperflow-demo.webm">观看 16 秒产品演示视频</a></strong>
+</p>
+
 > [!IMPORTANT]
-> PaperFlow AI 1.0.7 是本地优先的个人文献库、PDF 阅读与批注工作台和
+> PaperFlow AI 1.0.8 是本地优先的个人文献库、PDF 阅读与批注工作台和
 > AI 研究助手。登录 Google 后即可通过用户自己的云盘同步加密研究数据；
 > PaperFlow 不运营文档后端。
 
@@ -32,7 +36,7 @@
 
 | 研究资料库 | 论文旁的 AI |
 | --- | --- |
-| <img src="website/assets/paperflow-library.png" alt="PaperFlow 资料库" width="720"> | <img src="website/assets/paperflow-sidepanel.png" alt="PaperFlow AI 侧边栏" width="300"> |
+| <img src="website/assets/paperflow-library.png" alt="PaperFlow 资料库" width="720"> | <img src="website/assets/paperflow-ai-detail.png" alt="PaperFlow AI 侧边栏" width="300"> |
 | 集合、元数据、全文检索、引用与阅读历史。 | 页码感知提问、流式回答、笔记与每篇论文的长期记忆。 |
 
 ## 为什么做 PaperFlow

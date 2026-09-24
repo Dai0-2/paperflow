@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.8 - 2026-09-24
+
+- Rebuilt the product website around five concrete workflows: browser reading,
+  annotation, library organization, contextual AI, and Google Drive sync.
+- Removed forced mobile image widths so every product screenshot preserves its
+  natural aspect ratio on desktop and mobile.
+- Added high-resolution annotation and AI detail views derived from the real
+  *Attention Is All You Need* PaperFlow session.
+- Added a 16-second, 1280x720 product walkthrough made entirely from real
+  PaperFlow interface captures.
+
 ## 1.0.7 - 2026-09-24
 
 - Renamed the Zotero-inspired appearance option to White while preserving
