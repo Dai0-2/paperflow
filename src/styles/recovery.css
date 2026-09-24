@@ -24,14 +24,14 @@
 .recovery-eyebrow {
   margin: 18px 0 5px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1));
   font-weight: 650;
   text-transform: uppercase;
 }
 
 .recovery-panel h1 {
   margin: 0;
-  font-size: 22px;
+  font-size: calc(22px * var(--ui-font-scale, 1));
   line-height: 1.25;
   font-weight: 640;
 }
@@ -52,7 +52,7 @@
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: 6px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1));
   overflow-wrap: anywhere;
 }
 
@@ -73,7 +73,7 @@
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: 7px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1));
 }
 
 .recovery-actions button:first-child {
@@ -95,13 +95,13 @@
 .recovery-message {
   margin: 12px 0 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1));
 }
 
 .recovery-panel small {
   display: block;
   margin-top: 22px;
   color: var(--faint);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--ui-font-scale, 1));
   line-height: 1.55;
 }

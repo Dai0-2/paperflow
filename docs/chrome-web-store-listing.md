@@ -72,9 +72,9 @@ PaperFlow contains no advertising, analytics, tracking, or telemetry.
 
 ### Other fields
 
-- Official website: `https://dai0-2.github.io/paperflow-ai/`
-- Homepage URL: `https://dai0-2.github.io/paperflow-ai/`
-- Support URL: `https://github.com/Dai0-2/paperflow-ai/issues`
+- Official website: `https://dai0-2.github.io/paperflow/`
+- Homepage URL: `https://dai0-2.github.io/paperflow/`
+- Support URL: `https://github.com/Dai0-2/paperflow/issues`
 - Adult content: Off.
 
 ## Privacy
@@ -190,7 +190,7 @@ Confirm all applicable limited-use declarations:
 
 ### Privacy policy
 
-Use `https://dai0-2.github.io/paperflow-ai/privacy.html`.
+Use `https://dai0-2.github.io/paperflow/privacy.html`.
 
 ## Test instructions
 

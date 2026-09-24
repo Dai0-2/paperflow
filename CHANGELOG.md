@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.7 - 2026-09-24
+
+- Renamed the Zotero-inspired appearance option to White while preserving
+  existing theme preferences.
+- Expanded interface text sizing from 75% to 160%, added one-step adjustments
+  and reset controls, and applied scaling consistently across the Side Panel,
+  Reader, Library, and recovery views without changing PDF typography.
+- Replaced the website and README hero image with a high-resolution real
+  PaperFlow session displaying *Attention Is All You Need*.
+- Simplified the public website to a clean white presentation and renamed the
+  GitHub repository and Pages site from `paperflow-ai` to `paperflow`.
+
 ## 1.0.6 - 2026-09-24
 
 - Added recovery rendering for AI answers that emit LaTeX inside bare square

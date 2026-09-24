@@ -4,7 +4,7 @@
   <p><strong>陪伴每一篇论文的持久化 AI 研究助手。</strong></p>
   <p>阅读、批注、提问、记忆与同步，同时保留你的数据主权。</p>
   <p>
-    <a href="https://dai0-2.github.io/paperflow-ai/"><strong>产品网站</strong></a>
+    <a href="https://dai0-2.github.io/paperflow/"><strong>产品网站</strong></a>
     ·
     <a href="https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc"><strong>Chrome 应用商店</strong></a>
     ·
@@ -12,19 +12,19 @@
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
   <p>
-    <a href="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml/badge.svg" alt="构建状态"></a>
+    <a href="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml/badge.svg" alt="构建状态"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 许可证"></a>
-    <img src="https://img.shields.io/badge/version-1.0.6-5b7fa6" alt="版本 1.0.6">
+    <img src="https://img.shields.io/badge/version-1.0.7-5b7fa6" alt="版本 1.0.7">
     <img src="https://img.shields.io/badge/Chrome-MV3-5f9d75" alt="Chrome Manifest V3">
   </p>
 </div>
 
-<a href="https://dai0-2.github.io/paperflow-ai/">
-  <img src="website/assets/paperflow-reader.png" alt="PaperFlow Reader 的页码感知划词操作与持久化 AI 工作区">
+<a href="https://dai0-2.github.io/paperflow/">
+  <img src="website/assets/paperflow-attention-reader.png" alt="PaperFlow Reader 中打开 Attention Is All You Need，包含页面缩略图、批注工具与 AI 总结">
 </a>
 
 > [!IMPORTANT]
-> PaperFlow AI 1.0.6 是本地优先的个人文献库、PDF 阅读与批注工作台和
+> PaperFlow AI 1.0.7 是本地优先的个人文献库、PDF 阅读与批注工作台和
 > AI 研究助手。登录 Google 后即可通过用户自己的云盘同步加密研究数据；
 > PaperFlow 不运营文档后端。
 
@@ -132,8 +132,8 @@ Paper
 ### 加载扩展
 
 ```bash
-git clone https://github.com/Dai0-2/paperflow-ai.git
-cd paperflow-ai
+git clone https://github.com/Dai0-2/paperflow.git
+cd paperflow
 pnpm install
 pnpm build
 cargo build --release --locked --manifest-path native-host/Cargo.toml

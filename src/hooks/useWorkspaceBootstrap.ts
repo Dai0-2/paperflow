@@ -42,7 +42,6 @@ export function useWorkspaceBootstrap({
       document.documentElement.dataset.theme = dark ? 'dark' : theme === 'zotero' ? 'zotero' : 'light';
       document.documentElement.dataset.fontFamily = fontFamily;
       document.documentElement.style.setProperty('--ui-font-scale', String(fontScale / 100));
-      document.documentElement.style.fontSize = `${fontScale}%`;
     };
     apply();
     media.addEventListener('change', apply);

@@ -5,8 +5,10 @@ import {
   Laptop,
   Moon,
   Palette,
+  RotateCcw,
   Settings2,
   Sun,
+  Type,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -16,8 +18,14 @@ import {
   setPdfCloudSyncEnabled,
 } from '../../services/storage/documentStore';
 import { useAppStore } from '../../store/useAppStore';
-import type { Language, Theme } from '../../types';
+import type { Language, Theme, UiFontFamily } from '../../types';
 import { VaultSetup } from '../sync/VaultSetup';
+
+const fontFamilies: { id: UiFontFamily; en: string; zh: string }[] = [
+  { id: 'system', en: 'System', zh: '系统' },
+  { id: 'sans', en: 'Sans', zh: '无衬线' },
+  { id: 'serif', en: 'Serif', zh: '衬线' },
+];
 
 export function LibrarySettingsDialog(props: {
   language: Language;
@@ -28,7 +36,11 @@ export function LibrarySettingsDialog(props: {
   const [syncPdfDocuments, setSyncPdfDocumentsState] = useState(false);
   const {
     defaultOpenReader,
+    fontFamily,
+    fontScale,
     setDefaultOpenReader,
+    setFontFamily,
+    setFontScale,
     setUiLanguage,
   } = useAppStore();
 
@@ -90,7 +102,7 @@ export function LibrarySettingsDialog(props: {
               type="button"
               data-active={props.theme === 'zotero'}
               onClick={() => props.onThemeChange('zotero')}
-            ><Palette />{text(props.language, 'Zotero', 'Zotero 白')}</button>
+            ><Palette />{text(props.language, 'White', '白色')}</button>
             <button
               type="button"
               data-active={props.theme === 'light'}
@@ -106,6 +118,40 @@ export function LibrarySettingsDialog(props: {
               data-active={props.theme === 'system'}
               onClick={() => props.onThemeChange('system')}
             ><Laptop />{text(props.language, 'System', '跟随系统')}</button>
+          </div>
+          <div className="library-font-settings">
+            <span><Type />{text(props.language, 'Interface font', '界面字体')}</span>
+            <div className="library-setting-segmented three">
+              {fontFamilies.map((option) => <button
+                key={option.id}
+                type="button"
+                data-active={fontFamily === option.id}
+                onClick={() => setFontFamily(option.id)}
+              >{text(props.language, option.en, option.zh)}</button>)}
+            </div>
+            <label>
+              <span>{text(props.language, 'Text size', '文字大小')}</span>
+              <input
+                type="range"
+                min="75"
+                max="160"
+                step="1"
+                value={fontScale}
+                onChange={(event) => setFontScale(Number(event.target.value))}
+              />
+              <output>{fontScale}%</output>
+              <button
+                type="button"
+                title={text(props.language, 'Reset text size', '恢复默认文字大小')}
+                disabled={fontScale === 100}
+                onClick={() => setFontScale(100)}
+              ><RotateCcw />{text(props.language, 'Reset', '重置')}</button>
+            </label>
+            <small>{text(
+              props.language,
+              '75–160%. PDF typography is not changed.',
+              '可调范围 75%–160%，不改变 PDF 原始字体。',
+            )}</small>
           </div>
         </section>
 

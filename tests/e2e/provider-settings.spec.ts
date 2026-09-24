@@ -6,26 +6,37 @@ test('opens appearance settings before onboarding is complete', async ({ page })
 
   await page.getByRole('button', { name: 'Open settings' }).click();
   await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible();
-  await page.getByRole('button', { name: 'Zotero white' }).click();
+  await page.getByRole('button', { name: 'White' }).click();
   await page.getByRole('button', { name: 'Serif' }).click();
-  await page.getByRole('slider', { name: 'Text size' }).fill('115');
+  const textSize = page.getByRole('slider', { name: 'Text size' });
+  await textSize.fill('75');
+  const smallTextSize = await page.getByRole('button', { name: 'Settings' }).evaluate(
+    (element) => Number.parseFloat(getComputedStyle(element).fontSize),
+  );
+  await textSize.fill('160');
+  const largeTextSize = await page.getByRole('button', { name: 'Settings' }).evaluate(
+    (element) => Number.parseFloat(getComputedStyle(element).fontSize),
+  );
+  expect(largeTextSize).toBeGreaterThan(smallTextSize * 2);
 
   await expect.poll(() => page.evaluate(() => ({
     theme: document.documentElement.dataset.theme,
     fontFamily: document.documentElement.dataset.fontFamily,
-    fontSize: document.documentElement.style.fontSize,
+    fontScale: document.documentElement.style.getPropertyValue('--ui-font-scale'),
     storedTheme: localStorage.getItem('paperflow:theme'),
     storedFont: localStorage.getItem('paperflow:font-family'),
     storedScale: localStorage.getItem('paperflow:font-scale'),
   }))).toEqual({
     theme: 'zotero',
     fontFamily: 'serif',
-    fontSize: '115%',
+    fontScale: '1.6',
     storedTheme: 'zotero',
     storedFont: 'serif',
-    storedScale: '115',
+    storedScale: '160',
   });
 
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await expect(textSize).toHaveValue('100');
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.getByRole('heading', { name: 'Your paper, understood.' })).toBeVisible();
 });

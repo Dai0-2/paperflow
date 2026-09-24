@@ -107,7 +107,7 @@ export function LibraryApp() {
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : theme === 'zotero' ? 'zotero' : 'light';
     document.documentElement.dataset.fontFamily = fontFamily;
-    document.documentElement.style.fontSize = `${fontScale}%`;
+    document.documentElement.style.setProperty('--ui-font-scale', String(fontScale / 100));
   }, [dark, fontFamily, fontScale, theme]);
 
   const mutate = async (action: () => Promise<void>) => {

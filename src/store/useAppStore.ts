@@ -18,7 +18,7 @@ import type {
 
 function storedFontScale(): number {
   const value = Number(localStorage.getItem('paperflow:font-scale') || '100');
-  return Number.isFinite(value) ? Math.max(90, Math.min(120, value)) : 100;
+  return Number.isFinite(value) ? Math.max(75, Math.min(160, Math.round(value))) : 100;
 }
 
 interface AppState {
@@ -76,7 +76,7 @@ export const useAppStore = create<AppState>((set) => ({
     set({ fontFamily });
   },
   setFontScale: (value) => {
-    const fontScale = Math.max(90, Math.min(120, Math.round(value / 5) * 5));
+    const fontScale = Math.max(75, Math.min(160, Math.round(value)));
     localStorage.setItem('paperflow:font-scale', String(fontScale));
     set({ fontScale });
   },

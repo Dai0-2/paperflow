@@ -69,9 +69,9 @@ PaperFlow contains no advertising, analytics, tracking, or telemetry.
 
 ### 5. 其他字段
 
-- 官方网址：填写 `https://dai0-2.github.io/paperflow-ai/`。
-- 首页网址：填写 `https://dai0-2.github.io/paperflow-ai/`。
-- 支持信息页面网址：填写 `https://github.com/Dai0-2/paperflow-ai/issues`。
+- 官方网址：填写 `https://dai0-2.github.io/paperflow/`。
+- 首页网址：填写 `https://dai0-2.github.io/paperflow/`。
+- 支持信息页面网址：填写 `https://github.com/Dai0-2/paperflow/issues`。
 - 成人内容：关闭。
 
 完成后点击“保存草稿”，不要提交审核。
@@ -183,7 +183,7 @@ App functionality
 
 ### 5. 隐私政策
 
-填写正式隐私政策网址：`https://dai0-2.github.io/paperflow-ai/privacy.html`。
+填写正式隐私政策网址：`https://dai0-2.github.io/paperflow/privacy.html`。
 
 不要填写本地路径、临时预览网址或虚构网址。
 
