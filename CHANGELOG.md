@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.6 - 2026-09-24
+
+- Added recovery rendering for AI answers that emit LaTeX inside bare square
+  or round brackets instead of standard math delimiters.
+- Preserved formula contents while normalizing consecutive display equations.
+- Instructed both Codex subscription and API providers to use `$...$` and
+  `$$...$$` consistently for future mathematical answers.
+
 ## 1.0.5 - 2026-09-24
 
 - Made the public PaperFlow Google OAuth client ID part of every extension

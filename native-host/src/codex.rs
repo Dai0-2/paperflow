@@ -409,7 +409,8 @@ fn build_prompt(question: &str, context: &str, language: ResponseLanguage) -> St
 Answer the user's question using only the supplied paper context. Be explicit when the \
 context is insufficient. Do not inspect local files, run commands, or change the computer. \
 Answer in {}. Cite factual claims from the supplied paper as [Page N], and never invent \
-page numbers. Return only the answer in Markdown.\n\nPAPER CONTEXT\n{}\n\nUSER QUESTION\n{}",
+page numbers. For math, use only $...$ for inline formulas and $$...$$ for display formulas; \
+never wrap formulas in plain brackets. Return only the answer in Markdown.\n\nPAPER CONTEXT\n{}\n\nUSER QUESTION\n{}",
         language.instruction(),
         if context.is_empty() {
             "[No extracted paper text available]"
@@ -467,6 +468,7 @@ mod tests {
         let prompt = build_prompt("Why?", "[Page 1] Text", ResponseLanguage::English);
         assert!(prompt.contains("Do not inspect local files, run commands"));
         assert!(prompt.contains("[Page 1] Text"));
+        assert!(prompt.contains("$$...$$"));
     }
 
     #[test]

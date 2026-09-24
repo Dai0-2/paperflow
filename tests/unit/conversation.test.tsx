@@ -40,6 +40,10 @@ describe('conversation actions', () => {
           '\\[',
           '\\boxed{R_{\\text{RLCR}}(y,q,y^*) = \\mathbf{1}[y \\equiv y^*] - (q-\\mathbf{1}[y \\equiv y^*])^2}',
           '\\]',
+          '',
+          '[ \\mathrm{LayerNorm}\\bigl(x+\\mathrm{Sublayer}(x)\\bigr) ]',
+          '',
+          '其中 (\\mathrm{Residual}(x)) 是残差输出。',
         ].join('\n'),
       }],
     });
@@ -47,7 +51,14 @@ describe('conversation actions', () => {
     const { container } = render(<Conversation />);
 
     expect(container.querySelector('.message-body h2')).toHaveTextContent('Reward calibration');
-    expect(container.querySelectorAll('.message-body .katex')).toHaveLength(2);
+    const visibleMath = Array.from(container.querySelectorAll('.message-body .katex-html'))
+      .map((element) => element.textContent)
+      .join(' ');
+    expect(visibleMath).toContain('RLCR');
+    expect(visibleMath).toContain('y≡y');
+    expect(visibleMath).toContain('LayerNorm');
+    expect(visibleMath).toContain('Residual');
+    expect(container.querySelectorAll('.message-body .katex')).toHaveLength(4);
     expect(container.querySelector('.message-body .katex-display')).toBeInTheDocument();
     expect(container.querySelector('.message-body .katex-error')).not.toBeInTheDocument();
   });

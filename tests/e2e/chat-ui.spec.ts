@@ -74,6 +74,10 @@ test('keeps assistant actions visible and saves an answer as a library note', as
           '\\[',
           '\\boxed{R_{\\text{RLCR}}(y,q,y^*) = \\mathbf{1}[y \\equiv y^*] - (q-\\mathbf{1}[y \\equiv y^*])^2}',
           '\\]',
+          '',
+          '[ (x_1,\\ldots,x_n)\\rightarrow z=(z_1,\\ldots,z_n) ]',
+          '',
+          '其中 (\\mathrm{Sublayer}(x)) 是子层输出。',
         ].join('\n'),
         model: 'gpt-4.1-mini',
         firstTokenMs: 840,
@@ -91,10 +95,13 @@ test('keeps assistant actions visible and saves an answer as a library note', as
 
   const actions = page.getByLabel('Message actions').last();
   await expect(actions).toBeVisible();
-  await expect(page.locator('.message.assistant .katex-display')).toBeVisible();
+  const displayMath = page.locator('.message.assistant .katex-display');
+  await expect(displayMath.first()).toBeVisible();
+  await expect(displayMath).toHaveCount(2);
+  await expect(page.locator('.message.assistant .katex')).toHaveCount(3);
   await expect(page.locator('.message.assistant .katex-error')).toHaveCount(0);
   const answerBox = await page.locator('.message.assistant .message-body').last().boundingBox();
-  const formulaBox = await page.locator('.message.assistant .katex-display').boundingBox();
+  const formulaBox = await displayMath.first().boundingBox();
   const actionsBox = await actions.boundingBox();
   expect(answerBox).toBeTruthy();
   expect(formulaBox).toBeTruthy();

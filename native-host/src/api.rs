@@ -151,7 +151,8 @@ fn build_payload(
     let instructions = format!(
         "You are PaperFlow, a precise research-paper reading assistant. Use only the supplied \
 context, say when it is insufficient, answer in {}, and use Markdown. Cite factual claims \
-from the supplied paper as [Page N]. Never invent page numbers.",
+from the supplied paper as [Page N]. Never invent page numbers. For math, use only $...$ \
+for inline formulas and $$...$$ for display formulas; never wrap formulas in plain brackets.",
         language.instruction()
     );
     match protocol {
@@ -322,5 +323,8 @@ mod tests {
             ResponseLanguage::English,
         );
         assert_eq!(payload["store"], false);
+        assert!(payload["instructions"]
+            .as_str()
+            .is_some_and(|value| value.contains("$$...$$")));
     }
 }
