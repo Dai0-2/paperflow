@@ -1,11 +1,24 @@
 import { expect, test } from '@playwright/test';
 
+test('shows an actionable device login guide when the native host is unavailable', async ({ page }) => {
+  await page.setViewportSize({ width: 420, height: 900 });
+  await page.goto('/');
+
+  await expect(page.getByText('Device login guide')).toBeVisible();
+  await expect(page.getByText('Extension ID needs attention')).toBeVisible();
+  await expect(page.getByText('dffiahjmpkmellmjijffpcofoahbccoc')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Extension settings' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'PaperFlow settings' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy Codex commands' })).toBeVisible();
+});
+
 test('opens appearance settings before onboarding is complete', async ({ page }) => {
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto('/');
 
   await page.getByRole('button', { name: 'Open settings' }).click();
   await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible();
+  await expect(page.getByText('Device login guide')).toBeVisible();
   await page.getByRole('button', { name: 'White' }).click();
   await page.getByRole('button', { name: 'Serif' }).click();
   const textSize = page.getByRole('slider', { name: 'Text size' });

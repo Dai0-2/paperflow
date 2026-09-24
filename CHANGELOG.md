@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.10 - 2026-09-24
+
+- Added an in-product device login guide for ChatGPT and Google Drive setup.
+- The guide detects the current extension ID, explains stable-ID device builds,
+  Native Host installation, Codex CLI login, and Google Drive connection.
+- Login failures now expose direct actions for Chrome extension management,
+  PaperFlow settings, and copying the required Codex commands.
+
 ## 1.0.9 - 2026-09-24
 
 - Reworked the product website around a Paper-inspired editorial system with a

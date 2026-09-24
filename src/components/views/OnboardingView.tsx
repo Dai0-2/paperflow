@@ -5,6 +5,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { detectActivePaper } from '../../services/paper';
 import { loginWithChatGPT, saveApiKey, testApiConnection } from '../../services/bridge';
 import { text } from '../../i18n';
+import { DeviceSetupGuide } from '../setup/DeviceSetupGuide';
 
 export function OnboardingView() {
   const [apiKey, setApiKey] = useState('');
@@ -64,6 +65,11 @@ export function OnboardingView() {
           {apiState !== 'connected' && <div className="api-key-row"><input type="password" autoComplete="off" spellCheck={false} value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="API key" /><button disabled={!apiKey.trim() || !apiBaseUrl.trim() || !model.trim()} onClick={() => void connectApi()}>{apiState === 'checking' ? text(uiLanguage, 'Testing…', '测试中…') : text(uiLanguage, 'Save & test', '保存并测试')}</button></div>}
         </section>}
     </div>
+    {providerMode === 'chatgpt' && bridgeState === 'unavailable' && <DeviceSetupGuide
+      language={uiLanguage}
+      defaultOpen
+      onOpenSettings={() => setView('settings')}
+    />}
     <div className="privacy-note"><ShieldCheck size={15} /><span>{text(uiLanguage, 'PaperFlow never reads ChatGPT cookies or exposes your access token.', 'PaperFlow 不会读取 ChatGPT Cookie，也不会暴露访问令牌。')}</span></div>
     <button className="continue-button" disabled={!ready} onClick={() => setInitialized(true)}>{text(uiLanguage, 'Open workspace', '打开工作区')} <ArrowRight size={16} /></button>
   </main>;

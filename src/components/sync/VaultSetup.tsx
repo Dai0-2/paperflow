@@ -13,6 +13,7 @@ import type { Language } from '../../types';
 import { ConflictCenter } from './ConflictCenter';
 import { SyncStatus } from './SyncStatus';
 import { syncEngine } from '../../sync/SyncEngine';
+import { DeviceSetupGuide } from '../setup/DeviceSetupGuide';
 
 type SyncStage = 'unconfigured' | 'disconnected' | 'legacy' | 'connected';
 type LegacyUnlockMethod = 'password' | 'recovery';
@@ -179,6 +180,10 @@ export function VaultSetup({ language }: { language: Language }) {
     </div>}
 
     {error && <p className="vault-error" role="alert">{error}</p>}
+    {/extension ID|Native Host|device-test/i.test(error) && <DeviceSetupGuide
+      language={language}
+      defaultOpen
+    />}
     <p className="vault-footnote">{text(
       language,
       'Sync data is encrypted before upload. Anyone with access to this Google account and its PaperFlow Drive files can restore it.',
