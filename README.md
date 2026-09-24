@@ -14,7 +14,7 @@
   <p>
     <a href="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow-ai/actions/workflows/build.yml/badge.svg" alt="Build status"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 license"></a>
-    <img src="https://img.shields.io/badge/version-1.0.4-5b7fa6" alt="Version 1.0.4">
+    <img src="https://img.shields.io/badge/version-1.0.5-5b7fa6" alt="Version 1.0.5">
     <img src="https://img.shields.io/badge/Chrome-MV3-5f9d75" alt="Chrome Manifest V3">
   </p>
 </div>
@@ -24,7 +24,7 @@
 </a>
 
 > [!IMPORTANT]
-> PaperFlow AI 1.0.4 is a local-first personal research library, PDF reader,
+> PaperFlow AI 1.0.5 is a local-first personal research library, PDF reader,
 > annotation workspace, and AI companion. Sign in with Google to sync encrypted
 > research data through your own Drive. PaperFlow does not operate a document
 > backend.

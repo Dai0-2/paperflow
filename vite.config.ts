@@ -14,6 +14,8 @@ interface ExtensionManifest {
 
 const GOOGLE_OAUTH_CLIENT_ID_PATTERN =
   /^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/i;
+const DEFAULT_GOOGLE_OAUTH_CLIENT_ID =
+  '326091083454-ru79mir7van6oos1m6e8vhnmf1ohll2v.apps.googleusercontent.com';
 
 function manifestPlugin(clientId: string, storeBuild: boolean): Plugin {
   return {
@@ -47,14 +49,11 @@ function manifestPlugin(clientId: string, storeBuild: boolean): Plugin {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const googleOAuthClientId = env.PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID?.trim() || '';
+  const googleOAuthClientId =
+    env.PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID?.trim() || DEFAULT_GOOGLE_OAUTH_CLIENT_ID;
   const releaseBuild = mode === 'release' || env.PAPERFLOW_RELEASE === 'true';
-  const deviceTestBuild = mode === 'device-test';
   const storeBuild = releaseBuild || mode === 'store-draft';
-  if ((releaseBuild || deviceTestBuild) && !googleOAuthClientId) {
-    throw new Error(`PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID is required for ${mode} builds.`);
-  }
-  if (googleOAuthClientId && !GOOGLE_OAUTH_CLIENT_ID_PATTERN.test(googleOAuthClientId)) {
+  if (!GOOGLE_OAUTH_CLIENT_ID_PATTERN.test(googleOAuthClientId)) {
     throw new Error('PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID is not a valid Google OAuth client ID.');
   }
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.5 - 2026-09-24
+
+- Made the public PaperFlow Google OAuth client ID part of every extension
+  build, including the default local `dist` build.
+- Kept environment overrides for alternate registered OAuth clients while
+  preventing local builds from silently disabling Google Drive sync.
+
 ## 1.0.4 - 2026-09-24
 
 - Added local KaTeX rendering for inline and display mathematics in AI answers.
