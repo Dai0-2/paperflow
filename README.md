@@ -1,142 +1,153 @@
 <div align="center">
-  <img src="public/icons/paperflow-128.png" width="78" height="78" alt="PaperFlow AI logo">
-  <h1>PaperFlow AI</h1>
-  <p><strong>A PDF reader built for the browser.</strong></p>
-  <p>Read papers where you find them, annotate the source, ask with page context, and continue on any computer.</p>
+  <a href="https://dai0-2.github.io/paperflow/">
+    <img src="public/icons/paperflow-128.png" width="84" height="84" alt="PaperFlow logo">
+  </a>
+  <h1>PaperFlow</h1>
+  <p><strong>Read where you find papers. Think where you read them.</strong></p>
+  <p>A browser-native research workspace for Chrome.</p>
   <p>
-    <a href="https://dai0-2.github.io/paperflow/"><strong>Website</strong></a>
-    ·
-    <a href="https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc"><strong>Chrome Web Store</strong></a>
-    ·
-    <a href="#install"><strong>Build from source</strong></a>
+    Read, annotate, ask, remember, and organize papers without leaving the browser.
   </p>
-  <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
+  <p>
+    <a href="https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc"><strong>Add to Chrome</strong></a>
+    &nbsp;&nbsp;·&nbsp;&nbsp;
+    <a href="https://dai0-2.github.io/paperflow/"><strong>Visit website</strong></a>
+    &nbsp;&nbsp;·&nbsp;&nbsp;
+    <a href="#build-from-source"><strong>Build from source</strong></a>
+  </p>
+  <p>
+    <strong>English</strong>
+    &nbsp;·&nbsp;
+    <a href="README.zh-CN.md">简体中文</a>
+  </p>
   <p>
     <a href="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml/badge.svg" alt="Build status"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 license"></a>
-    <img src="https://img.shields.io/badge/version-1.0.10-5b7fa6" alt="Version 1.0.10">
-    <img src="https://img.shields.io/badge/Chrome-MV3-5f9d75" alt="Chrome Manifest V3">
+    <img src="https://img.shields.io/badge/version-1.0.10-326bd1" alt="Version 1.0.10">
+    <img src="https://img.shields.io/badge/Chrome-MV3-347556" alt="Chrome Manifest V3">
+    <img src="https://img.shields.io/badge/storage-local--first-606460" alt="Local-first storage">
   </p>
 </div>
 
 <a href="https://dai0-2.github.io/paperflow/">
-  <img src="website/assets/paperflow-attention-reader.png" alt="PaperFlow Reader displaying Attention Is All You Need with page thumbnails, annotation tools, and an AI summary">
+  <img src="website/assets/paperflow-attention-reader.png" alt="PaperFlow Reader displaying Attention Is All You Need with page thumbnails, annotation tools, and a source-aware assistant">
 </a>
 
 <p align="center">
-  <strong><a href="https://dai0-2.github.io/paperflow/assets/paperflow-demo.mp4">Watch the 15-second product walkthrough</a></strong>
+  <a href="https://dai0-2.github.io/paperflow/assets/paperflow-demo.mp4"><strong>Watch the product walkthrough</strong></a>
 </p>
 
-> [!IMPORTANT]
-> PaperFlow AI 1.0.10 is a browser-native PDF reader for Chrome with annotation,
-> page-aware AI, a personal research library, and encrypted sync through your
-> own Google Drive. PaperFlow does not operate a document backend.
+## Your PDF is the workspace
 
-## Product at a glance
-
-| Research library | AI beside the paper |
-| --- | --- |
-| <img src="website/assets/paperflow-library.png" alt="PaperFlow library" width="720"> | <img src="website/assets/paperflow-ai-detail.png" alt="PaperFlow AI side panel" width="300"> |
-| Collections, metadata, full-text search, citations, and reading history. | Page-aware questions, streaming answers, notes, and per-paper memory. |
-
-## Why PaperFlow
-
-PaperFlow is not a generic ChatPDF clone. It can live in Chrome's Side Panel beside an existing viewer, or open a PDF in its own integrated Reader so page position, text selection, citations, and AI context can work together.
-
-Every paper is designed to have its own long-lived workspace:
+Research is often split across a PDF viewer, notes, a detached chatbot, browser
+tabs, and a separate reference manager. PaperFlow brings those parts together
+around the paper itself.
 
 ```text
 Paper
 ├── metadata and identity
-├── conversations
-├── selections and notes
-├── paper memory
-└── reading state
+├── reading state
+├── annotations and notes
+├── source-linked conversations
+└── Paper Memory
 ```
 
-Open the same paper days later—from a different source when identity can be resolved—and continue the same line of thought.
+Open an arXiv paper where you found it, keep the original URL, and work inside
+one persistent browser workspace. Return later and the paper still has its
+position, notes, conversations, and saved context.
 
-## Personal library
+## AI that stays connected to the paper
 
-- Nested collections, tags, favorites, reading status, trash, bulk actions, and
-  duplicate review
-- Virtualized dense table for large libraries and field-aware search filters
-- Markdown notes, annotation summaries, PDF attachments, and per-paper AI memory
-- BibTeX/RIS import and export; APA, MLA, Chicago, IEEE, and BibTeX copy
-- User-confirmed AI organization suggestions that never modify the library
-  before review
-- Local-first IndexedDB and OPFS storage with optional encrypted Google Drive
-  sync; offline PDF backup remains separately controlled and off by default
+<img src="website/assets/paperflow-source-stage.png" alt="PaperFlow showing a question, page citation, and the corresponding source passage in the PDF">
 
-## Integrated Reader
+Select text, ask a focused question, and receive a concise answer beside the
+document. PaperFlow builds context from the selection, current page, and
+relevant paper chunks. Structured citations link back to the cited page in the
+Reader.
 
-- Extension page at `reader.html?url=<encoded-pdf-url>` for remote PDFs, plus a local PDF picker
-- Continuous, lazy PDF.js rendering with text layers, thumbnails, document outline, search navigation, zoom, fit width, download, and print
-- Current-page tracking, keyboard navigation, responsive narrow-window fit, and light/dark reading surfaces without recoloring PDF pages
-- Reusable PaperFlow AI workspace embedded in a resizable right panel
-- Text-selection actions for asking, explaining, translating, summarizing, and saving
-- PDF-coordinate annotation layer with highlight, underline, strikeout, text note, area note, and ink tools
-- Annotation comments, colors, deletion, zoom-safe persistence, and offline reopening
-- Annotated PDF copy export through `pdf-lib`, with standard text-note comments and JSON/Markdown fallback
-- Explicit offline PDF storage in OPFS, local full-text search, and on-demand English/Simplified Chinese OCR
-- Page-aware chunked context; selected text is preferred over the current page and relevant paper chunks
-- Structured citations with page, label, and excerpt; citation clicks navigate the Reader
-- Explicit errors for missing, blocked, encrypted, or textless PDFs
-- arXiv PDF pages keep their original `arxiv.org/pdf/...` URL and favicon while PaperFlow Reader is mounted in-page; other direct PDFs use the extension Reader
-- Immediate hover labels identify compact Reader and annotation toolbar controls
+- Page-aware context instead of a detached chat upload
+- Streaming answers with Markdown, tables, and research prompt shortcuts
+- ChatGPT subscription support through the official Codex CLI
+- OpenAI-compatible API support with a custom base URL and model ID
+- API keys stored in the operating-system credential store
 
-## Side Panel and AI
+## Think directly on the paper
 
-- Minimal Chrome Manifest V3 Side Panel
-- Active-tab detection for arXiv, OpenReview, direct PDFs, and compatible PDF viewers
-- On-demand text extraction for accessible arXiv PDFs when AI context is needed
-- PDF, TXT, Markdown, and image attachments from a ChatGPT-style composer menu
-- Two provider modes: ChatGPT subscription through the official Codex CLI, or an OpenAI API key through the Responses API
-- API keys stored in the operating-system credential store rather than Chrome extension storage
-- Custom API base URL, model ID, and Responses/Chat Completions compatibility mode
-- Independent English/Chinese switches for the interface and model prompts
-- User-message bubbles with copy and edit-to-resend; answer copy, regenerate, save-to-memory, tags, and local feedback
-- Live answer progress for ChatGPT subscription mode and token streaming for API mode
-- Low-latency reasoning configuration and bounded conversation history to prevent progressive slowdowns
-- Per-paper IndexedDB storage for papers, aliases, threads, messages, memory, selections, annotations, settings, and reading state
-- One-click Google account sign-in and encrypted Drive sync using only the
-  minimum `drive.file` scope
-- Automatic sync for the library, notes, annotations, conversations, and
-  reading progress; offline PDF backup remains an explicit opt-in
-- One-time migration of legacy `localStorage` conversations and notes
-- First-run setup and connection diagnostics
-- Research conversation with Markdown and tables
-- Page-citation interaction prototype
-- Selected-text context preview
-- Prompt shortcuts: Translate, Summarize, Key Points, Methodology, and Limitations
-- Conversation history and multiple-thread UI
-- Paper Memory view
-- Provider connection status and model selector UI
-- Light, dark, and system themes
-- Responsive layout for 360–440 px panels
-- Keyboard navigation, focus states, and reduced-motion support
+<img src="website/assets/paperflow-annotations.png" alt="PaperFlow annotation tools over a research paper">
 
-## Known limits
+Highlight, underline, strike out, write a text note, capture an area, or draw
+with ink. Annotations stay anchored in PDF coordinates, survive zoom changes,
+and reopen with the paper.
 
-- Subscription requests still invoke `codex exec`; a persistent official Codex app server should be evaluated later.
-- Generation cancellation is not yet reliable.
-- Search navigates matching pages but does not yet provide a full match list or in-page match stepping.
-- Citation-range highlighting is not yet rendered.
-- OCR is intentionally on demand and limited to 50 pages per run.
-- Remote PDFs behind login walls or restrictive CORS must be downloaded and opened locally.
-- No collaboration, vector database, or account/payment system.
+Annotated work can be exported as a PDF copy, JSON, or Markdown. Local
+full-text search and on-demand English and Simplified Chinese OCR are available
+for papers that need them.
+
+## Every paper remembers
+
+PaperFlow treats each paper as a long-lived research object rather than a
+temporary chat session.
+
+| Persistent context | What is retained |
+| --- | --- |
+| Reading | Current page, position, and reader state |
+| Evidence | Selections, annotations, comments, and notes |
+| Conversation | Multiple threads, messages, and page citations |
+| Memory | Saved insights and concise paper context |
+| Identity | Metadata and source aliases for recognizing the same paper |
+
+## Your papers become a research system
+
+<img src="website/assets/paperflow-library-system.png" alt="PaperFlow research library with collections, tags, status, search, and paper details">
+
+The library uses a dense research-table interface designed for scanning and
+repeated work:
+
+- Nested collections, tags, favorites, reading status, and reading history
+- Field-aware search, duplicate review, trash, and bulk actions
+- BibTeX and RIS import/export
+- APA, MLA, Chicago, IEEE, and BibTeX citation copy
+- Markdown notes, annotation summaries, attachments, and Paper Memory
+- User-reviewed organization suggestions that never change the library silently
+
+## Your research stays yours
+
+PaperFlow is local-first. It does not operate a document backend.
+
+```mermaid
+flowchart LR
+    B["Chrome + PaperFlow"] --> L["Local storage<br/>IndexedDB + OPFS"]
+    L -. "optional · encrypted before upload" .-> D["Your Google Drive"]
+    B --> H["Local native host"]
+    H --> C["ChatGPT subscription<br/>via official Codex CLI"]
+    H --> A["OpenAI-compatible API"]
+```
+
+- Paper metadata, reading state, notes, annotations, conversations, and memory
+  remain local by default.
+- Optional Google Drive sync uses the minimum `drive.file` scope and stores
+  encrypted objects in the user's own `PaperFlow` folder.
+- Offline PDF backup is separately controlled and disabled by default.
+- PaperFlow does not scrape ChatGPT cookies or call private ChatGPT web
+  endpoints.
+- Local OCR has no runtime CDN or remote-code dependency.
+
+Read the [privacy notice](docs/privacy.md), [security policy](SECURITY.md), and
+[architecture document](docs/architecture.md).
 
 ## Install
 
-### Requirements
+### Chrome Web Store
 
-- Chrome 114 or newer on macOS, Windows, or Linux
-- ChatGPT desktop app or Codex CLI for subscription mode; an OpenAI Platform API key for API mode
-- Node.js 20 or newer
-- pnpm 10 or newer
-- Rust stable when building the Native Host from source
+[Install PaperFlow from the Chrome Web Store](https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc).
 
-### Load the extension
+PaperFlow supports Chrome 114 or newer on macOS, Windows, and Linux. The
+integrated Reader handles local and remote PDFs; arXiv PDF pages retain their
+original `arxiv.org/pdf/...` address while PaperFlow runs in the page.
+
+### Build from source
+
+Requirements: Node.js 20+, pnpm 10+, and Rust stable for the native host.
 
 ```bash
 git clone https://github.com/Dai0-2/paperflow.git
@@ -144,73 +155,24 @@ cd paperflow
 pnpm install
 pnpm build
 cargo build --release --locked --manifest-path native-host/Cargo.toml
+```
+
+Install the native host for your platform:
+
+```bash
 # macOS
 bash native-host/install/install-macos.sh
+
 # Linux
 sh native-host/install/install-linux.sh
+
 # Windows PowerShell
 .\native-host\install\install-windows.ps1
 ```
 
-Then:
-
-1. Open `chrome://extensions`.
-2. Enable **Developer mode**.
-3. Select **Load unpacked**.
-4. Choose the generated `dist/` folder.
-5. Pin PaperFlow AI and click its toolbar icon for the Side Panel.
-6. Right-click a PDF link or page and choose **Open with PaperFlow** for the integrated Reader.
-
-The installer registers the Rust Native Messaging host for PaperFlow's fixed extension ID. It invokes the official Codex CLI with fixed arguments for subscription mode and stores an optional API key in macOS Keychain, Windows Credential Manager, or Linux Secret Service. It never reads ChatGPT cookies or Codex authentication files. After installing the official Codex CLI, use **Sign in with ChatGPT** in PaperFlow to start its browser authorization.
-
-After rebuilding or reinstalling, click **Reload** for PaperFlow AI on `chrome://extensions`. If Chrome cannot find the host, rerun the platform installer and reload the extension. See [Native Host setup](docs/native-host.md) for paths, uninstall commands, and the one-release Python fallback.
-
-### Development preview
-
-```bash
-pnpm dev
-```
-
-Open the printed localhost URL for the Side Panel, or `/reader.html` for the Reader open screen. Resize to 360–440 px to verify narrow layouts.
-
-## Provider architecture
-
-PaperFlow will not read ChatGPT cookies, expose OAuth tokens to the extension, or call private ChatGPT web endpoints.
-
-```text
-Chrome Extension
-       │ Chrome Native Messaging
-       ▼
-PaperFlow Bridge
-       │
-       ├── ChatGPT subscription → official Codex status/exec
-       └── API key → OS credential store → OpenAI-compatible API
-```
-
-The local bridge invokes the official Codex CLI for subscription access. API keys remain in the operating-system credential store and are never returned to the extension. See [the architecture document](docs/architecture.md).
-
-Google Drive access is separate from AI providers. Chrome Identity manages the
-OAuth token with the `drive.file` scope. PaperFlow encrypts each cloud object
-before upload and stores account-managed key material in the user's PaperFlow
-Drive folder. Signing in with the same Google account restores the workspace
-without a separate vault password or recovery-key flow.
-
-## Privacy and security
-
-- No analytics or telemetry in the prototype
-- No API keys or OAuth tokens in the repository
-- No ChatGPT cookie scraping
-- No PDF uploads unless **Back up offline PDFs** is explicitly enabled
-- Paper context will be visible and user-controllable before transmission
-- Paper data is designed to remain local by default
-- Google Drive sync is opt-in, uses only `drive.file`, and uploads encrypted
-  opaque objects
-- Local OCR has no runtime CDN or remote code dependency
-- Database upgrade failure enters a read-only recovery export flow
-
-Read the [privacy notice](docs/privacy.md), [security policy](SECURITY.md),
-[migration/rollback guide](docs/migration-and-rollback.md), and
-[release checklist](docs/release-checklist.md).
+Then open `chrome://extensions`, enable **Developer mode**, choose
+**Load unpacked**, and select `dist/`. See
+[Native Host setup](docs/native-host.md) for installation and troubleshooting.
 
 ## Development
 
@@ -222,33 +184,30 @@ pnpm test
 pnpm build
 pnpm audit:release
 pnpm test:e2e
-pnpm package
 ```
 
-Project structure:
+The extension is built with React, TypeScript, PDF.js, Dexie, Zustand, and
+Chrome Manifest V3. The native bridge is written in Rust.
 
-```text
-src/
-├── components/
-│   ├── chat/
-│   ├── common/
-│   ├── composer/
-│   ├── layout/
-│   ├── paper/
-│   ├── reader/
-│   └── views/
-├── data/
-├── hooks/
-├── services/
-├── store/
-├── styles/
-└── types/
-```
+## Current limits
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+- Remote PDFs behind login walls or restrictive CORS must be opened locally.
+- OCR is intentionally on demand and processes up to 50 pages per run.
+- Search locates matching pages but does not yet provide full in-page result
+  stepping.
+- Citation clicks navigate to the cited page; precise citation-range
+  highlighting is not yet available.
+- PaperFlow currently has no collaboration, vector database, or account/payment
+  system.
+
+## Contributing
+
+Issues and pull requests are welcome. Start with
+[CONTRIBUTING.md](CONTRIBUTING.md), then review the
+[release checklist](docs/release-checklist.md) before shipping a build.
 
 ## License
 
-PaperFlow AI source code is licensed under Apache License 2.0. See [LICENSE](LICENSE).
-Bundled dependencies retain their own licenses; see
+PaperFlow is open source under the [Apache License 2.0](LICENSE). Bundled
+dependencies retain their own licenses; see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

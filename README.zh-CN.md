@@ -1,138 +1,141 @@
 <div align="center">
-  <img src="public/icons/paperflow-128.png" width="78" height="78" alt="PaperFlow AI 图标">
-  <h1>PaperFlow AI</h1>
-  <p><strong>为浏览器而生的 PDF 阅读器。</strong></p>
-  <p>在发现论文的地方直接阅读、批注和提问，并在不同电脑上继续研究。</p>
+  <a href="https://dai0-2.github.io/paperflow/">
+    <img src="public/icons/paperflow-128.png" width="84" height="84" alt="PaperFlow 图标">
+  </a>
+  <h1>PaperFlow</h1>
+  <p><strong>在发现论文的地方阅读，在阅读论文的地方思考。</strong></p>
+  <p>为 Chrome 打造的浏览器原生研究工作区。</p>
+  <p>无需离开浏览器，即可阅读、批注、提问、记忆和整理论文。</p>
   <p>
-    <a href="https://dai0-2.github.io/paperflow/"><strong>产品网站</strong></a>
-    ·
-    <a href="https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc"><strong>Chrome 应用商店</strong></a>
-    ·
-    <a href="#安装"><strong>从源码构建</strong></a>
+    <a href="https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc"><strong>添加到 Chrome</strong></a>
+    &nbsp;&nbsp;·&nbsp;&nbsp;
+    <a href="https://dai0-2.github.io/paperflow/"><strong>访问官网</strong></a>
+    &nbsp;&nbsp;·&nbsp;&nbsp;
+    <a href="#从源码构建"><strong>从源码构建</strong></a>
   </p>
-  <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
+  <p>
+    <a href="README.md">English</a>
+    &nbsp;·&nbsp;
+    <strong>简体中文</strong>
+  </p>
   <p>
     <a href="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml/badge.svg" alt="构建状态"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 许可证"></a>
-    <img src="https://img.shields.io/badge/version-1.0.10-5b7fa6" alt="版本 1.0.10">
-    <img src="https://img.shields.io/badge/Chrome-MV3-5f9d75" alt="Chrome Manifest V3">
+    <img src="https://img.shields.io/badge/version-1.0.10-326bd1" alt="版本 1.0.10">
+    <img src="https://img.shields.io/badge/Chrome-MV3-347556" alt="Chrome Manifest V3">
+    <img src="https://img.shields.io/badge/storage-local--first-606460" alt="本地优先存储">
   </p>
 </div>
 
 <a href="https://dai0-2.github.io/paperflow/">
-  <img src="website/assets/paperflow-attention-reader.png" alt="PaperFlow Reader 中打开 Attention Is All You Need，包含页面缩略图、批注工具与 AI 总结">
+  <img src="website/assets/paperflow-attention-reader.png" alt="PaperFlow Reader 正在显示 Attention Is All You Need，包含页面缩略图、批注工具与溯源助手">
 </a>
 
 <p align="center">
-  <strong><a href="https://dai0-2.github.io/paperflow/assets/paperflow-demo.mp4">观看 15 秒产品演示视频</a></strong>
+  <a href="https://dai0-2.github.io/paperflow/assets/paperflow-demo.mp4"><strong>观看产品演示</strong></a>
 </p>
 
-> [!IMPORTANT]
-> PaperFlow AI 1.0.10 是运行在 Chrome 中的浏览器原生 PDF 阅读器，集成
-> 批注、页码感知 AI、个人文献库与用户自有 Google Drive 加密同步。
-> PaperFlow 不运营文档后端。
+## 让 PDF 成为工作区
 
-## 产品概览
-
-| 研究资料库 | 论文旁的 AI |
-| --- | --- |
-| <img src="website/assets/paperflow-library.png" alt="PaperFlow 资料库" width="720"> | <img src="website/assets/paperflow-ai-detail.png" alt="PaperFlow AI 侧边栏" width="300"> |
-| 集合、元数据、全文检索、引用与阅读历史。 | 页码感知提问、流式回答、笔记与每篇论文的长期记忆。 |
-
-## 为什么做 PaperFlow
-
-PaperFlow 不是普通的 ChatPDF。它既能通过 Chrome Side Panel 运行在现有阅读器旁边，也能在自己的集成式 Reader 中打开 PDF，让页码、划词、Citation 和 AI 上下文真正联动。
-
-每一篇论文都将拥有独立且长期存在的工作空间：
+研究过程常常被拆散在 PDF 阅读器、笔记、独立聊天窗口、浏览器标签页和文献管理器中。
+PaperFlow 将这些环节重新组织在论文原文周围。
 
 ```text
 Paper
-├── metadata 与统一身份
-├── conversations
-├── selections 与 notes
-├── paper memory
-└── reading state
+├── 元数据与论文身份
+├── 阅读状态
+├── 批注与笔记
+├── 与原文关联的对话
+└── Paper Memory
 ```
 
-即使几天后从另一个来源重新打开同一篇论文，只要身份可以识别，就能继续之前的思考。
+在发现 arXiv 论文的地方直接打开，保留原始网址，并在同一个浏览器工作区中完成研究。
+几天后再次打开，阅读位置、笔记、对话与保存的上下文仍然属于这篇论文。
 
-## 个人文献库
+## 始终连接原文的 AI
 
-- 集合/子集合、标签、星标、阅读状态、回收站、批量操作与重复项确认
-- 面向大型资料库的虚拟化高密度表格与字段筛选语法
-- Markdown 笔记、批注摘要、PDF 附件和每篇论文独立的 AI 记忆
-- BibTeX/RIS 导入导出，以及 APA、MLA、Chicago、IEEE、BibTeX 复制
-- AI 整理建议必须由用户确认，确认前不会修改分类
-- IndexedDB + OPFS 本地优先存储，并可选通过 Google Drive 加密同步；
-  离线 PDF 备份独立控制且默认关闭
+<img src="website/assets/paperflow-source-stage.png" alt="PaperFlow 展示问题、页码引用以及 PDF 中对应的原文位置">
 
-## 集成式 Reader
+划选文字、提出具体问题，并在文档旁获得简洁回答。PaperFlow 会结合选中文字、当前页与
+论文相关片段构建上下文，结构化 Citation 可直接跳转到 Reader 中的引用页。
 
-- 提供 `reader.html?url=<encoded-pdf-url>` 远程 PDF 入口和本地 PDF 选择器
-- PDF.js 连续按需渲染，支持文字层、缩略图、目录、搜索跳页、缩放、适合宽度、下载和打印
-- 当前页追踪、键盘操作、窄窗口自动适配，以及不改变 PDF 原色的浅色/深色阅读背景
-- 右侧复用现有 PaperFlow AI 工作区，并支持拖动调整宽度
-- 划词后可提问、解释、翻译、总结或保存
-- 基于 PDF 原生坐标的高亮、下划线、删除线、文本、区域和手写六类批注
-- 批注评论、颜色、删除、缩放后稳定定位和离线重开
-- 使用 `pdf-lib` 导出带批注 PDF 副本，文本评论写入标准 PDF 注释，并提供 JSON/Markdown 降级
-- 通过 OPFS 显式离线保存 PDF，支持本地全文检索与按需中英文 OCR
-- 分页结构化 Chunk；上下文优先级为选中文字、当前页、相关论文片段
-- Citation 包含页码、标签和摘录，点击可跳转 Reader 对应页
-- 对跨域、登录墙、缺失文件、加密 PDF 和无文字层 PDF 显示明确错误
-- 右键“使用 PaperFlow 打开”，以及默认接管直接 PDF 的可选开关
+- 页码感知上下文，而不是脱离原文的聊天上传
+- 支持 Markdown、表格与科研快捷提示的流式回答
+- 通过官方 Codex CLI 使用 ChatGPT 订阅
+- 支持自定义 Base URL 与模型 ID 的 OpenAI 兼容 API
+- API Key 存储在操作系统凭据库中
 
-## Side Panel 与 AI
+## 直接在论文上思考
 
-- Chrome Manifest V3 Side Panel
-- 自动识别 arXiv、OpenReview、直接 PDF 和兼容的 PDF Reader 标签页
-- 对可访问的 arXiv/OpenReview PDF 自动提取正文
-- 在 ChatGPT 风格的 Composer 菜单中上传 PDF、TXT、Markdown 和图片
-- 两种 Provider：通过官方 Codex CLI 使用 ChatGPT 订阅，或通过 Responses API 使用 OpenAI API Key
-- API Key 存入操作系统凭据库，不进入 Chrome 扩展存储
-- 可自定义 API Base URL、模型 ID，并切换 Responses / Chat Completions 格式
-- 界面语言与回答提示词语言可以分别切换中文或英文
-- 用户消息支持气泡边界、复制和编辑后重新发送；回答支持复制、重新生成、保存到记忆、标签与本地反馈
-- ChatGPT 订阅模式显示实时运行阶段，API 模式逐字流式生成回答
-- 订阅模式采用低推理延迟配置，并限制累计历史上下文，避免对话越长越慢
-- 通过 IndexedDB 按论文保存 papers、aliases、threads、messages、memory、selections、annotations、settings 和阅读状态
-- Google 账号一键登录与加密 Drive 同步，仅申请最小 `drive.file` 权限
-- 自动同步资料库、笔记、批注、对话与阅读进度；离线 PDF 备份保持手动开启
-- 自动迁移旧版 `localStorage` 对话与笔记
-- 首次初始化与连接诊断页面
-- 论文标题、作者、来源、页码和上下文状态
-- 支持 Markdown 和表格的科研对话界面
-- 论文页码 Citation 交互原型
-- Selected Text 上下文预览
-- Translate、Summarize、Key Points、Methodology、Limitations 快捷 Prompt
-- 多 Thread 和 Conversation History 界面
-- Paper Memory 页面
-- Provider 与模型选择界面
-- Light、Dark、System 主题
-- 适配 360–440px 宽度
-- 键盘导航、Focus 状态和 Reduced Motion
+<img src="website/assets/paperflow-annotations.png" alt="PaperFlow 在论文原文上提供批注工具">
 
-## 已知限制
+支持高亮、下划线、删除线、文本笔记、区域批注和手写。所有批注使用 PDF 坐标锚定，
+缩放后仍能保持位置，并会随论文一起重新打开。
 
-- 订阅模式仍按请求调用 `codex exec`，后续应评估官方持久化 Codex App Server。
-- 暂无可靠的停止生成与取消。
-- 搜索可定位包含关键词的页面，但尚未实现完整结果列表和页内逐项跳转。
-- 尚未实现 Citation 原文范围高亮。
-- OCR 采用用户按需触发模式，单次最多处理 50 页。
-- 登录墙或严格 CORS 限制的远程 PDF 需要先下载，再本地打开。
-- 暂不包含团队协作、向量数据库和账号付费系统。
+批注结果可导出为 PDF 副本、JSON 或 Markdown。对于需要处理的论文，还提供本地全文
+搜索和按需中英文 OCR。
+
+## 每篇论文都会记住
+
+PaperFlow 将论文视为长期存在的研究对象，而不是一次性的聊天会话。
+
+| 持久化上下文 | 保留内容 |
+| --- | --- |
+| 阅读 | 当前页、阅读位置和 Reader 状态 |
+| 证据 | 划选、批注、评论与笔记 |
+| 对话 | 多个 Thread、消息与页码引用 |
+| 记忆 | 保存的洞见与精简论文上下文 |
+| 身份 | 元数据与来源别名，用于识别同一篇论文 |
+
+## 让论文形成研究系统
+
+<img src="website/assets/paperflow-library-system.png" alt="PaperFlow 研究资料库，包含集合、标签、阅读状态、搜索与论文详情">
+
+资料库采用适合扫描、比较和重复操作的高密度研究表格：
+
+- 集合与子集合、标签、星标、阅读状态和阅读历史
+- 字段搜索、重复项检查、回收站和批量操作
+- BibTeX 与 RIS 导入导出
+- APA、MLA、Chicago、IEEE 与 BibTeX 引用复制
+- Markdown 笔记、批注摘要、附件与 Paper Memory
+- 所有整理建议都必须经过用户确认，不会静默修改资料库
+
+## 你的研究仍然属于你
+
+PaperFlow 坚持本地优先，不运营文档后端。
+
+```mermaid
+flowchart LR
+    B["Chrome + PaperFlow"] --> L["本地存储<br/>IndexedDB + OPFS"]
+    L -. "可选 · 上传前加密" .-> D["你的 Google Drive"]
+    B --> H["本地 Native Host"]
+    H --> C["ChatGPT 订阅<br/>官方 Codex CLI"]
+    H --> A["OpenAI 兼容 API"]
+```
+
+- 论文元数据、阅读状态、笔记、批注、对话和记忆默认保存在本地。
+- 可选 Google Drive 同步仅申请最小 `drive.file` 权限，加密对象存放在用户自己的
+  `PaperFlow` 文件夹中。
+- 离线 PDF 备份独立控制，默认关闭。
+- PaperFlow 不读取 ChatGPT Cookie，也不调用 ChatGPT 私有网页接口。
+- 本地 OCR 不依赖运行时 CDN 或远程代码。
+
+请阅读[隐私说明](docs/privacy.md)、[安全策略](SECURITY.md)和
+[架构文档](docs/architecture.md)。
 
 ## 安装
 
-### 环境要求
+### Chrome 应用商店
 
-- Chrome 114 或更高版本（macOS、Windows 或 Linux）
-- 订阅模式需要 ChatGPT 桌面应用或 Codex CLI；API 模式需要 OpenAI Platform API Key
-- Node.js 20 或更高版本
-- pnpm 10 或更高版本
-- 从源码构建 Native Host 时需要 Rust stable
+[从 Chrome Web Store 安装 PaperFlow](https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc)。
 
-### 加载扩展
+PaperFlow 支持 macOS、Windows 和 Linux 上的 Chrome 114 或更高版本。
+集成 Reader 可以打开本地与远程 PDF；arXiv PDF 会保留原始
+`arxiv.org/pdf/...` 地址，PaperFlow 直接运行在页面中。
+
+### 从源码构建
+
+环境要求：Node.js 20+、pnpm 10+；构建 Native Host 还需要 Rust stable。
 
 ```bash
 git clone https://github.com/Dai0-2/paperflow.git
@@ -140,72 +143,24 @@ cd paperflow
 pnpm install
 pnpm build
 cargo build --release --locked --manifest-path native-host/Cargo.toml
+```
+
+安装当前系统对应的 Native Host：
+
+```bash
 # macOS
 bash native-host/install/install-macos.sh
+
 # Linux
 sh native-host/install/install-linux.sh
+
 # Windows PowerShell
 .\native-host\install\install-windows.ps1
 ```
 
-然后：
-
-1. 打开 `chrome://extensions`
-2. 开启“开发者模式”
-3. 点击“加载已解压的扩展程序”
-4. 选择生成的 `dist/` 文件夹
-5. 固定 PaperFlow AI，点击工具栏图标打开 Side Panel
-6. 右键 PDF 链接或 PDF 页面，选择“使用 PaperFlow 打开”进入集成式 Reader
-
-安装脚本会为固定扩展 ID 注册 Rust Native Messaging Host。订阅模式仅使用固定参数调用官方 Codex CLI；API 密钥存入 macOS 钥匙串、Windows 凭据管理器或 Linux Secret Service。它不会读取 ChatGPT Cookie 或 Codex 认证文件。安装官方 Codex CLI 后，在 PaperFlow 中点击“登录 ChatGPT”即可启动浏览器授权。
-
-重新构建或安装后，请在 `chrome://extensions` 中点击 PaperFlow AI 的“重新加载”。如果 Chrome 找不到 Host，请重新运行对应平台安装器并重新加载扩展。安装路径、卸载命令和保留一个版本的 Python 回退说明见 [Native Host 文档](docs/native-host.md)。
-
-开发预览：
-
-```bash
-pnpm dev
-```
-
-打开命令输出的 localhost 地址预览 Side Panel，或访问 `/reader.html` 查看 Reader 打开页；将宽度调整为 360–440px 可验证窄屏布局。
-
-## ChatGPT 登录架构
-
-PaperFlow 不会读取 ChatGPT Cookie、把 OAuth Token 交给扩展，也不会请求 ChatGPT 私有网页接口。
-
-```text
-Chrome Extension
-       │ Chrome Native Messaging
-       ▼
-PaperFlow Rust Native Host
-       │
-       ├── codex login status
-       ├── codex exec --json
-       └── 系统凭据存储 → OpenAI 兼容 API
-```
-
-独立安装的本地 Bridge 将调用官方 Codex CLI，凭据由 Codex CLI 或操作系统凭据存储管理。详见[架构文档](docs/architecture.md)。
-
-Google Drive 授权与 AI Provider 相互独立。OAuth Token 由 Chrome Identity
-按 `drive.file` 范围管理；所有业务对象在上传前完成加密，账号管理的密钥材料
-存放在用户云盘的 `PaperFlow` 文件夹中。新设备登录同一 Google 账号即可恢复，
-不再需要保险库密码或恢复密钥流程。
-
-## 隐私与安全
-
-- 当前原型没有 Analytics 或 Telemetry
-- Repository 不保存 API Key 或 OAuth Token
-- 不读取 ChatGPT Cookie
-- 不上传不必要的 PDF 内容
-- 发送前清楚显示并允许控制 Paper Context
-- 论文数据默认保存在本地
-- Google Drive 同步为可选功能，仅使用 `drive.file`，上传内容为加密不透明对象
-- 本地 OCR 不依赖运行时 CDN 或远程代码
-- 数据库升级失败时进入只读恢复导出流程
-
-请阅读[隐私说明](docs/privacy.md)、[安全策略](SECURITY.md)、
-[迁移与回滚指南](docs/migration-and-rollback.md)和
-[发布检查清单](docs/release-checklist.md)。
+然后打开 `chrome://extensions`，启用“开发者模式”，选择“加载已解压的扩展程序”，
+并选中 `dist/`。安装与故障排查详见
+[Native Host 文档](docs/native-host.md)。
 
 ## 开发
 
@@ -217,13 +172,26 @@ pnpm test
 pnpm build
 pnpm audit:release
 pnpm test:e2e
-pnpm package
 ```
 
-欢迎贡献代码，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+扩展使用 React、TypeScript、PDF.js、Dexie、Zustand 与 Chrome Manifest V3；
+本地 Bridge 使用 Rust。
 
-## License
+## 当前限制
 
-PaperFlow AI 源代码采用 Apache License 2.0，见 [LICENSE](LICENSE)。
-打包的第三方依赖保留各自许可证，见
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+- 登录墙或严格 CORS 限制的远程 PDF 需要下载后从本地打开。
+- OCR 采用按需处理方式，单次最多处理 50 页。
+- 搜索可以定位匹配页面，但尚未提供完整页内结果逐项跳转。
+- Citation 可跳转到引用页，但尚未实现精确的引用范围高亮。
+- 当前不包含团队协作、向量数据库和账号付费系统。
+
+## 参与贡献
+
+欢迎提交 Issue 和 Pull Request。请先阅读
+[CONTRIBUTING.md](CONTRIBUTING.md)，发布构建前请检查
+[发布清单](docs/release-checklist.md)。
+
+## 许可证
+
+PaperFlow 基于 [Apache License 2.0](LICENSE) 开源。捆绑依赖保留各自许可证，
+详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
