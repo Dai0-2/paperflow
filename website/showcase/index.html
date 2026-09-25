@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f5f6f3">
+    <title>PaperFlow AI - Cinematic Product Demo</title>
+    <link rel="icon" href="../assets/paperflow.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="showcase.css">
+  </head>
+  <body>
+    <svg class="icon-definitions" aria-hidden="true">
+      <symbol id="icon-panel-left" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></symbol>
+      <symbol id="icon-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+      <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+      <symbol id="icon-zoom-out" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M8 11h6m7 10-4.3-4.3"/></symbol>
+      <symbol id="icon-zoom-in" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M11 8v6m-3-3h6m7 10-4.3-4.3"/></symbol>
+      <symbol id="icon-bookmark" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></symbol>
+      <symbol id="icon-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5M12 15V3"/></symbol>
+      <symbol id="icon-library" viewBox="0 0 24 24"><path d="m16 6 4 14M12 6v14M8 8v12M4 4v16"/></symbol>
+      <symbol id="icon-panel-right" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></symbol>
+      <symbol id="icon-files" viewBox="0 0 24 24"><path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10l5 5v9a2 2 0 0 1-2 2h-1"/><path d="M7 8h4M7 12h3"/><rect width="8" height="6" x="9" y="15" rx="1"/></symbol>
+      <symbol id="icon-note" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+      <symbol id="icon-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+      <symbol id="icon-sparkle" viewBox="0 0 24 24"><path d="m12 3-1.5 4.5L6 9l4.5 1.5L12 15l1.5-4.5L18 9l-4.5-1.5zM5 16l-.7 2.3L2 19l2.3.7L5 22l.7-2.3L8 19l-2.3-.7zM19 14l-.7 2.3-2.3.7 2.3.7L19 20l.7-2.3L22 17l-2.3-.7z"/></symbol>
+      <symbol id="icon-arrow-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+      <symbol id="icon-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 7h-7V0"/><path d="M20 7a9 9 0 1 0 2 5"/></symbol>
+      <symbol id="icon-tag" viewBox="0 0 24 24"><path d="M12.6 2.6H5a2.4 2.4 0 0 0-2.4 2.4v7.6a2.4 2.4 0 0 0 .7 1.7l6.4 6.4a2.4 2.4 0 0 0 3.4 0l7.6-7.6a2.4 2.4 0 0 0 0-3.4l-6.4-6.4a2.4 2.4 0 0 0-1.7-.7z"/><circle cx="7.5" cy="7.5" r=".5"/></symbol>
+      <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+      <symbol id="icon-folder" viewBox="0 0 24 24"><path d="M3 6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+      <symbol id="icon-star" viewBox="0 0 24 24"><path d="m12 2.7 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5-4.7-4.6 6.5-.9z"/></symbol>
+      <symbol id="icon-cloud" viewBox="0 0 24 24"><path d="M17.5 19H7a5 5 0 1 1 1-9.9A7 7 0 0 1 21 12.5 3.5 3.5 0 0 1 17.5 19z"/></symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+      <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    </svg>
+
+    <main id="showcase" aria-label="PaperFlow AI product demonstration">
+      <section class="scene opening-scene" data-scene="1" aria-label="Opening">
+        <div class="opening-lockup">
+          <div class="brand-lockup brand-lockup-large">
+            <img src="../assets/paperflow.svg" alt="" width="58" height="58">
+            <span>PaperFlow AI</span>
+          </div>
+          <h1>Research shouldn't be<br>split across tabs.</h1>
+          <div class="opening-rule"></div>
+          <p>Read where you find papers. Think where you read them.</p>
+        </div>
+        <span class="corner-label">BROWSER-NATIVE RESEARCH WORKSPACE</span>
+      </section>
+
+      <section class="scene workspace-scene" data-scene-group="2-6" aria-label="PaperFlow Reader">
+        <div class="scene-caption scene-caption-reader" data-caption="2">
+          <span>01 / PAPER READER</span>
+          <strong>The paper stays central.</strong>
+        </div>
+        <div class="scene-caption scene-caption-ask" data-caption="3">
+          <span>02 / ASK THE PAPER</span>
+          <strong>Ask without losing your place.</strong>
+        </div>
+        <div class="scene-caption scene-caption-citation" data-caption="4">
+          <span>03 / PAGE-AWARE AI</span>
+          <strong>Answers stay connected to the source.</strong>
+        </div>
+        <div class="scene-caption scene-caption-annotation" data-caption="5">
+          <span>04 / ANNOTATION</span>
+          <strong>Read. Annotate. Remember.</strong>
+        </div>
+        <div class="scene-caption scene-caption-memory" data-caption="6">
+          <span>05 / PAPER MEMORY</span>
+          <strong>Every paper becomes a persistent workspace.</strong>
+        </div>
+
+        <div class="reader-window">
+          <header class="reader-toolbar">
+            <div class="toolbar-cluster document-cluster">
+              <button class="icon-button active" aria-label="Toggle navigation"><svg><use href="#icon-panel-left"/></svg></button>
+              <strong>Attention Is All You Need</strong>
+              <button class="icon-button" aria-label="Open local PDF"><svg><use href="#icon-folder"/></svg></button>
+            </div>
+            <div class="toolbar-cluster page-cluster">
+              <button class="icon-button"><svg><use href="#icon-chevron-left"/></svg></button>
+              <div class="page-control"><b data-page-number>1</b><span>/ 15</span></div>
+              <button class="icon-button"><svg><use href="#icon-chevron-right"/></svg></button>
+              <i></i>
+              <button class="icon-button"><svg><use href="#icon-zoom-out"/></svg></button>
+              <span class="zoom-value">150%</span>
+              <button class="icon-button"><svg><use href="#icon-zoom-in"/></svg></button>
+            </div>
+            <div class="toolbar-cluster action-cluster">
+              <button class="icon-button"><svg><use href="#icon-search"/></svg></button>
+              <button class="icon-button"><svg><use href="#icon-bookmark"/></svg></button>
+              <button class="icon-button"><svg><use href="#icon-download"/></svg></button>
+              <button class="icon-button"><svg><use href="#icon-library"/></svg></button>
+              <button class="icon-button active"><svg><use href="#icon-panel-right"/></svg></button>
+            </div>
+          </header>
+
+          <div class="reader-body">
+            <aside class="thumbnail-sidebar">
+              <div class="thumbnail-tabs">
+                <button class="active"><svg><use href="#icon-files"/></svg></button>
+                <button><svg><use href="#icon-note"/></svg></button>
+                <button><svg><use href="#icon-list"/></svg></button>
+              </div>
+              <div class="thumbnail-list">
+                <button class="thumbnail active" data-thumbnail="1">
+                  <span class="mini-page mini-page-cover">
+                    <i></i><b>Attention Is All You Need</b><small>Vaswani et al.</small>
+                    <em></em><em></em><em></em><em></em><em></em>
+                  </span>
+                  <label>1</label>
+                </button>
+                <button class="thumbnail" data-thumbnail="2">
+                  <span class="mini-page"><b>1 Introduction</b><em></em><em></em><em></em><em></em><em></em><em></em><em></em><em></em><em></em></span>
+                  <label>2</label>
+                </button>
+                <button class="thumbnail" data-thumbnail="3">
+                  <span class="mini-page"><b>3 Model Architecture</b><em></em><em></em><em></em><i class="mini-diagram"></i><em></em><em></em></span>
+                  <label>3</label>
+                </button>
+                <button class="thumbnail" data-thumbnail="4">
+                  <span class="mini-page"><b>3.2 Attention</b><em></em><em></em><em></em><em></em><em></em><em></em><em></em></span>
+                  <label>4</label>
+                </button>
+              </div>
+            </aside>
+
+            <div class="document-viewport">
+              <div class="annotation-toolbar">
+                <button class="selected">↖</button><button>⌁</button><button>U</button><button>S</button>
+                <i></i><button>□</button><button>⌗</button><button>╱</button><i></i>
+                <button class="color selected-color"></button><button class="color green"></button>
+                <button class="color blue"></button><button class="color pink"></button>
+              </div>
+
+              <article class="pdf-page cover-page" data-pdf-page="1">
+                <h2>Attention Is All You Need</h2>
+                <div class="paper-rule"></div>
+                <div class="authors">
+                  <p><b>Ashish Vaswani</b><span>Google Brain</span><small>avaswani@google.com</small></p>
+                  <p><b>Noam Shazeer</b><span>Google Brain</span><small>noam@google.com</small></p>
+                  <p><b>Niki Parmar</b><span>Google Research</span><small>nikip@google.com</small></p>
+                  <p><b>Jakob Uszkoreit</b><span>Google Research</span><small>usz@google.com</small></p>
+                </div>
+                <h3>Abstract</h3>
+                <p class="paper-copy">The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism.</p>
+                <p class="paper-copy">We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.</p>
+                <div class="paper-footnote">31st Conference on Neural Information Processing Systems (NIPS 2017), Long Beach, CA, USA.</div>
+              </article>
+
+              <article class="pdf-page detail-page" data-pdf-page="3">
+                <div class="paper-running-head"><span>Vaswani et al.</span><span>Attention Is All You Need</span></div>
+                <h3>3.2.1 Scaled Dot-Product Attention</h3>
+                <p class="paper-copy">
+                  <span class="selectable-sentence" data-selection>
+                    An attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors.
+                  </span>
+                  The output is computed as a weighted sum of the values, where the weight assigned to each value is computed by a compatibility function of the query with the corresponding key.
+                </p>
+                <div class="attention-equation">Attention(Q, K, V) = softmax(QK<sup>T</sup> / √d<sub>k</sub>)V</div>
+                <h3>3.2.2 Multi-Head Attention</h3>
+                <p class="paper-copy">Instead of performing a single attention function with d<sub>model</sub>-dimensional keys, values and queries, we found it beneficial to linearly project the queries, keys and values h times with different, learned linear projections.</p>
+                <p class="paper-copy annotation-target">
+                  <span data-annotation-text>Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions.</span>
+                </p>
+                <div class="page-number">3</div>
+              </article>
+
+              <div class="selection-menu">
+                <button><svg><use href="#icon-sparkle"/></svg>Ask PaperFlow</button>
+                <span></span>
+                <button>Highlight</button>
+              </div>
+
+              <div class="annotation-note">
+                <div><span></span><strong>Page 3 note</strong></div>
+                <p>Useful framing for comparing attention heads.</p>
+                <small>Saved to this paper</small>
+              </div>
+              <div class="source-pulse"></div>
+            </div>
+
+            <aside class="ai-panel">
+              <header class="ai-header">
+                <div class="ai-brand"><img src="../assets/paperflow.svg" alt="" width="22" height="22"><strong>PaperFlow</strong></div>
+                <div><button>+</button><button><svg><use href="#icon-clock"/></svg></button><button>•••</button></div>
+              </header>
+
+              <div class="chat-view panel-view active">
+                <div class="paper-context">
+                  <span>ACTIVE PAPER</span>
+                  <strong>Attention Is All You Need</strong>
+                  <small><i></i><span data-context-page>Current page 1</span> · Paper indexed</small>
+                </div>
+                <div class="conversation">
+                  <article class="question-message">
+                    <label>You</label>
+                    <p data-typed-question></p>
+                  </article>
+                  <article class="answer-message">
+                    <label><i><svg><use href="#icon-check"/></svg></i>PaperFlow</label>
+                    <small>gpt-4.1-mini · First response 0.8s</small>
+                    <h4>Why self-attention helps</h4>
+                    <p data-stream-answer></p>
+                    <button class="citation-button"><svg><use href="#icon-note"/></svg>Page 3 <span>·</span> Multi-head attention</button>
+                    <div class="message-actions">
+                      <button><svg><use href="#icon-copy"/></svg></button>
+                      <button><svg><use href="#icon-refresh"/></svg></button>
+                      <button><svg><use href="#icon-bookmark"/></svg></button>
+                      <button><svg><use href="#icon-tag"/></svg></button>
+                    </div>
+                  </article>
+                </div>
+                <div class="composer">
+                  <div class="prompt-shortcuts"><span>Translate</span><span>Summarize</span><span>Key Points</span><span>Methodology</span></div>
+                  <div class="composer-box">
+                    <p>Ask about this paper...</p>
+                    <div><button>+</button><span><i></i>Paper⌄</span><small>gpt-4.1-mini⌄</small><button class="send"><svg><use href="#icon-arrow-up"/></svg></button></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="memory-view panel-view">
+                <header><button>‹</button><strong>Paper Memory</strong><span>Saved locally</span></header>
+                <div class="memory-scroll">
+                  <div class="memory-summary">
+                    <span>MEMORY SUMMARY</span>
+                    <p>The Transformer replaces recurrence with attention, enabling parallel training while preserving long-range context.</p>
+                  </div>
+                  <section>
+                    <h4>Key ideas</h4>
+                    <ul>
+                      <li><i></i><span>Self-attention connects every token directly.</span></li>
+                      <li><i></i><span>Multiple heads capture distinct relationships.</span></li>
+                    </ul>
+                  </section>
+                  <section>
+                    <h4>Saved note</h4>
+                    <div class="saved-note"><span></span><p>Useful framing for comparing attention heads.</p><small>Page 3 · just now</small></div>
+                  </section>
+                  <section>
+                    <h4>Previous question</h4>
+                    <p class="previous-question">Why is self-attention useful here?</p>
+                  </section>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        <div class="demo-cursor" aria-hidden="true">
+          <svg viewBox="0 0 28 34"><path d="M2 2.2v25.4l6.9-6.4 4.4 10.1 4.5-2-4.4-9.8h9.4z"/></svg>
+        </div>
+      </section>
+
+      <section class="scene library-scene" data-scene="7" aria-label="PaperFlow Library">
+        <div class="scene-caption library-caption">
+          <span>06 / RESEARCH LIBRARY</span>
+          <strong>Your research stays connected.</strong>
+        </div>
+        <div class="library-window">
+          <header class="library-header">
+            <div class="library-brand">
+              <button><svg><use href="#icon-menu"/></svg></button>
+              <img src="../assets/paperflow.svg" alt="" width="23" height="23">
+              <strong>PaperFlow</strong><span>Library</span>
+            </div>
+            <div class="library-search"><svg><use href="#icon-search"/></svg><span>Search papers, author:, tag:, collection:, year:</span></div>
+            <div class="library-actions"><button><svg><use href="#icon-cloud"/></svg>Google Drive synced</button><button>Settings</button><button>Import / Export</button></div>
+          </header>
+          <div class="library-body">
+            <aside class="library-sidebar">
+              <nav>
+                <button class="active"><svg><use href="#icon-library"/></svg><span>All papers</span><b>126</b></button>
+                <button><svg><use href="#icon-clock"/></svg><span>Recently read</span><b>8</b></button>
+                <button><svg><use href="#icon-star"/></svg><span>Starred</span><b>14</b></button>
+              </nav>
+              <h4>COLLECTIONS <span>+</span></h4>
+              <button class="collection active"><svg><use href="#icon-folder"/></svg><span>Machine Learning</span><b>32</b></button>
+              <button class="collection"><svg><use href="#icon-folder"/></svg><span>Language Models</span><b>18</b></button>
+              <button class="collection"><svg><use href="#icon-folder"/></svg><span>Reading Queue</span><b>11</b></button>
+              <h4>TAGS</h4>
+              <button class="tag-row"><i class="tag-green"></i><span>Transformers</span><b>20</b></button>
+              <button class="tag-row"><i class="tag-blue"></i><span>Representation</span><b>12</b></button>
+              <button class="tag-row"><i class="tag-yellow"></i><span>Review</span><b>7</b></button>
+            </aside>
+            <main class="library-main">
+              <div class="library-view-title"><div><h2>Machine Learning</h2><span>10 papers shown</span></div><button>Updated today ↓</button></div>
+              <div class="paper-table">
+                <div class="paper-row table-head"><span></span><span></span><span>Title</span><span>Authors</span><span>Year</span><span>Status</span><span>Last opened</span></div>
+                <div class="paper-row selected"><span>□</span><span class="starred">★</span><span><b>Attention Is All You Need</b><small>arXiv:1706.03762 · Transformers</small></span><span>Vaswani et al.</span><span>2017</span><span><em class="status reading">Reading</em></span><span>Today</span></div>
+                <div class="paper-row"><span>□</span><span>☆</span><span><b>BERT: Pre-training of Deep Bidirectional Transformers</b><small>arXiv:1810.04805 · Language Models</small></span><span>Devlin et al.</span><span>2018</span><span><em class="status annotated">Annotated</em></span><span>Yesterday</span></div>
+                <div class="paper-row"><span>□</span><span class="starred">★</span><span><b>Deep Residual Learning for Image Recognition</b><small>arXiv:1512.03385 · Vision</small></span><span>He et al.</span><span>2015</span><span><em class="status complete">Complete</em></span><span>2 days ago</span></div>
+                <div class="paper-row"><span>□</span><span>☆</span><span><b>Retrieval-Augmented Generation for Knowledge-Intensive NLP</b><small>arXiv:2005.11401 · Retrieval</small></span><span>Lewis et al.</span><span>2020</span><span><em class="status reading">Reading</em></span><span>3 days ago</span></div>
+                <div class="paper-row"><span>□</span><span>☆</span><span><b>LoRA: Low-Rank Adaptation of Large Language Models</b><small>arXiv:2106.09685 · Efficient ML</small></span><span>Hu et al.</span><span>2021</span><span><em class="status queued">To read</em></span><span>Sep 21</span></div>
+                <div class="paper-row"><span>□</span><span>☆</span><span><b>FlashAttention: Fast and Memory-Efficient Exact Attention</b><small>arXiv:2205.14135 · Systems</small></span><span>Dao et al.</span><span>2022</span><span><em class="status annotated">Annotated</em></span><span>Sep 18</span></div>
+                <div class="paper-row"><span>□</span><span>☆</span><span><b>Language Models are Few-Shot Learners</b><small>NeurIPS 2020 · Language Models</small></span><span>Brown et al.</span><span>2020</span><span><em class="status complete">Complete</em></span><span>Sep 14</span></div>
+                <div class="paper-row"><span>□</span><span>☆</span><span><b>Chain-of-Thought Prompting Elicits Reasoning</b><small>arXiv:2201.11903 · Reasoning</small></span><span>Wei et al.</span><span>2022</span><span><em class="status queued">To read</em></span><span>Sep 9</span></div>
+                <div class="paper-row"><span>□</span><span>☆</span><span><b>Direct Preference Optimization</b><small>arXiv:2305.18290 · Alignment</small></span><span>Rafailov et al.</span><span>2023</span><span><em class="status reading">Reading</em></span><span>Sep 4</span></div>
+                <div class="paper-row"><span>□</span><span>☆</span><span><b>Segment Anything</b><small>arXiv:2304.02643 · Vision</small></span><span>Kirillov et al.</span><span>2023</span><span><em class="status complete">Complete</em></span><span>Aug 27</span></div>
+              </div>
+            </main>
+            <aside class="library-detail">
+              <div class="detail-tabs"><b>Details</b><span>Notes 2</span></div>
+              <h3>Attention Is All You Need</h3>
+              <p class="detail-authors">Vaswani et al. · 2017</p>
+              <div class="detail-tags"><span>Transformers</span><span>Reading</span></div>
+              <h4>ABSTRACT</h4>
+              <p>The Transformer is based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.</p>
+              <h4>PAPER MEMORY</h4>
+              <div class="detail-memory"><i></i><span>2 saved insights</span><small>Updated today</small></div>
+              <h4>COLLECTIONS</h4>
+              <div class="detail-collection"><svg><use href="#icon-folder"/></svg>Machine Learning</div>
+              <div class="sync-note"><svg><use href="#icon-check"/></svg><span>Stored locally<br><small>Encrypted sync complete</small></span></div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene end-scene" data-scene="8" aria-label="PaperFlow closing message">
+        <div class="end-grid"></div>
+        <div class="end-content">
+          <div class="brand-lockup">
+            <img src="../assets/paperflow.svg" alt="" width="48" height="48">
+            <span>PaperFlow AI</span>
+          </div>
+          <h2>Read where you find papers.<br>Think where you read them.</h2>
+          <a href="https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc">Add to Chrome <span>→</span></a>
+          <p>Local-first <i></i> Open source</p>
+        </div>
+      </section>
+
+      <div class="debug-controls" aria-label="Showcase controls">
+        <button data-control="restart">Restart</button>
+        <button data-control="pause">Pause</button>
+        <input type="range" min="0" max="28000" step="10" value="0" aria-label="Timeline">
+        <output>00.0 / 28.0</output>
+      </div>
+    </main>
+    <script src="showcase.js"></script>
+  </body>
+</html>
