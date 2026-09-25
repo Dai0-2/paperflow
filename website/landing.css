@@ -42,6 +42,13 @@
   --green: #347556;
   --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.64' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 .09'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Cfilter id='fiber'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .42' numOctaves='2' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 .045'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='.72'/%3E%3Crect width='100%25' height='100%25' filter='url(%23fiber)' opacity='.34'/%3E%3C/svg%3E");
   --paper-grain-size: 320px 320px;
+  --technical-grid:
+    linear-gradient(to right, rgb(117 121 110 / 18%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(117 121 110 / 18%) 1px, transparent 1px);
+  --technical-grid-dark:
+    linear-gradient(to right, rgb(255 255 255 / 7%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 7%) 1px, transparent 1px);
+  --technical-grid-size: 120px 120px, 120px 120px;
   --page-gutter: clamp(24px, 4.45vw, 86px);
   --section-pad: clamp(92px, 10vw, 190px);
 }
@@ -224,11 +231,8 @@ a:focus-visible {
   pointer-events: none;
   opacity: .78;
   background-color: rgb(239 240 230 / 62%);
-  background-image:
-    linear-gradient(to right, rgb(117 121 110 / 18%) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(117 121 110 / 18%) 1px, transparent 1px),
-    var(--paper-grain);
-  background-size: 120px 120px, 120px 120px, var(--paper-grain-size);
+  background-image: var(--technical-grid), var(--paper-grain);
+  background-size: var(--technical-grid-size), var(--paper-grain-size);
   clip-path: polygon(80% 0, 100% 0, 100% 100%, 0 100%);
 }
 
@@ -503,10 +507,22 @@ a:focus-visible {
 }
 
 .fragment-story {
+  position: relative;
   background-color: #eff0ec;
   background-image: var(--paper-grain);
   background-size: var(--paper-grain-size);
   border-bottom: 1px solid var(--line-strong);
+}
+
+.fragment-story::before {
+  position: absolute;
+  inset: 0 0 0 47%;
+  content: "";
+  pointer-events: none;
+  opacity: .48;
+  background-image: var(--technical-grid);
+  background-size: var(--technical-grid-size);
+  clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .fragment-stage {
@@ -766,8 +782,21 @@ a:focus-visible {
 }
 
 .workspace-story {
+  position: relative;
   background: transparent;
   border-bottom: 1px solid var(--line);
+}
+
+.workspace-story::before {
+  position: absolute;
+  inset: 0 0 0 50%;
+  content: "";
+  pointer-events: none;
+  opacity: .42;
+  background-color: rgb(239 240 230 / 30%);
+  background-image: var(--technical-grid);
+  background-size: var(--technical-grid-size);
+  clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .workspace-sticky {
@@ -1115,6 +1144,7 @@ a:focus-visible {
 }
 
 .annotation-section {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(320px, 31%) minmax(0, 1fr);
   align-items: center;
@@ -1124,6 +1154,17 @@ a:focus-visible {
   background-image: var(--paper-grain);
   background-size: var(--paper-grain-size);
   border-bottom: 1px solid var(--line);
+}
+
+.annotation-section::before {
+  position: absolute;
+  inset: 0 0 0 57%;
+  content: "";
+  pointer-events: none;
+  opacity: .34;
+  background-image: var(--technical-grid);
+  background-size: var(--technical-grid-size);
+  clip-path: polygon(28% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .annotation-visual {
@@ -1302,10 +1343,26 @@ a:focus-visible {
 }
 
 .library-section {
+  position: relative;
   padding: var(--section-pad) var(--page-gutter) 0;
   overflow: hidden;
   background: transparent;
   border-bottom: 1px solid var(--line);
+}
+
+.library-section::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 55%;
+  height: 470px;
+  content: "";
+  pointer-events: none;
+  opacity: .44;
+  background-color: rgb(239 240 230 / 36%);
+  background-image: var(--technical-grid);
+  background-size: var(--technical-grid-size);
+  clip-path: polygon(35% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .library-heading {
@@ -1345,10 +1402,11 @@ a:focus-visible {
 }
 
 .architecture-section {
+  position: relative;
   padding: var(--section-pad) var(--page-gutter) 80px;
   background-color: #eceee9;
-  background-image: var(--paper-grain);
-  background-size: var(--paper-grain-size);
+  background-image: var(--technical-grid), var(--paper-grain);
+  background-size: var(--technical-grid-size), var(--paper-grain-size);
   border-bottom: 1px solid var(--line-strong);
 }
 
@@ -1546,6 +1604,8 @@ a:focus-visible {
 }
 
 .final-cta {
+  position: relative;
+  overflow: hidden;
   min-height: 800px;
   display: flex;
   flex-direction: column;
@@ -1553,6 +1613,17 @@ a:focus-visible {
   padding: var(--section-pad) var(--page-gutter);
   color: #f7f8f5;
   background: #1b1e1c;
+}
+
+.final-cta::before {
+  position: absolute;
+  inset: 0 0 0 47%;
+  content: "";
+  pointer-events: none;
+  opacity: .48;
+  background-image: var(--technical-grid-dark);
+  background-size: var(--technical-grid-size);
+  clip-path: polygon(32% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .final-brand {
@@ -1778,7 +1849,12 @@ a:focus-visible {
     padding-top: 116px;
   }
 
-  .hero-canvas-grid {
+  .hero-canvas-grid,
+  .fragment-story::before,
+  .workspace-story::before,
+  .annotation-section::before,
+  .library-section::before,
+  .final-cta::before {
     display: none;
   }
 
