@@ -111,9 +111,6 @@
               <div class="product-scanline" aria-hidden="true"></div>
             </div>
           </div>
-          <div class="hero-index" aria-hidden="true">
-            <span>01</span><i></i><span>09</span>
-          </div>
         </div>
 
         <p class="hero-manifesto" data-en="Read where you find papers. Think where you read them." data-zh="在发现论文的地方阅读，在阅读论文的地方思考。">
@@ -124,7 +121,7 @@
       <section class="fragment-story scroll-story" id="workflow" data-story="fragments">
         <div class="story-sticky">
           <div class="story-copy">
-            <p class="section-index">01 / BEFORE</p>
+            <p class="section-index" data-en="BEFORE PAPERFLOW" data-zh="使用 PAPERFLOW 之前">BEFORE PAPERFLOW</p>
             <h2 data-en="Research starts<br>in pieces." data-zh="研究往往从<br>碎片开始。">Research starts<br>in pieces.</h2>
             <p
               data-en="A PDF in one tab. Notes somewhere else. A chatbot with no page context. A library that cannot remember the conversation."
@@ -133,7 +130,6 @@
             <div class="story-phase" aria-live="polite">
               <span data-phase-label data-en="FRAGMENTED" data-zh="割裂">FRAGMENTED</span>
               <i></i>
-              <span>00<span data-phase-number>1</span></span>
             </div>
           </div>
 
@@ -151,9 +147,9 @@
               <p>Compare representation subspaces</p>
             </div>
             <div class="fragment fragment-chat">
-              <div class="fragment-bar"><span>CHAT</span><code>new session</code></div>
+              <div class="fragment-bar"><span>SEPARATE AI TAB</span><code>outside paper</code></div>
               <p>What is this paper about?</p>
-              <small>No source context attached.</small>
+              <small>No page or citation context</small>
             </div>
             <div class="fragment fragment-library">
               <div class="fragment-bar"><span>LIBRARY</span><code>126 items</code></div>
@@ -181,7 +177,7 @@
               >
               <div class="consolidation-seal">
                 <span data-en="CONNECTED" data-zh="已连接">CONNECTED</span>
-                <small>01 workspace</small>
+                <small>ONE WORKSPACE</small>
               </div>
             </div>
           </div>
@@ -191,7 +187,7 @@
       <section class="workspace-story scroll-story" id="workspace" data-story="layers">
         <div class="story-sticky workspace-sticky">
           <div class="workspace-heading">
-            <p class="section-index">02 / THE PAPER</p>
+            <p class="section-index" data-en="PAPER WORKSPACE" data-zh="论文工作区">PAPER WORKSPACE</p>
             <h2 data-en="One paper.<br>One persistent workspace." data-zh="一篇论文。<br>一个持续存在的工作区。">
               One paper.<br>One persistent workspace.
             </h2>
@@ -226,7 +222,7 @@
       <section class="source-story scroll-story" id="source-ai" data-story="source">
         <div class="story-sticky source-sticky">
           <div class="source-copy">
-            <p class="section-index">03 / PAGE-AWARE AI</p>
+            <p class="section-index" data-en="SOURCE-LINKED AI" data-zh="溯源 AI">SOURCE-LINKED AI</p>
             <h2 data-en="AI that stays<br>connected to the paper." data-zh="始终连接原文的<br>AI。">
               AI that stays<br>connected to the paper.
             </h2>
@@ -269,7 +265,7 @@
 
       <section class="annotation-section" id="annotations">
         <div class="annotation-copy">
-          <p class="section-index">04 / ANNOTATION</p>
+          <p class="section-index" data-en="ANNOTATIONS" data-zh="批注">ANNOTATIONS</p>
           <h2 data-en="Think directly<br>on the paper." data-zh="直接在论文上<br>思考。">Think directly<br>on the paper.</h2>
           <p
             data-en="Highlight an argument. Underline a definition. Attach a note to the exact place that made you stop."
@@ -293,16 +289,13 @@
 
       <section class="memory-section" id="memory">
         <div class="memory-heading">
-          <p class="section-index">05 / PAPER MEMORY</p>
+          <p class="section-index" data-en="PAPER MEMORY" data-zh="论文记忆">PAPER MEMORY</p>
           <h2 data-en="Come back days later.<br>PaperFlow remembers where you left off." data-zh="几天后再回来。<br>PaperFlow 仍记得你读到哪里。">
             Come back days later.<br>PaperFlow remembers where you left off.
           </h2>
         </div>
 
         <div class="memory-system" data-observe="memory">
-          <div class="memory-date">
-            <span>SEP</span><strong>25</strong><small>2026</small>
-          </div>
           <div class="memory-ledger">
             <div class="ledger-head"><span>ATTENTION IS ALL YOU NEED</span><code>PAPER MEMORY / LOCAL</code></div>
             <div class="ledger-row">
@@ -338,7 +331,7 @@
       <section class="library-section" id="library">
         <div class="library-heading">
           <div>
-            <p class="section-index">06 / RESEARCH LIBRARY</p>
+            <p class="section-index" data-en="RESEARCH LIBRARY" data-zh="研究资料库">RESEARCH LIBRARY</p>
             <h2 data-en="Your papers become<br>a research system." data-zh="你的论文成为<br>一套研究系统。">
               Your papers become<br>a research system.
             </h2>
@@ -349,12 +342,11 @@
           >Collections, tags, status, citations, and history stay dense enough to scan and quiet enough to think.</p>
         </div>
         <figure class="library-visual" data-observe="library">
-          <div class="library-ruler"><span>01 PAPER</span><i></i><span>126 PAPERS</span></div>
           <img
             src="assets/paperflow-library-system.png"
             alt="PaperFlow research library with collections, searchable metadata, and reading status"
-            width="1812"
-            height="934"
+            width="4077"
+            height="2102"
             loading="lazy"
           >
         </figure>
@@ -362,7 +354,7 @@
 
       <section class="architecture-section" id="architecture">
         <div class="architecture-heading">
-          <p class="section-index">07 / ARCHITECTURE</p>
+          <p class="section-index" data-en="LOCAL-FIRST ARCHITECTURE" data-zh="本地优先架构">LOCAL-FIRST ARCHITECTURE</p>
           <h2 data-en="Your research<br>stays yours." data-zh="你的研究<br>始终属于你。">Your research<br>stays yours.</h2>
           <p
             data-en="PaperFlow keeps the document workspace in the browser. Sync and AI remain explicit connections you control."
@@ -374,13 +366,13 @@
           <div class="architecture-column">
             <span class="architecture-label">DEVICE</span>
             <div class="architecture-node browser-node">
-              <code>01 / BROWSER</code>
+              <code>BROWSER</code>
               <strong>Chrome + PaperFlow</strong>
               <small>Reader · Library · Search · OCR</small>
             </div>
             <div class="vertical-connector"><i></i><span>LOCAL WRITE</span></div>
             <div class="architecture-node local-node">
-              <code>02 / LOCAL STORAGE</code>
+              <code>LOCAL STORAGE</code>
               <strong>IndexedDB + OPFS</strong>
               <small>Metadata · notes · annotations · PDFs</small>
             </div>
@@ -389,13 +381,13 @@
           <div class="architecture-branch">
             <div class="branch-line branch-sync"><i></i><span>OPTIONAL / ENCRYPTED</span></div>
             <div class="architecture-node cloud-node">
-              <code>03 / YOUR GOOGLE DRIVE</code>
+              <code>YOUR GOOGLE DRIVE</code>
               <strong>Encrypted sync</strong>
               <small>drive.file · no document backend</small>
             </div>
             <div class="branch-line branch-ai"><i></i><span>YOUR REQUEST</span></div>
             <div class="architecture-node ai-node">
-              <code>04 / AI PROVIDER</code>
+              <code>AI PROVIDER</code>
               <strong>Codex CLI or compatible API</strong>
               <small>Direct provider connection</small>
             </div>
@@ -411,7 +403,7 @@
       </section>
 
       <section class="philosophy-section">
-        <p class="section-index">08 / PRINCIPLE</p>
+        <p class="section-index" data-en="PRODUCT PHILOSOPHY" data-zh="产品理念">PRODUCT PHILOSOPHY</p>
         <blockquote data-en="Research tools should<br>disappear into the work." data-zh="研究工具应该<br>消失在研究过程里。">
           Research tools should<br>disappear into the work.
         </blockquote>

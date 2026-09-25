@@ -8,7 +8,6 @@ const desktopMotionQuery = window.matchMedia("(min-width: 861px)");
 const observedItems = document.querySelectorAll("[data-observe]");
 const storySections = document.querySelectorAll("[data-story]");
 const phaseLabel = document.querySelector("[data-phase-label]");
-const phaseNumber = document.querySelector("[data-phase-number]");
 const sequenceSteps = document.querySelectorAll("[data-step]");
 
 const savedLanguage = localStorage.getItem("paperflow-site-language");
@@ -105,9 +104,6 @@ function updateFragmentStory(section, storyProgress) {
   stage.style.setProperty("--workspace-opacity", progress(merge, 0.52, 0.9).toFixed(4));
   stage.style.setProperty("--workspace-scale", mix(0.86, 1, progress(merge, 0.42, 1)).toFixed(4));
 
-  if (phaseNumber) {
-    phaseNumber.textContent = String(Math.min(5, Math.max(1, Math.floor(storyProgress * 5) + 1)));
-  }
   setPhaseLabel(storyProgress > 0.68 ? "connected" : storyProgress > 0.24 ? "connecting" : "fragmented");
 }
 
