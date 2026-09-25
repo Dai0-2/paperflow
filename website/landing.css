@@ -205,6 +205,8 @@ a:focus-visible {
 }
 
 .hero {
+  position: relative;
+  isolation: isolate;
   min-height: 1180px;
   padding: 150px var(--page-gutter) 0;
   overflow: hidden;
@@ -212,7 +214,55 @@ a:focus-visible {
   border-bottom: 1px solid var(--line);
 }
 
+.hero-canvas-grid {
+  position: absolute;
+  z-index: -1;
+  top: 66px;
+  right: 0;
+  width: min(49vw, 940px);
+  height: 650px;
+  pointer-events: none;
+  opacity: .78;
+  background-color: rgb(239 240 230 / 62%);
+  background-image:
+    linear-gradient(to right, rgb(117 121 110 / 18%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(117 121 110 / 18%) 1px, transparent 1px),
+    var(--paper-grain);
+  background-size: 120px 120px, 120px 120px, var(--paper-grain-size);
+  clip-path: polygon(80% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.hero-canvas-grid::before {
+  position: absolute;
+  top: 0;
+  left: 80%;
+  width: 1px;
+  height: 1120px;
+  content: "";
+  background: rgb(117 121 110 / 32%);
+  transform: rotate(46deg);
+  transform-origin: top;
+}
+
+.hero-canvas-grid::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 28px;
+  height: 100%;
+  content: "";
+  background-image:
+    repeating-linear-gradient(to bottom, transparent 0 9px, rgb(84 88 79 / 42%) 9px 10px),
+    repeating-linear-gradient(to bottom, transparent 0 59px, rgb(84 88 79 / 58%) 59px 60px);
+  background-position: right top;
+  background-size: 12px 10px, 23px 60px;
+  background-repeat: repeat-y;
+  border-right: 1px solid rgb(84 88 79 / 30%);
+}
+
 .hero-measure {
+  position: relative;
+  z-index: 1;
   max-width: 1760px;
   margin: 0 auto;
 }
@@ -310,6 +360,7 @@ a:focus-visible {
 
 .hero-product {
   position: relative;
+  z-index: 1;
   max-width: 1760px;
   margin: 88px auto 0;
 }
@@ -373,6 +424,8 @@ a:focus-visible {
 }
 
 .hero-manifesto {
+  position: relative;
+  z-index: 1;
   max-width: 1760px;
   margin: 44px auto 0;
   padding-bottom: 64px;
@@ -1723,6 +1776,10 @@ a:focus-visible {
 
   .hero {
     padding-top: 116px;
+  }
+
+  .hero-canvas-grid {
+    display: none;
   }
 
   .hero h1 {
