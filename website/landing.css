@@ -554,7 +554,7 @@ a:focus-visible {
   height: 31%;
 }
 
-.fragment-chat p {
+.fragment-chat .fragment-prompt {
   width: 75%;
   margin: 17px 13px 8px auto;
   padding: 9px;
@@ -564,7 +564,27 @@ a:focus-visible {
   font-size: 10px;
 }
 
-.fragment-chat small {
+.fragment-response {
+  margin: 13px 14px 11px;
+  padding-left: 11px;
+  border-left: 2px solid #b8c9e5;
+}
+
+.fragment-response span {
+  color: var(--blue);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 7px;
+  font-weight: 600;
+}
+
+.fragment-response p {
+  margin: 6px 0 0;
+  color: #4f544f;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.fragment-chat > small {
   display: block;
   margin: 0 13px;
   color: #777c76;
