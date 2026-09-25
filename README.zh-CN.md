@@ -31,10 +31,6 @@
   <img src="website/assets/paperflow-attention-reader.png" alt="PaperFlow Reader 正在显示 Attention Is All You Need，包含页面缩略图、批注工具与溯源助手">
 </a>
 
-<p align="center">
-  <a href="https://dai0-2.github.io/paperflow/assets/paperflow-demo.mp4"><strong>观看产品演示</strong></a>
-</p>
-
 ## 让 PDF 成为工作区
 
 研究过程常常被拆散在 PDF 阅读器、笔记、独立聊天窗口、浏览器标签页和文献管理器中。

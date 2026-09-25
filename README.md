@@ -33,10 +33,6 @@
   <img src="website/assets/paperflow-attention-reader.png" alt="PaperFlow Reader displaying Attention Is All You Need with page thumbnails, annotation tools, and a source-aware assistant">
 </a>
 
-<p align="center">
-  <a href="https://dai0-2.github.io/paperflow/assets/paperflow-demo.mp4"><strong>Watch the product walkthrough</strong></a>
-</p>
-
 ## Your PDF is the workspace
 
 Research is often split across a PDF viewer, notes, a detached chatbot, browser
