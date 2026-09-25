@@ -140,6 +140,9 @@ AI Provider 是可选功能。使用 ChatGPT 订阅需要：
 2. 安装 PaperFlow Native Host。
 3. 在 PaperFlow 中完成一次浏览器登录。
 
+如果使用 OpenAI 兼容 API，请跳过本节全部步骤。API 模式不需要 Codex CLI、Rust
+或 Native Host。
+
 安装官方 Codex CLI：
 
 ```bash
@@ -155,24 +158,50 @@ Chrome Web Store 扩展无法自行安装或启动本机程序，因此 Native H
 
 > [!NOTE]
 > 已签名的一键 Native Host 安装包尚未公开发布。在正式发布前，只需从源码构建并
-> 安装 Native Host：
+> 安装 Native Host。
+
+Windows 测试用户如果不想安装 Rust，可以打开
+[最新一次成功构建](https://github.com/Dai0-2/paperflow/actions/workflows/build.yml)，
+下载 `paperflow-native-host-windows` 构建产物，解压后运行：
+
+```powershell
+.\install-windows.ps1
+```
+
+GitHub Actions 构建产物属于未签名的开发版本。需要自行编译时，再按下面的源码步骤操作。
 
 ```bash
+# macOS / Linux
 git clone https://github.com/Dai0-2/paperflow.git
 cd paperflow
 cargo build --release --locked --manifest-path native-host/Cargo.toml
-```
-
-```bash
 # macOS
 bash native-host/install/install-macos.sh
 
 # Linux
 sh native-host/install/install-linux.sh
+```
 
-# Windows PowerShell
+Windows 需要先安装 **Visual Studio Build Tools 2022**，并在安装界面勾选
+**Desktop development with C++ / 使用 C++ 的桌面开发**。然后在 PowerShell
+执行：
+
+```powershell
+winget install --id Rustlang.Rustup -e
+```
+
+安装后关闭并重新打开 PowerShell，让 `cargo` 加入 `PATH`，再执行：
+
+```powershell
+git clone https://github.com/Dai0-2/paperflow.git
+cd paperflow
+cargo --version
 .\native-host\install\install-windows.ps1
 ```
+
+Windows 安装脚本会优先使用安装包内已有的 `paperflow-host.exe`；从源码仓库运行时，
+会自动构建 Host。若 `cargo --version` 仍无法识别，请重启 PowerShell 或 Windows
+后重试。
 
 打开 PaperFlow，选择“ChatGPT 订阅”，再点击“登录 ChatGPT”。PaperFlow 会启动
 官方 Codex 浏览器授权流程，通常无需再手动执行 `codex login`。

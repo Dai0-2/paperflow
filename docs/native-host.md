@@ -83,10 +83,28 @@ sh native-host/install/uninstall-linux.sh
 
 ### Windows PowerShell
 
+API mode does not use this installer. For ChatGPT/Codex subscription mode,
+the latest successful GitHub Actions run provides an unsigned
+`paperflow-native-host-windows` development artifact. Extract it and run
+`.\install-windows.ps1`; no Rust installation is needed for that package.
+
+To build from source instead, install Visual Studio Build Tools 2022 with the
+**Desktop development with C++** workload, then install Rust:
+
+```powershell
+winget install --id Rustlang.Rustup -e
+```
+
+Close and reopen PowerShell, verify `cargo --version`, then run:
+
 ```powershell
 .\native-host\install\install-windows.ps1
 .\native-host\install\uninstall-windows.ps1
 ```
+
+The installer uses a packaged `paperflow-host.exe` when present and otherwise
+builds it from the source checkout. A "`cargo` is not recognized" error means
+the Rust installation is missing or the terminal has not been restarted.
 
 Pass a binary path as the first shell argument or `-BinaryPath` in PowerShell when installing an externally built or signed release binary.
 

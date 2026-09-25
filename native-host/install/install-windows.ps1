@@ -6,11 +6,42 @@ $ErrorActionPreference = "Stop"
 $HostName = "com.paperflow.ai"
 $ExtensionId = "dffiahjmpkmellmjijffpcofoahbccoc"
 $ScriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
+$NativeHostDirectory = Split-Path -Parent $ScriptDirectory
 
 if ([string]::IsNullOrWhiteSpace($BinaryPath)) {
     $PackagedBinary = Join-Path $ScriptDirectory "paperflow-host.exe"
-    $BuiltBinary = Join-Path (Split-Path -Parent $ScriptDirectory) "target\release\paperflow-host.exe"
-    $BinaryPath = if (Test-Path $PackagedBinary) { $PackagedBinary } else { $BuiltBinary }
+    $BuiltBinary = Join-Path $NativeHostDirectory "target\release\paperflow-host.exe"
+    if (Test-Path $PackagedBinary) {
+        $BinaryPath = $PackagedBinary
+    } elseif (Test-Path $BuiltBinary) {
+        $BinaryPath = $BuiltBinary
+    } else {
+        $Cargo = Get-Command cargo -ErrorAction SilentlyContinue
+        if ($null -eq $Cargo) {
+            throw @"
+PaperFlow Native Host is needed only for ChatGPT/Codex subscription mode.
+OpenAI-compatible API mode does not need Cargo or the Native Host.
+
+To use ChatGPT/Codex, install:
+1. Visual Studio Build Tools 2022 with "Desktop development with C++".
+2. Rust from https://rustup.rs/ or: winget install --id Rustlang.Rustup -e
+
+Close and reopen PowerShell, verify "cargo --version", then run this installer again.
+"@
+        }
+
+        Write-Host "Building the PaperFlow Native Host..."
+        Push-Location $NativeHostDirectory
+        try {
+            & $Cargo.Source build --release --locked
+            if ($LASTEXITCODE -ne 0) {
+                throw "Building the PaperFlow Native Host failed with exit code $LASTEXITCODE."
+            }
+        } finally {
+            Pop-Location
+        }
+        $BinaryPath = $BuiltBinary
+    }
 }
 
 if (-not (Test-Path -PathType Leaf $BinaryPath)) {

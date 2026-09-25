@@ -152,6 +152,9 @@ AI providers are optional. ChatGPT subscription mode requires:
 2. The PaperFlow Native Host.
 3. A one-time browser sign-in from PaperFlow.
 
+If you use an OpenAI-compatible API instead, skip this entire section. API mode
+does not need Codex CLI, Rust, or the Native Host.
+
 Install the official Codex CLI:
 
 ```bash
@@ -169,24 +172,52 @@ extension.
 
 > [!NOTE]
 > Signed one-click Native Host installers are not publicly available yet.
-> Until they are released, build and install only the host from source:
+> Until they are released, build and install only the host from source.
+
+For Windows testing without installing Rust, open the
+[latest successful build](https://github.com/Dai0-2/paperflow/actions/workflows/build.yml),
+download the `paperflow-native-host-windows` artifact, extract it, and run:
+
+```powershell
+.\install-windows.ps1
+```
+
+GitHub Actions artifacts are unsigned development builds. The source-build
+steps below remain available when you want to compile the host yourself.
 
 ```bash
+# macOS / Linux
 git clone https://github.com/Dai0-2/paperflow.git
 cd paperflow
 cargo build --release --locked --manifest-path native-host/Cargo.toml
-```
-
-```bash
+# Then install it:
 # macOS
 bash native-host/install/install-macos.sh
 
 # Linux
 sh native-host/install/install-linux.sh
+```
 
-# Windows PowerShell
+On Windows, first install **Visual Studio Build Tools 2022** with the
+**Desktop development with C++** workload. Then run:
+
+```powershell
+winget install --id Rustlang.Rustup -e
+```
+
+Close and reopen PowerShell so `cargo` is added to `PATH`, then:
+
+```powershell
+git clone https://github.com/Dai0-2/paperflow.git
+cd paperflow
+cargo --version
 .\native-host\install\install-windows.ps1
 ```
+
+The Windows installer uses a packaged `paperflow-host.exe` when available.
+When run from a source checkout, it builds the host automatically. If
+`cargo --version` is still not recognized, restart PowerShell or Windows before
+retrying.
 
 Open PaperFlow, choose **ChatGPT subscription**, and select
 **Sign in with ChatGPT**. PaperFlow starts the official Codex browser
