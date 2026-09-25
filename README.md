@@ -133,7 +133,7 @@ Read the [privacy notice](docs/privacy.md), [security policy](SECURITY.md), and
 
 ## Install
 
-### Chrome Web Store
+### Core workspace
 
 [Install PaperFlow from the Chrome Web Store](https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc).
 
@@ -141,19 +141,41 @@ PaperFlow supports Chrome 114 or newer on macOS, Windows, and Linux. The
 integrated Reader handles local and remote PDFs; arXiv PDF pages retain their
 original `arxiv.org/pdf/...` address while PaperFlow runs in the page.
 
-### Build from source
+The Reader, annotations, research library, local storage, and Google Drive sync
+work directly from the extension. They do not require the Native Host.
 
-Requirements: Node.js 20+, pnpm 10+, and Rust stable for the native host.
+### Connect a ChatGPT subscription
+
+AI providers are optional. ChatGPT subscription mode requires:
+
+1. The official Codex CLI.
+2. The PaperFlow Native Host.
+3. A one-time browser sign-in from PaperFlow.
+
+Install the official Codex CLI:
+
+```bash
+# macOS / Linux
+npm install -g @openai/codex
+
+# Windows PowerShell
+npm.cmd install -g @openai/codex
+```
+
+Chrome Web Store extensions cannot install or launch local executables by
+themselves. The Native Host is therefore installed separately. It invokes only
+the official Codex CLI and never exposes Codex authentication data to the
+extension.
+
+> [!NOTE]
+> Signed one-click Native Host installers are not publicly available yet.
+> Until they are released, build and install only the host from source:
 
 ```bash
 git clone https://github.com/Dai0-2/paperflow.git
 cd paperflow
-pnpm install
-pnpm build
 cargo build --release --locked --manifest-path native-host/Cargo.toml
 ```
-
-Install the native host for your platform:
 
 ```bash
 # macOS
@@ -166,9 +188,34 @@ sh native-host/install/install-linux.sh
 .\native-host\install\install-windows.ps1
 ```
 
-Then open `chrome://extensions`, enable **Developer mode**, choose
-**Load unpacked**, and select `dist/`. See
-[Native Host setup](docs/native-host.md) for installation and troubleshooting.
+Open PaperFlow, choose **ChatGPT subscription**, and select
+**Sign in with ChatGPT**. PaperFlow starts the official Codex browser
+authorization flow; running `codex login` separately is not normally required.
+
+OpenAI-compatible API mode also uses the Native Host so API keys can remain in
+the operating-system credential store. Google Drive sync does not use the
+Native Host.
+
+See [Native Host setup](docs/native-host.md) for installation and
+troubleshooting.
+
+### Build the extension from source
+
+This path is for contributors and users testing an unreleased build. It is not
+required after installing from the Chrome Web Store.
+
+Requirements: Node.js 20+, pnpm 10+, and Rust stable.
+
+```bash
+git clone https://github.com/Dai0-2/paperflow.git
+cd paperflow
+pnpm install
+pnpm build
+cargo build --release --locked --manifest-path native-host/Cargo.toml
+```
+
+Run the Native Host installer shown above. Then open `chrome://extensions`,
+enable **Developer mode**, choose **Load unpacked**, and select `dist/`.
 
 ## Development
 

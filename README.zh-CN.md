@@ -121,7 +121,7 @@ flowchart LR
 
 ## 安装
 
-### Chrome 应用商店
+### 使用核心工作区
 
 [从 Chrome Web Store 安装 PaperFlow](https://chromewebstore.google.com/detail/paperflow-ai/dffiahjmpkmellmjijffpcofoahbccoc)。
 
@@ -129,19 +129,39 @@ PaperFlow 支持 macOS、Windows 和 Linux 上的 Chrome 114 或更高版本。
 集成 Reader 可以打开本地与远程 PDF；arXiv PDF 会保留原始
 `arxiv.org/pdf/...` 地址，PaperFlow 直接运行在页面中。
 
-### 从源码构建
+Reader、批注、研究资料库、本地存储和 Google Drive 同步安装扩展后即可使用，
+不需要安装 Native Host。
 
-环境要求：Node.js 20+、pnpm 10+；构建 Native Host 还需要 Rust stable。
+### 连接 ChatGPT 订阅
+
+AI Provider 是可选功能。使用 ChatGPT 订阅需要：
+
+1. 安装官方 Codex CLI。
+2. 安装 PaperFlow Native Host。
+3. 在 PaperFlow 中完成一次浏览器登录。
+
+安装官方 Codex CLI：
+
+```bash
+# macOS / Linux
+npm install -g @openai/codex
+
+# Windows PowerShell
+npm.cmd install -g @openai/codex
+```
+
+Chrome Web Store 扩展无法自行安装或启动本机程序，因此 Native Host 必须单独安装。
+它只调用官方 Codex CLI，不会向扩展暴露 Codex 的认证数据。
+
+> [!NOTE]
+> 已签名的一键 Native Host 安装包尚未公开发布。在正式发布前，只需从源码构建并
+> 安装 Native Host：
 
 ```bash
 git clone https://github.com/Dai0-2/paperflow.git
 cd paperflow
-pnpm install
-pnpm build
 cargo build --release --locked --manifest-path native-host/Cargo.toml
 ```
-
-安装当前系统对应的 Native Host：
 
 ```bash
 # macOS
@@ -154,9 +174,30 @@ sh native-host/install/install-linux.sh
 .\native-host\install\install-windows.ps1
 ```
 
-然后打开 `chrome://extensions`，启用“开发者模式”，选择“加载已解压的扩展程序”，
-并选中 `dist/`。安装与故障排查详见
-[Native Host 文档](docs/native-host.md)。
+打开 PaperFlow，选择“ChatGPT 订阅”，再点击“登录 ChatGPT”。PaperFlow 会启动
+官方 Codex 浏览器授权流程，通常无需再手动执行 `codex login`。
+
+OpenAI 兼容 API 模式也会使用 Native Host，以便将 API Key 保存在操作系统凭据库中。
+Google Drive 同步不使用 Native Host。
+
+安装与故障排查详见 [Native Host 文档](docs/native-host.md)。
+
+### 从源码构建扩展
+
+此路径供贡献者或测试未发布版本的用户使用。从 Chrome Web Store 安装后无需执行。
+
+环境要求：Node.js 20+、pnpm 10+ 和 Rust stable。
+
+```bash
+git clone https://github.com/Dai0-2/paperflow.git
+cd paperflow
+pnpm install
+pnpm build
+cargo build --release --locked --manifest-path native-host/Cargo.toml
+```
+
+运行上方对应系统的 Native Host 安装脚本。然后打开 `chrome://extensions`，
+启用“开发者模式”，选择“加载已解压的扩展程序”，并选中 `dist/`。
 
 ## 开发
 
