@@ -20,11 +20,11 @@ Chrome Side Panel                     ▼
                                                   │ bounded context
                 IndexedDB                         ▼
           papers / aliases / threads       Provider adapter
-          messages / memory / selections      ├─ Codex Bridge
-          annotations / settings              └─ OpenAI-compatible API
-                │                                 │
-                │ encrypted object queue          ▼
-                ▼                      OS credential store / Codex credentials
+          messages / memory / selections      ├─ Codex Bridge → Native Host → Codex CLI
+          annotations / settings              └─ API Bridge → service worker → selected HTTPS origin
+                │
+                │ encrypted object queue
+                ▼
         Google Drive adapter
                 │ drive.file + Chrome Identity
                 ▼
@@ -123,8 +123,9 @@ The key is loaded into memory while synchronization is active. It is not stored
 in browser local storage or IndexedDB. Because the key is available in the
 PaperFlow-created Drive header, this is account-protected encryption rather than
 zero-knowledge encryption: access to the Google account and all PaperFlow files
-is sufficient to restore content. OAuth tokens remain under Chrome Identity and
-API keys remain in the operating-system credential store.
+is sufficient to restore content. OAuth tokens remain under Chrome Identity.
+OpenAI-compatible API keys remain in device-local extension storage and are not
+included in Drive synchronization.
 
 Version 1 password/recovery headers remain readable for migration. PaperFlow
 requires one successful legacy unlock, then writes a version 2 account-managed
@@ -166,6 +167,20 @@ A Chrome extension cannot safely launch arbitrary local executables. It also mus
 
 The extension never receives or persists the Codex access token. The bridge must never read or return `~/.codex/auth.json`.
 
+## OpenAI-compatible API transport
+
+API mode does not use Native Messaging. A user gesture requests optional access
+only to the origin derived from the configured Base URL. The API key is stored
+in `chrome.storage.local`, excluded from synchronization, and restricted to
+trusted extension contexts through `setAccessLevel` where supported.
+
+The MV3 service worker loads the key, performs model discovery and API requests,
+and returns only status, model IDs, or streamed response events to the UI.
+Endpoints require HTTPS except for loopback development URLs. Requests and
+responses are schema bounded, and the key is never returned by the background
+protocol. Browser-profile storage is less isolated than an operating-system
+credential store, so scoped and revocable provider keys are recommended.
+
 ## Native host security requirements
 
 - Allow only the published PaperFlow extension ID.
@@ -176,8 +191,9 @@ The extension never receives or persists the Codex access token. The bridge must
 - Redact secrets and local paths from logs.
 - Show the exact paper context before transmission.
 - Support cancellation and timeouts.
-- Keep credentials in the OS credential store whenever possible.
-- Use macOS Keychain, Windows Credential Manager, or Linux Secret Service. If Secret Service is unavailable, disable persistence instead of writing plaintext.
+- Keep Codex credentials owned by the official Codex CLI.
+- Preserve legacy OS credential-store entries only for compatibility and
+  migration; new API keys do not pass through the Native Host.
 
 The Rust host uses protocol version 1 and the fixed host name `com.paperflow.ai`.
 The previous Python host remains a one-release compatibility fallback; new

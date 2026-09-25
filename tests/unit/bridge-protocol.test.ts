@@ -54,8 +54,9 @@ describe('native host protocol', () => {
     }).success).toBe(true);
   });
 
-  it('probes Rust protocol once and uses only v1 action names', async () => {
+  it('keeps API-key storage off the native host', async () => {
     const actions: string[] = [];
+    const backgroundMessages: string[] = [];
     const responses = [
       {
         ok: true,
@@ -65,10 +66,13 @@ describe('native host protocol', () => {
         apiKeyConfigured: false,
       },
       { ok: true, authenticated: true, detail: 'Signed in' },
-      { ok: true, authenticated: true, detail: 'Saved' },
     ];
     vi.stubGlobal('chrome', {
+      permissions: {
+        request: vi.fn(async () => true),
+      },
       runtime: {
+        id: 'paperflow-test',
         lastError: undefined,
         sendNativeMessage: (
           _host: string,
@@ -78,12 +82,20 @@ describe('native host protocol', () => {
           actions.push(payload.action);
           callback(responses.shift());
         },
+        sendMessage: (
+          payload: { type: string },
+          callback: (response: unknown) => void,
+        ) => {
+          backgroundMessages.push(payload.type);
+          callback({ ok: true, authenticated: true, detail: 'Saved in browser' });
+        },
       },
     });
 
     expect((await getBridgeStatus()).authenticated).toBe(true);
-    expect((await saveApiKey('paperflow-test-key')).ok).toBe(true);
-    expect(actions).toEqual(['status', 'codex.auth_status', 'api_key.set']);
+    expect((await saveApiKey('paperflow-test-key', 'https://api.example.com/v1')).ok).toBe(true);
+    expect(actions).toEqual(['status', 'codex.auth_status']);
+    expect(backgroundMessages).toEqual(['paperflow:api-save-key']);
   });
 
   it('keeps the Python action mapping for one compatibility release', async () => {
@@ -116,7 +128,9 @@ describe('native host protocol', () => {
         credentialStoreAvailable: true,
         apiKeyConfigured: false,
       },
+      { ok: true, authenticated: false, detail: 'Not signed in.' },
       { ok: true, authenticated: true, detail: 'Codex CLI sign-in completed.' },
+      { ok: true, authenticated: true, detail: 'Signed in.' },
     ];
     vi.stubGlobal('chrome', {
       runtime: {
@@ -133,7 +147,58 @@ describe('native host protocol', () => {
     });
 
     expect((await loginWithChatGPT()).authenticated).toBe(true);
-    expect(actions).toEqual(['status', 'codex.login']);
+    expect(actions).toEqual([
+      'status',
+      'codex.auth_status',
+      'codex.login',
+      'codex.auth_status',
+    ]);
+  });
+
+  it('stops waiting when auth status succeeds before the login process exits', async () => {
+    const actions: string[] = [];
+    let authChecks = 0;
+    vi.stubGlobal('chrome', {
+      runtime: {
+        lastError: undefined,
+        sendNativeMessage: (
+          _host: string,
+          payload: { action: string },
+          callback: (response: unknown) => void,
+        ) => {
+          actions.push(payload.action);
+          if (payload.action === 'status') {
+            callback({
+              ok: true,
+              protocolVersion: 1,
+              codexAvailable: true,
+              credentialStoreAvailable: true,
+              apiKeyConfigured: false,
+            });
+            return;
+          }
+          if (payload.action === 'codex.login') return;
+          authChecks += 1;
+          callback({
+            ok: true,
+            authenticated: authChecks > 1,
+            detail: authChecks > 1 ? 'Logged in using ChatGPT' : 'Not logged in',
+          });
+        },
+      },
+    });
+
+    await expect(loginWithChatGPT()).resolves.toMatchObject({
+      ok: true,
+      authenticated: true,
+      detail: 'Logged in using ChatGPT',
+    });
+    expect(actions).toEqual([
+      'status',
+      'codex.auth_status',
+      'codex.login',
+      'codex.auth_status',
+    ]);
   });
 
   it('re-probes the host when the user checks status after an upgrade', async () => {

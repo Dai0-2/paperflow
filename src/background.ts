@@ -11,6 +11,7 @@ import {
   type ReaderLaunchSource,
 } from './services/backgroundRouting';
 import { paperFromUrl } from './services/paper';
+import { registerBrowserApiHandlers } from './services/browserApi';
 import { syncEngine } from './sync/SyncEngine';
 import { SYNC_SOON_ALARM } from './sync/operationLog';
 
@@ -22,6 +23,8 @@ const OPEN_LIBRARY_MENU = 'paperflow-open-library';
 const REDIRECT_GUARD_PREFIX = 'paperflow:reader-redirect:';
 const EMBEDDED_READER_PREFIX = 'paperflow:embedded-reader:';
 const EMBEDDED_READER_SETTLE_MS = 1_000;
+
+registerBrowserApiHandlers();
 
 function readerUrl(
   rawUrl: string,

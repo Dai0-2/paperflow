@@ -2,11 +2,15 @@ import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { text } from '../../i18n';
+import { API_MODEL_OPTIONS } from '../../config/apiModels';
 
 export function ModelSelector({ close }: { close: () => void }) {
-  const { model, providerMode, uiLanguage, setModel } = useAppStore();
+  const { model, providerMode, apiModels, uiLanguage, setModel } = useAppStore();
   const [customModel, setCustomModel] = useState(model === 'ChatGPT via Codex' ? '' : model);
-  const apiModels = [...new Set([model, 'gpt-4.1-mini', 'gpt-4.1', 'gpt-4o-mini'])]
+  const selectableApiModels = [...new Set([
+    model,
+    ...(apiModels.length ? apiModels : API_MODEL_OPTIONS),
+  ])]
     .filter((item) => item && item !== 'ChatGPT via Codex');
   const codexModels = [...new Set([
     model,
@@ -24,7 +28,7 @@ export function ModelSelector({ close }: { close: () => void }) {
     name: providerMode === 'api'
       ? text(uiLanguage, 'OpenAI-compatible API', 'OpenAI 兼容 API')
       : text(uiLanguage, 'ChatGPT subscription', 'ChatGPT 订阅'),
-    models: providerMode === 'api' ? apiModels : codexModels,
+    models: providerMode === 'api' ? selectableApiModels : codexModels,
   }];
   return <div className="popover model-popover" role="dialog" aria-label={text(uiLanguage, 'Choose model', '选择模型')}><div className="popover-title">{text(uiLanguage, 'Model', '模型')}</div>
     {groups.map((group) => <div className="model-group" key={group.name}><div className="model-group-name">{group.name}</div>{group.models.map((item) => <button key={item} onClick={() => { setModel(item); close(); }}><span>{item === 'ChatGPT via Codex' ? text(uiLanguage, 'Codex default (recommended)', 'Codex 默认（推荐）') : item}</span>{model === item && <Check size={15} />}</button>)}</div>)}

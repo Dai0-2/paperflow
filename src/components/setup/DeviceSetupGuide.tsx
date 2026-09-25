@@ -67,8 +67,8 @@ export function DeviceSetupGuide({
       <span><MonitorCog />{text(language, 'Device login guide', '设备登录向导')}</span>
       <small>{text(
         language,
-        'Fix ChatGPT and Google sign-in',
-        '排查 ChatGPT 与 Google 登录',
+        'Set up ChatGPT through Codex',
+        '通过 Codex 配置 ChatGPT',
       )}</small>
     </summary>
 
@@ -104,14 +104,6 @@ export function DeviceSetupGuide({
             language,
             'Install the official Codex CLI, run codex login, then return to PaperFlow.',
             '安装官方 Codex CLI，运行 codex login，再返回 PaperFlow。',
-          )}</p>
-        </li>
-        <li>
-          <strong>{text(language, 'Connect Google Drive', '连接 Google Drive')}</strong>
-          <p>{text(
-            language,
-            'After the ID is correct, use Sign in with Google in Sync settings.',
-            '固定 ID 正确后，在同步设置中点击“使用 Google 账号登录”。',
           )}</p>
         </li>
       </ol>

@@ -1,17 +1,19 @@
 # PaperFlow Native Host
 
-PaperFlow uses the separately installed `com.paperflow.ai` Native Messaging host for operations that must remain outside Chrome extension storage:
+PaperFlow uses the separately installed `com.paperflow.ai` Native Messaging
+host only for ChatGPT subscription access through an installed and authenticated
+official Codex CLI.
 
-- calling an already installed and authenticated official Codex CLI;
-- storing an OpenAI-compatible API key in the operating-system credential store and making API requests without returning the key to Chrome.
-
-Google Drive sync works without the host. Legacy `vault.*` actions remain in
-protocol version 1 only so older extension builds can access previously stored
-device keys during the upgrade period.
+OpenAI-compatible API mode and Google Drive sync work without the host. API
+requests run in the extension service worker and the API key remains in
+device-local extension storage. Legacy `api.*`, `api_key.*`, and `vault.*`
+actions remain in protocol version 1 for older extension builds and migration;
+the current extension does not call them.
 
 ## Security boundary
 
-The Rust host accepts only these schema-validated actions:
+The Rust host still accepts these schema-validated version 1 actions for current
+and compatibility clients:
 
 ```text
 status
@@ -33,7 +35,7 @@ Codex is discovered using fixed platform locations or the `codex` executable on 
 
 The host does not log prompts, responses, paper text, API keys, vault keys, OAuth tokens, or local paths.
 
-## Credential stores
+## Legacy credential stores
 
 | Platform | Store |
 |---|---|
@@ -41,14 +43,12 @@ The host does not log prompts, responses, paper text, API keys, vault keys, OAut
 | Windows | Credential Manager |
 | Linux | Secret Service |
 
-The current service name is `com.paperflow.ai`, with API-key account
-`openai_api_key`. Older builds may also have vault accounts named
+Older builds used service name `com.paperflow.ai`, with API-key account
+`openai_api_key`, and may also have vault accounts named
 `vault_device_key:<vault UUID>`; current one-click Google sync does not create or
-read them. On first API-key access, the Rust host imports a matching credential
-from the legacy macOS service `PaperFlow AI` into the new service without
-exposing it to extension storage. It retains the old item until the user
-explicitly deletes that credential. Uninstallers preserve credentials by
-default.
+read them. The current extension stores new API keys in Chrome extension-local
+storage and does not read these legacy host credentials. Host uninstallers
+preserve legacy credentials by default.
 
 If Secret Service is unavailable on Linux, the host reports that persistent credential storage is unavailable. PaperFlow does not fall back to a plaintext file.
 

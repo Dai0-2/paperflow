@@ -4,6 +4,7 @@ test('shows an actionable device login guide when the native host is unavailable
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto('/');
 
+  await expect(page.getByRole('button', { name: 'Use Chrome extension' })).toBeDisabled();
   await expect(page.getByText('Device login guide')).toBeVisible();
   await expect(page.getByText('Extension ID needs attention')).toBeVisible();
   await expect(page.getByText('dffiahjmpkmellmjijffpcofoahbccoc')).toBeVisible();
@@ -64,10 +65,11 @@ test('configures an OpenAI-compatible relay during onboarding', async ({ page },
   const protocol = page.getByLabel('API format');
   await expect(baseUrl).toBeVisible();
   await baseUrl.fill('https://relay.example.com/v1');
-  await model.fill('relay-model-v2');
+  await model.selectOption('__custom__');
+  await page.getByLabel('Custom model ID').fill('relay-model-v2');
   await protocol.selectOption('chat-completions');
 
-  await expect(page.getByRole('button', { name: 'Save & test' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Test for this session' })).toBeDisabled();
   await expect.poll(() => page.evaluate(() => ({
     baseUrl: localStorage.getItem('paperflow:api-base-url'),
     model: localStorage.getItem('paperflow:api-model'),

@@ -65,7 +65,7 @@ Reader.
 - Streaming answers with Markdown, tables, and research prompt shortcuts
 - ChatGPT subscription support through the official Codex CLI
 - OpenAI-compatible API support with a custom base URL and model ID
-- API keys stored in the operating-system credential store
+- Direct API connections from the extension with device-local key storage
 
 ## Think directly on the paper
 
@@ -116,7 +116,7 @@ flowchart LR
     L -. "optional · encrypted before upload" .-> D["Your Google Drive"]
     B --> H["Local native host"]
     H --> C["ChatGPT subscription<br/>via official Codex CLI"]
-    H --> A["OpenAI-compatible API"]
+    B --> A["OpenAI-compatible API"]
 ```
 
 - Paper metadata, reading state, notes, annotations, conversations, and memory
@@ -192,9 +192,12 @@ Open PaperFlow, choose **ChatGPT subscription**, and select
 **Sign in with ChatGPT**. PaperFlow starts the official Codex browser
 authorization flow; running `codex login` separately is not normally required.
 
-OpenAI-compatible API mode also uses the Native Host so API keys can remain in
-the operating-system credential store. Google Drive sync does not use the
-Native Host.
+OpenAI-compatible API mode does not require the Native Host. PaperFlow requests
+access only to the configured API origin, stores the key in extension-local
+browser storage on that device, and sends requests directly from the extension
+to the selected provider. The key is not synchronized. Browser-profile storage
+is less isolated than an operating-system credential store, so use a scoped,
+revocable API key. Google Drive sync also does not use the Native Host.
 
 See [Native Host setup](docs/native-host.md) for installation and
 troubleshooting.
@@ -204,18 +207,18 @@ troubleshooting.
 This path is for contributors and users testing an unreleased build. It is not
 required after installing from the Chrome Web Store.
 
-Requirements: Node.js 20+, pnpm 10+, and Rust stable.
+Requirements for the extension: Node.js 20+ and pnpm 10+.
 
 ```bash
 git clone https://github.com/Dai0-2/paperflow.git
 cd paperflow
 pnpm install
 pnpm build
-cargo build --release --locked --manifest-path native-host/Cargo.toml
 ```
 
-Run the Native Host installer shown above. Then open `chrome://extensions`,
-enable **Developer mode**, choose **Load unpacked**, and select `dist/`.
+Open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**,
+and select `dist/`. Rust and the Native Host build/install steps are needed only
+when testing ChatGPT subscription mode.
 
 ## Development
 

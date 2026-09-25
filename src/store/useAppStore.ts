@@ -21,13 +21,24 @@ function storedFontScale(): number {
   return Number.isFinite(value) ? Math.max(75, Math.min(160, Math.round(value))) : 100;
 }
 
+function storedApiModels(): string[] {
+  try {
+    const value = JSON.parse(localStorage.getItem('paperflow:api-models') || '[]') as unknown;
+    return Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim())).slice(0, 500)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 interface AppState {
   view: View; theme: Theme; fontFamily: UiFontFamily; fontScale: number; chatState: ChatState; model: string;
   initialized: boolean; detecting: boolean; paper: PaperInfo | null; paperText: string; paperChunks: PaperChunk[]; readingPaper: boolean;
   activeThreadId: string | null; selection: PaperSelection | null; defaultOpenReader: boolean;
   bridgeState: BridgeState; bridgeDetail: string;
   providerMode: ProviderMode; apiState: BridgeState; apiDetail: string;
-  uiLanguage: Language; promptLanguage: PromptLanguage; apiBaseUrl: string; apiProtocol: ApiProtocol;
+  uiLanguage: Language; promptLanguage: PromptLanguage; apiBaseUrl: string; apiProtocol: ApiProtocol; apiModels: string[];
   messages: Message[]; attachments: Attachment[]; sending: boolean; draft: string;
   setView: (view: View) => void;
   setTheme: (theme: Theme) => void;
@@ -52,6 +63,7 @@ interface AppState {
   setPromptLanguage: (language: PromptLanguage) => void;
   setApiBaseUrl: (url: string) => void;
   setApiProtocol: (protocol: ApiProtocol) => void;
+  setApiModels: (models: string[]) => void;
   addMessage: (message: Message) => void;
   setMessages: (messages: Message[]) => void;
   updateMessage: (id: string, patch: Partial<Message>) => void;
@@ -68,7 +80,7 @@ export const useAppStore = create<AppState>((set) => ({
   activeThreadId: null, selection: null, defaultOpenReader: localStorage.getItem('paperflow:default-reader') !== 'false',
   bridgeState: 'checking', bridgeDetail: '', providerMode: (localStorage.getItem('paperflow:provider') as ProviderMode) || 'chatgpt', apiState: 'checking', apiDetail: '',
   uiLanguage: (localStorage.getItem('paperflow:ui-language') as Language) || 'en', promptLanguage: (localStorage.getItem('paperflow:prompt-language') as PromptLanguage) || 'auto',
-  apiBaseUrl: localStorage.getItem('paperflow:api-base-url') || 'https://api.openai.com/v1', apiProtocol: (localStorage.getItem('paperflow:api-protocol') as ApiProtocol) || 'responses',
+  apiBaseUrl: localStorage.getItem('paperflow:api-base-url') || 'https://api.openai.com/v1', apiProtocol: (localStorage.getItem('paperflow:api-protocol') as ApiProtocol) || 'responses', apiModels: storedApiModels(),
   messages: [], attachments: [], sending: false, draft: '',
   setView: (view) => set({ view }), setTheme: (theme) => { localStorage.setItem('paperflow:theme', theme); set({ theme }); },
   setFontFamily: (fontFamily) => {
@@ -116,8 +128,17 @@ export const useAppStore = create<AppState>((set) => ({
     set({ uiLanguage });
   },
   setPromptLanguage: (promptLanguage) => { localStorage.setItem('paperflow:prompt-language', promptLanguage); set({ promptLanguage }); },
-  setApiBaseUrl: (apiBaseUrl) => { localStorage.setItem('paperflow:api-base-url', apiBaseUrl); set({ apiBaseUrl }); },
+  setApiBaseUrl: (apiBaseUrl) => set((state) => {
+    localStorage.setItem('paperflow:api-base-url', apiBaseUrl);
+    if (state.apiBaseUrl !== apiBaseUrl) localStorage.removeItem('paperflow:api-models');
+    return state.apiBaseUrl === apiBaseUrl ? { apiBaseUrl } : { apiBaseUrl, apiModels: [] };
+  }),
   setApiProtocol: (apiProtocol) => { localStorage.setItem('paperflow:api-protocol', apiProtocol); set({ apiProtocol }); },
+  setApiModels: (apiModels) => {
+    const unique = [...new Set(apiModels.map((item) => item.trim()).filter(Boolean))].slice(0, 500);
+    localStorage.setItem('paperflow:api-models', JSON.stringify(unique));
+    set({ apiModels: unique });
+  },
   addMessage: (message) => set((state) => ({ messages: [...state.messages, message], chatState: 'conversation' })),
   setMessages: (messages) => set({ messages, chatState: messages.length ? 'conversation' : 'empty' }),
   updateMessage: (id, patch) => set((state) => ({ messages: state.messages.map((message) => message.id === id ? { ...message, ...patch } : message) })),

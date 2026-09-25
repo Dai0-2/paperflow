@@ -58,7 +58,7 @@ redirect to `recovery.html`. The page is read-only and can export every
 accessible IndexedDB store as `paperflow-recovery-<timestamp>.json`.
 
 The export intentionally excludes OPFS PDF and encrypted-upload binary files,
-OAuth tokens managed by Chrome, API keys held by the OS credential store, and
+OAuth tokens managed by Chrome, API keys held in extension-local storage, and
 Codex credentials.
 
 Before reinstalling or clearing site data, preserve the recovery JSON and

@@ -1,8 +1,28 @@
 import { z } from 'zod';
 import type { BridgeResponse } from '../types';
+import {
+  deletePreviewApiKey,
+  discoverApiModelsWithKey,
+  getPreviewApiStatus,
+  previewApiAvailable,
+  resetPreviewApiForTests,
+  savePreviewApiKey,
+  sendPreviewApi,
+  testPreviewApiConnection,
+} from './previewApi';
+import {
+  deleteBrowserApiKey,
+  discoverBrowserApiModels,
+  getBrowserApiStatus,
+  saveBrowserApiKey,
+  sendBrowserApi,
+  testBrowserApiConnection,
+} from './browserApi';
 
 const HOST_NAME = 'com.paperflow.ai';
 const CURRENT_PROTOCOL_VERSION = 1;
+const CODEX_AUTH_POLL_INTERVAL_MS = 1_000;
+const CODEX_AUTH_TIMEOUT_MS = 5 * 60_000;
 
 const bridgeResponseSchema = z.object({
   ok: z.boolean(),
@@ -19,6 +39,7 @@ const bridgeResponseSchema = z.object({
   codexAvailable: z.boolean().optional(),
   credentialStoreAvailable: z.boolean().optional(),
   apiKeyConfigured: z.boolean().optional(),
+  models: z.array(z.string().min(1).max(128)).max(500).optional(),
   error: z.string().max(8192).optional(),
 }).strict();
 
@@ -183,12 +204,33 @@ function refreshHostMode(): Promise<HostMode> {
   return hostModePromise;
 }
 
-function updateCachedStatus(changes: Partial<BridgeResponse>): void {
-  if (!hostModePromise) return;
-  hostModePromise = hostModePromise.then((mode) => ({
-    ...mode,
-    status: { ...mode.status, ...changes },
-  }));
+function delay(milliseconds: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, milliseconds);
+    signal.addEventListener('abort', () => {
+      clearTimeout(timer);
+      resolve();
+    }, { once: true });
+  });
+}
+
+async function pollCodexAuthentication(signal: AbortSignal): Promise<BridgeResponse> {
+  const deadline = Date.now() + CODEX_AUTH_TIMEOUT_MS;
+  let latest: BridgeResponse = {
+    ok: true,
+    authenticated: false,
+    detail: 'Waiting for Codex CLI sign-in to complete.',
+  };
+  while (!signal.aborted && Date.now() < deadline) {
+    latest = await nativeMessage({ action: 'codex.auth_status' });
+    if (latest.ok && latest.authenticated) return latest;
+    await delay(CODEX_AUTH_POLL_INTERVAL_MS, signal);
+  }
+  return {
+    ok: false,
+    authenticated: false,
+    error: latest.error || 'Codex sign-in timed out. Check `codex login status`, then try again.',
+  };
 }
 
 export async function getBridgeStatus(): Promise<BridgeResponse> {
@@ -212,7 +254,19 @@ export async function loginWithChatGPT(): Promise<BridgeResponse> {
       error: 'Codex CLI was not found. Install the official Codex CLI, then try again.',
     };
   }
-  return nativeMessage({ action: 'codex.login' });
+  const current = await nativeMessage({ action: 'codex.auth_status' });
+  if (current.ok && current.authenticated) return current;
+
+  const polling = new AbortController();
+  const result = await Promise.race([
+    nativeMessage({ action: 'codex.login' }),
+    pollCodexAuthentication(polling.signal),
+  ]);
+  polling.abort();
+  if (result.ok && result.authenticated) return result;
+
+  const confirmed = await nativeMessage({ action: 'codex.auth_status' });
+  return confirmed.ok && confirmed.authenticated ? confirmed : result;
 }
 
 export async function sendToCodex(
@@ -237,36 +291,30 @@ export async function sendToCodex(
 }
 
 export async function getApiStatus(): Promise<BridgeResponse> {
-  const host = await hostMode();
-  if (host.kind === 'legacy') return nativeMessageUnchecked({ action: 'api.status' });
-  if (!host.status.ok) return host.status;
-  return {
-    ok: host.status.credentialStoreAvailable !== false,
-    authenticated: host.status.apiKeyConfigured === true,
-    detail: host.status.credentialStoreAvailable === false
-      ? 'The operating-system credential store is unavailable.'
-      : host.status.apiKeyConfigured
-        ? 'API key is stored in the operating-system credential store.'
-        : 'No API key saved.',
-  };
+  if (previewApiAvailable()) return getPreviewApiStatus();
+  return getBrowserApiStatus();
 }
 
-export async function saveApiKey(apiKey: string): Promise<BridgeResponse> {
-  const host = await hostMode();
-  const result = host.kind === 'rust'
-    ? await nativeMessage({ action: 'api_key.set', apiKey })
-    : await nativeMessageUnchecked({ action: 'api.save_key', apiKey });
-  if (result.ok) updateCachedStatus({ apiKeyConfigured: true });
-  return result;
+export async function saveApiKey(
+  apiKey: string,
+  baseUrl = 'https://api.openai.com/v1',
+): Promise<BridgeResponse> {
+  if (previewApiAvailable()) return savePreviewApiKey(apiKey);
+  return saveBrowserApiKey(apiKey, baseUrl);
 }
 
 export async function deleteApiKey(): Promise<BridgeResponse> {
-  const host = await hostMode();
-  const result = host.kind === 'rust'
-    ? await nativeMessage({ action: 'api_key.delete' })
-    : await nativeMessageUnchecked({ action: 'api.delete_key' });
-  if (result.ok) updateCachedStatus({ apiKeyConfigured: false });
-  return result;
+  if (previewApiAvailable()) return deletePreviewApiKey();
+  return deleteBrowserApiKey();
+}
+
+export async function discoverApiModels(
+  apiKey: string,
+  baseUrl: string,
+): Promise<BridgeResponse> {
+  return previewApiAvailable()
+    ? discoverApiModelsWithKey(apiKey, baseUrl)
+    : discoverBrowserApiModels(apiKey, baseUrl);
 }
 
 export async function testApiConnection(
@@ -274,14 +322,18 @@ export async function testApiConnection(
   baseUrl = 'https://api.openai.com/v1',
   protocol = 'responses',
 ): Promise<BridgeResponse> {
-  const host = await hostMode();
-  if (host.kind === 'legacy') return nativeMessageUnchecked({ action: 'api.status' });
-  return nativeMessage({
-    action: 'api.test',
+  if (previewApiAvailable()) {
+    return testPreviewApiConnection(
+      model,
+      baseUrl,
+      protocol === 'chat-completions' ? 'chat-completions' : 'responses',
+    );
+  }
+  return testBrowserApiConnection(
     model,
     baseUrl,
-    protocol: protocol === 'chat-completions' ? 'chat-completions' : 'responses',
-  });
+    protocol === 'chat-completions' ? 'chat-completions' : 'responses',
+  );
 }
 
 export async function sendToOpenAI(
@@ -294,19 +346,28 @@ export async function sendToOpenAI(
   responseLanguage = 'en',
   onEvent?: (event: BridgeResponse) => void,
 ): Promise<BridgeResponse> {
-  const host = await hostMode();
-  return host.kind === 'rust'
-    ? nativeStream({
-      action: 'api.chat',
+  if (previewApiAvailable()) {
+    return sendPreviewApi(
       question,
       context,
       images,
       model,
       baseUrl,
-      protocol: protocol === 'chat-completions' ? 'chat-completions' : 'responses',
-      responseLanguage: responseLanguage === 'zh' ? 'zh' : 'en',
-    }, onEvent)
-    : nativeStream({ action: 'api.chat', question, context, images, model, baseUrl, protocol, responseLanguage }, onEvent);
+      protocol === 'chat-completions' ? 'chat-completions' : 'responses',
+      responseLanguage,
+      onEvent,
+    );
+  }
+  return sendBrowserApi(
+    question,
+    context,
+    images,
+    model,
+    baseUrl,
+    protocol === 'chat-completions' ? 'chat-completions' : 'responses',
+    responseLanguage,
+    onEvent,
+  );
 }
 
 export async function getVaultCredentialStatus(): Promise<BridgeResponse> {
@@ -344,4 +405,5 @@ export async function deleteDeviceVaultKey(vaultId: string): Promise<BridgeRespo
 
 export function resetBridgeProbeForTests(): void {
   hostModePromise = undefined;
+  resetPreviewApiForTests();
 }

@@ -45,7 +45,7 @@ PaperFlow 是一个本地优先的学术研究工作台，用于阅读、批注�
 
 使用嵌套文件夹、标签、收藏和最近阅读视图管理论文。笔记、批注、对话和阅读进度默认保存在本地。
 
-AI 功能完全可选。用户可以通过本地 Native Host 连接已有的 Codex 订阅，也可以配置兼容 OpenAI API 的自定义服务。只有当用户主动发送问题或执行 AI 操作时，PaperFlow 才会向用户选择的服务发送相关内容。
+AI 功能完全可选。用户可以通过本地 Native Host 连接已有的 Codex 订阅，也可以无需安装 Host、直接配置兼容 OpenAI API 的自定义服务。只有当用户主动发送问题或执行 AI 操作时，PaperFlow 才会向用户选择的服务发送相关内容。
 
 可选的 Google Drive 加密同步可在不同设备之间同步资料库记录、笔记、批注、对话和用户选择离线备份的 PDF。所有同步内容都会先在设备端加密，再上传到 Google Drive。
 
@@ -86,7 +86,7 @@ PaperFlow 提供一个本地优先的学术研究工作台，帮助用户阅读�
 #### storage
 
 ```text
-在本地保存轻量级界面偏好、语言设置和防止重复重定向所需的状态。
+在此设备本地保存界面偏好、防止重复重定向所需的状态，以及用户可选提供的 API Key。API Key 不会同步。
 ```
 
 #### tabs
@@ -98,7 +98,7 @@ PaperFlow 提供一个本地优先的学术研究工作台，帮助用户阅读�
 #### nativeMessaging
 
 ```text
-与用户可选安装的 PaperFlow Native Host 通信，用于访问 Codex CLI，并将凭据安全存储在操作系统凭据存储中。
+与用户可选安装的 PaperFlow Native Host 通信，仅用于访问用户已安装并完成认证的官方 Codex CLI。
 ```
 
 #### contextMenus
@@ -128,7 +128,7 @@ PaperFlow 提供一个本地优先的学术研究工作台，帮助用户阅读�
 #### 可选 HTTP 和 HTTPS 主机权限
 
 ```text
-仅当用户主动打开某个 PDF 或主动刷新论文元数据时请求对应来源的访问权限。PaperFlow 不检查用户的任意浏览活动。
+仅为用户选择的 API 服务商、用户主动打开的 PDF 或主动刷新的论文元数据来源请求访问权限。PaperFlow 不检查用户的任意浏览活动。
 ```
 
 ### 远程代码
@@ -151,7 +151,7 @@ PaperFlow 提供一个本地优先的学术研究工作台，帮助用户阅读�
 
 - 网站内容：用户选中的文字、当前页文字、相关论文片段、论文元数据及用户主动选择的附件。
 - 个人通信：用户问题、AI 对话记录和笔记。
-- 身份验证信息：通过 Native Host 处理的用户 API 凭据，以及由 Chrome Identity 管理的 OAuth 授权。
+- 身份验证信息：仅保存在扩展本地浏览器存储中的用户 API Key，以及由 Chrome Identity 管理的 OAuth 授权。
 - 用户活动：可选 Google Drive 同步中的阅读状态和最近阅读记录。
 - 网络浏览记录：可选 Google Drive 同步中的论文来源网址和访问时间。
 
@@ -194,7 +194,7 @@ PaperFlow 不请求用户的 Google 个人资料或邮箱地址。
 4. 测试 PDF 翻页、缩放、搜索、高亮、评论、批注及保存到资料库。
 5. 从扩展菜单打开 PaperFlow 资料库，测试文件夹、标签、搜索和最近阅读。
 
-AI 功能是可选功能，需要安装独立的 PaperFlow Native Host 并完成 Codex 身份验证，或者由用户提供兼容 OpenAI API 的服务地址和 API Key。
+AI 功能是可选功能。ChatGPT 订阅模式需要安装独立的 PaperFlow Native Host 并完成 Codex 身份验证；用户提供的 OpenAI 兼容 API 由扩展直接连接，不需要 Native Host。
 
 Google Drive 同步是可选功能。用户只需登录一次 Google 账号，PaperFlow
 随后会同步资料库、笔记、批注、对话、阅读进度和可选的离线 PDF。

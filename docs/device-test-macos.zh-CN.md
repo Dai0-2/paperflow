@@ -1,6 +1,6 @@
 # PaperFlow AI macOS 跨设备测试
 
-此包用于 Apple Silicon Mac。扩展目录包含固定扩展 ID 和 Google Drive OAuth 配置；Native Host 用于 ChatGPT/Codex 登录与系统钥匙串中的 API Key。
+此包用于 Apple Silicon Mac。扩展目录包含固定扩展 ID 和 Google Drive OAuth 配置；Native Host 仅用于 ChatGPT/Codex 登录。OpenAI 兼容 API 由扩展直连，不需要 Host。
 
 ## 1. 安装 Native Host
 

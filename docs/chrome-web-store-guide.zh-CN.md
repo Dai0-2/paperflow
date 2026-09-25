@@ -52,7 +52,7 @@ Open arXiv and direct PDF links in an integrated reader while preserving the ori
 
 Organize papers with nested collections, tags, favorites, and recently read views. Notes, annotations, conversations, and reading progress are stored locally.
 
-AI features are optional. Users can connect an existing Codex subscription through the local Native Host or configure an OpenAI-compatible API endpoint. Content is sent only when the user explicitly invokes an AI action.
+AI features are optional. Users can connect an existing Codex subscription through the local Native Host or configure a direct OpenAI-compatible API connection without installing the host. Content is sent only when the user explicitly invokes an AI action.
 
 Optional encrypted Google Drive synchronization keeps library records, notes, annotations, conversations, and selected offline PDFs available across devices. Data is encrypted on the device before upload.
 
@@ -101,7 +101,7 @@ Displays the PaperFlow research workspace beside the paper being read.
 #### storage
 
 ```text
-Stores lightweight interface preferences, language settings, and redirect-loop protection flags locally.
+Stores interface preferences, redirect-loop protection flags, and an optional user-provided API key locally on this device. The API key is not synchronized.
 ```
 
 #### tabs
@@ -113,7 +113,7 @@ Identifies the active PDF or research-paper tab and opens the Reader or Library 
 #### nativeMessaging
 
 ```text
-Communicates with the optional local PaperFlow Native Host to access the Codex CLI and store credentials in the operating-system credential store.
+Communicates with the optional local PaperFlow Native Host only to access a user-installed and authenticated official Codex CLI.
 ```
 
 #### contextMenus
@@ -143,7 +143,7 @@ Mounts the integrated PaperFlow Reader on user-opened arXiv paper pages while pr
 #### 可选 HTTP 和 HTTPS 主机权限
 
 ```text
-Requested only when the user explicitly opens a PDF or refreshes paper metadata from its source. PaperFlow does not inspect arbitrary browsing activity.
+Requested only for a user-selected API provider, a user-opened PDF, or an explicit metadata refresh. PaperFlow does not inspect arbitrary browsing activity.
 ```
 
 ### 3. 远程代码
@@ -202,7 +202,7 @@ No account is required to test the core Reader and Library.
 4. Test PDF navigation, search, highlighting, comments, annotations, and saving the paper to the Library.
 5. Open the PaperFlow Library from the extension menu and test collections, tags, search, and recently read items.
 
-AI features are optional and require either the separately installed PaperFlow Native Host with Codex authentication or a user-provided OpenAI-compatible API endpoint.
+AI features are optional. ChatGPT subscription mode requires the separately installed PaperFlow Native Host with Codex authentication. A user-provided OpenAI-compatible API connects directly from the extension and does not require the Native Host.
 
 Google Drive synchronization is optional. The user signs in with Google once; PaperFlow then synchronizes library records, notes, annotations, conversations, reading progress, and optional offline PDFs.
 ```

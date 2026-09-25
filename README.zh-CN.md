@@ -59,7 +59,7 @@ Paper
 - 支持 Markdown、表格与科研快捷提示的流式回答
 - 通过官方 Codex CLI 使用 ChatGPT 订阅
 - 支持自定义 Base URL 与模型 ID 的 OpenAI 兼容 API
-- API Key 存储在操作系统凭据库中
+- 扩展直连 API，API Key 仅保存在当前设备的浏览器配置中
 
 ## 直接在论文上思考
 
@@ -106,7 +106,7 @@ flowchart LR
     L -. "可选 · 上传前加密" .-> D["你的 Google Drive"]
     B --> H["本地 Native Host"]
     H --> C["ChatGPT 订阅<br/>官方 Codex CLI"]
-    H --> A["OpenAI 兼容 API"]
+    B --> A["OpenAI 兼容 API"]
 ```
 
 - 论文元数据、阅读状态、笔记、批注、对话和记忆默认保存在本地。
@@ -177,8 +177,10 @@ sh native-host/install/install-linux.sh
 打开 PaperFlow，选择“ChatGPT 订阅”，再点击“登录 ChatGPT”。PaperFlow 会启动
 官方 Codex 浏览器授权流程，通常无需再手动执行 `codex login`。
 
-OpenAI 兼容 API 模式也会使用 Native Host，以便将 API Key 保存在操作系统凭据库中。
-Google Drive 同步不使用 Native Host。
+OpenAI 兼容 API 模式不需要 Native Host。PaperFlow 只申请访问用户填写的 API
+域名，将 API Key 保存在当前设备的扩展本地存储中，并由扩展直接向所选服务商发送请求；
+密钥不会同步。浏览器配置存储的隔离性弱于操作系统凭据库，建议使用可撤销、权限受限的
+API Key。Google Drive 同步同样不使用 Native Host。
 
 安装与故障排查详见 [Native Host 文档](docs/native-host.md)。
 
@@ -186,18 +188,18 @@ Google Drive 同步不使用 Native Host。
 
 此路径供贡献者或测试未发布版本的用户使用。从 Chrome Web Store 安装后无需执行。
 
-环境要求：Node.js 20+、pnpm 10+ 和 Rust stable。
+扩展构建环境要求：Node.js 20+ 和 pnpm 10+。
 
 ```bash
 git clone https://github.com/Dai0-2/paperflow.git
 cd paperflow
 pnpm install
 pnpm build
-cargo build --release --locked --manifest-path native-host/Cargo.toml
 ```
 
-运行上方对应系统的 Native Host 安装脚本。然后打开 `chrome://extensions`，
-启用“开发者模式”，选择“加载已解压的扩展程序”，并选中 `dist/`。
+打开 `chrome://extensions`，启用“开发者模式”，选择“加载已解压的扩展程序”，
+并选中 `dist/`。只有测试 ChatGPT 订阅模式时才需要 Rust，并执行 Native Host
+构建与安装步骤。
 
 ## 开发
 

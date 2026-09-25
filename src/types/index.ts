@@ -357,5 +357,6 @@ export interface BridgeResponse {
   codexAvailable?: boolean;
   credentialStoreAvailable?: boolean;
   apiKeyConfigured?: boolean;
+  models?: string[];
   error?: string;
 }

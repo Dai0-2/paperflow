@@ -50,8 +50,8 @@ account, device, or signing service.
 ## Native Host distribution gate
 
 - [ ] Build each package on native macOS, Windows, and Linux runners.
-- [ ] Verify install, status, credential store, Codex call, and uninstall on
-  each supported OS.
+- [ ] Verify install, status, Codex login/call, and uninstall on each supported
+  OS.
 - [ ] Sign and notarize the macOS binary with Apple Developer ID.
 - [ ] Authenticode-sign the Windows binary.
 - [ ] Apply the chosen Linux package-signing policy.
