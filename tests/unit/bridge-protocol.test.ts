@@ -16,6 +16,7 @@ describe('native host protocol', () => {
   it('accepts only allow-listed actions and exact fields', () => {
     expect(bridgeRequestSchema.safeParse({ action: 'status' }).success).toBe(true);
     expect(bridgeRequestSchema.safeParse({ action: 'codex.login' }).success).toBe(true);
+    expect(bridgeRequestSchema.safeParse({ action: 'codex.models' }).success).toBe(true);
     expect(bridgeRequestSchema.safeParse({
       action: 'vault.load_device_key',
       vaultId: '18ea83a8-49f8-4e32-970f-02cbf129d4c2',

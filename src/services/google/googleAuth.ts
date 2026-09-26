@@ -1,6 +1,21 @@
+import { z } from 'zod';
 import { buildConfig } from '../../config/buildConfig';
 
 const PRODUCTION_EXTENSION_ID = 'dffiahjmpkmellmjijffpcofoahbccoc';
+const DRIVE_ABOUT_URL =
+  'https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress)';
+
+const googleAccountResponseSchema = z.object({
+  user: z.object({
+    displayName: z.string().optional(),
+    emailAddress: z.string().optional(),
+  }),
+});
+
+export interface GoogleAccountInfo {
+  displayName: string;
+  emailAddress: string;
+}
 
 export type GoogleAuthErrorCode =
   | 'not-configured'
@@ -63,6 +78,30 @@ export function getGoogleAuthToken(interactive: boolean): Promise<string> {
   });
 }
 
+export async function getGoogleAccount(): Promise<GoogleAccountInfo> {
+  const token = await getGoogleAuthToken(false);
+  const response = await globalThis.fetch(DRIVE_ABOUT_URL, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw new GoogleAuthError(
+      'authorization-failed',
+      `Google Drive account details could not be loaded (HTTP ${response.status}).`,
+    );
+  }
+  const { user } = googleAccountResponseSchema.parse(await response.json() as unknown);
+  if (!user.displayName && !user.emailAddress) {
+    throw new GoogleAuthError(
+      'authorization-failed',
+      'Google Drive did not return the connected account details.',
+    );
+  }
+  return {
+    displayName: user.displayName || user.emailAddress || 'Google account',
+    emailAddress: user.emailAddress || '',
+  };
+}
+
 export async function clearGoogleAuthToken(token?: string): Promise<void> {
   if (typeof chrome === 'undefined' || !chrome.identity?.removeCachedAuthToken) return;
   const current = token || await getGoogleAuthToken(false).catch(() => '');
@@ -76,5 +115,6 @@ export const googleAuth = {
   isConfigured: () => buildConfig.googleOAuthConfigured,
   connect: () => getGoogleAuthToken(true),
   getToken: () => getGoogleAuthToken(false),
+  getAccount: getGoogleAccount,
   disconnect: clearGoogleAuthToken,
 };

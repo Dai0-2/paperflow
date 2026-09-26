@@ -8,18 +8,17 @@ import {
 } from '../services/database';
 import { detectActivePaper } from '../services/paper';
 import { useAppStore } from '../store/useAppStore';
+import { useAppearance } from './useAppearance';
 
 export function useWorkspaceBootstrap({
   detectPaper = false,
 }: {
   detectPaper?: boolean;
 } = {}) {
+  useAppearance();
   const loadedPaperId = useRef<string | undefined>(undefined);
   const workspaceReady = useRef(false);
   const {
-    theme,
-    fontFamily,
-    fontScale,
     initialized,
     paper,
     messages,
@@ -34,19 +33,6 @@ export function useWorkspaceBootstrap({
     setPaperChunks,
     setActiveThreadId,
   } = useAppStore();
-
-  useEffect(() => {
-    const media = matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => {
-      const dark = theme === 'dark' || (theme === 'system' && media.matches);
-      document.documentElement.dataset.theme = dark ? 'dark' : theme === 'zotero' ? 'zotero' : 'light';
-      document.documentElement.dataset.fontFamily = fontFamily;
-      document.documentElement.style.setProperty('--ui-font-scale', String(fontScale / 100));
-    };
-    apply();
-    media.addEventListener('change', apply);
-    return () => media.removeEventListener('change', apply);
-  }, [fontFamily, fontScale, theme]);
 
   useEffect(() => {
     setInitialized(localStorage.getItem('paperflow:initialized') === 'true');

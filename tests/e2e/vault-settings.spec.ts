@@ -17,7 +17,8 @@ test('shows the correct Google sync entry without breaking narrow settings layou
   await expect(pdfBackup).toBeChecked();
   await expect(page.getByText('Google Drive is unavailable in this build')).toHaveCount(0);
   await expect(page.getByText('Google Drive sync')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+  await expect(page.locator('.vault-setup').getByRole('button', { name: 'Open the Chrome extension to sign in' }))
+    .toBeDisabled();
   await expect(page.getByText('Encrypted Google Drive vault')).toHaveCount(0);
   await expect(page.locator('.view-content.settings')).toHaveCSS('overflow-y', 'auto');
   await page.screenshot({ path: testInfo.outputPath('vault-settings-unconfigured.png'), fullPage: true });

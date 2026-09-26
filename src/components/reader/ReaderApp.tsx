@@ -69,6 +69,7 @@ export function ReaderApp() {
   const [translationStatus, setTranslationStatus] = useState<ReadonlyMap<string, string>>(
     () => new Map(),
   );
+  const [translationAnnotations, setTranslationAnnotations] = useState<Annotation[]>([]);
   const [ocrProgress, setOcrProgress] = useState<OcrProgress>();
   const ocrJob = useRef<OcrJob | undefined>(undefined);
   const viewports = useRef(new Map<number, PageViewport>());
@@ -141,6 +142,7 @@ export function ReaderApp() {
         return;
       }
       setTranslationStatus(new Map());
+      setTranslationAnnotations([]);
       const range = browserSelection.getRangeAt(0);
       const startContainer = range.startContainer;
       const element = (startContainer.nodeType === Node.ELEMENT_NODE
@@ -245,7 +247,6 @@ export function ReaderApp() {
       if (!result.ok || !translation) {
         throw new Error(result.error || text(uiLanguage, 'Translation failed.', '翻译失败。'));
       }
-      await annotationState.update(annotation.id, { translation });
       setTranslationStatus(new Map([[annotation.id, translation]]));
     } catch (reason) {
       setTranslationStatus((status) => new Map(status).set(
@@ -269,8 +270,8 @@ export function ReaderApp() {
     };
     setSelection(selection);
     await saveSelection(selection);
-    if (action === 'highlight' || action === 'translate') {
-      const annotation = await addPersistentAnnotation({
+    if (action === 'highlight') {
+      await addPersistentAnnotation({
         page: captured.page,
         text: captured.text,
         type: 'highlight',
@@ -279,7 +280,21 @@ export function ReaderApp() {
         anchor: captured.anchor,
       });
       annotationState.select(undefined);
-      if (action === 'translate') void translateAnnotation(annotation);
+    } else if (action === 'translate') {
+      const now = Date.now();
+      const annotation: Annotation = {
+        id: `translation:${crypto.randomUUID()}`,
+        paperId: paper.id,
+        page: captured.page,
+        text: captured.text,
+        createdAt: now,
+        updatedAt: now,
+        quadPoints: captured.quadPoints,
+        anchor: captured.anchor,
+      };
+      setTranslationAnnotations([annotation]);
+      annotationState.select(undefined);
+      void translateAnnotation(annotation);
     } else {
       const prompts = {
         ask: uiLanguage === 'zh' ? '基于选中内容回答：' : 'Answer using the selected passage:',
@@ -540,6 +555,7 @@ export function ReaderApp() {
     ) return;
     setSelectionToolbar(undefined);
     setTranslationStatus(new Map());
+    setTranslationAnnotations([]);
     annotationState.select(undefined);
     window.getSelection()?.removeAllRanges();
   };
@@ -613,6 +629,7 @@ export function ReaderApp() {
         onOutlineClick={(item) => void resolveOutline(item)}
         onAnnotationClick={(annotation) => {
           setTranslationStatus(new Map());
+          setTranslationAnnotations([]);
           goToPage(annotation.page);
           annotationState.select(annotation.id);
         }}
@@ -627,6 +644,7 @@ export function ReaderApp() {
             annotationCount={annotationState.annotations.length}
             onToolChange={(tool) => {
               setTranslationStatus(new Map());
+              setTranslationAnnotations([]);
               annotationState.setTool(tool);
               annotationState.select(undefined);
             }}
@@ -650,6 +668,9 @@ export function ReaderApp() {
                   scale={scale}
                   searchQuery={searchQuery}
                   annotations={annotationsByPage.get(pageNumber) || []}
+                  translationAnnotations={translationAnnotations.filter(
+                    (annotation) => annotation.page === pageNumber,
+                  )}
                   annotationTool={annotationState.tool}
                   annotationColor={annotationState.color}
                   selectedAnnotationId={annotationState.selected?.id}
@@ -658,6 +679,7 @@ export function ReaderApp() {
                   onViewportReady={onViewportReady}
                   onCreateAnnotation={addPersistentAnnotation}
                   onSelectAnnotation={(annotationId) => {
+                    setTranslationAnnotations([]);
                     setTranslationStatus((status) => (
                       status.has(annotationId) ? status : new Map()
                     ));

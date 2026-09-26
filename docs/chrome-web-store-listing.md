@@ -6,7 +6,7 @@ The default listing language is English.
 ## Current release identifiers
 
 - Chrome Web Store item ID: `dffiahjmpkmellmjijffpcofoahbccoc`
-- Version: `1.0.11`
+- Version: `1.0.12`
 - Pricing: Free
 - Initial visibility: Unlisted
 

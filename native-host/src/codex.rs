@@ -32,6 +32,8 @@ const CREDENTIAL_REFRESH_TIMEOUT: Duration = Duration::from_secs(30);
 const MAX_AUTH_FILE_BYTES: u64 = 1_048_576;
 const MAX_IMAGE_BYTES: usize = 400_000;
 const MAX_NON_SSE_BYTES: usize = 1_048_576;
+const MAX_MODEL_ID_BYTES: usize = 128;
+const MAX_MODEL_COUNT: usize = 500;
 
 static CODEX_CLIENT: OnceLock<Client> = OnceLock::new();
 
@@ -333,6 +335,26 @@ pub fn chat(
     Err(CodexError::AuthenticationExpired)
 }
 
+pub fn models() -> Result<Vec<String>, CodexError> {
+    let client = codex_client()?;
+    let mut credentials = read_credentials()?;
+    for attempt in 0..2 {
+        let headers = build_headers(&credentials)?;
+        match request_model_ids(client, headers) {
+            Ok(models) => return Ok(models),
+            Err(RequestError::Unauthorized) if attempt == 0 => {
+                refresh_credentials()?;
+                credentials = read_credentials()?;
+            }
+            Err(RequestError::Unauthorized) => {
+                return Err(CodexError::AuthenticationExpired);
+            }
+            Err(RequestError::Public(error)) => return Err(error),
+        }
+    }
+    Err(CodexError::AuthenticationExpired)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn chat_once(
     client: &Client,
@@ -383,7 +405,13 @@ fn build_headers(credentials: &Credentials) -> Result<HeaderMap, CodexError> {
 }
 
 fn fetch_default_model(client: &Client, headers: &HeaderMap) -> Result<String, RequestError> {
-    let mut headers = headers.clone();
+    request_model_ids(client, headers.clone())?
+        .into_iter()
+        .next()
+        .ok_or(RequestError::Public(CodexError::NoModel))
+}
+
+fn request_model_ids(client: &Client, mut headers: HeaderMap) -> Result<Vec<String>, RequestError> {
     headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
     let response = client
         .get(CODEX_MODELS_URL)
@@ -394,27 +422,56 @@ fn fetch_default_model(client: &Client, headers: &HeaderMap) -> Result<String, R
     let payload: Value = response
         .json()
         .map_err(|_| RequestError::Public(CodexError::NoModel))?;
-    first_model_id(&payload).ok_or(RequestError::Public(CodexError::NoModel))
+    let models = model_ids(&payload);
+    if models.is_empty() {
+        Err(RequestError::Public(CodexError::NoModel))
+    } else {
+        Ok(models)
+    }
 }
 
-fn first_model_id(payload: &Value) -> Option<String> {
+fn model_ids(payload: &Value) -> Vec<String> {
     let models = payload
         .as_array()
-        .or_else(|| payload.get("models").and_then(Value::as_array))?;
+        .or_else(|| payload.get("models").and_then(Value::as_array));
+    let Some(models) = models else {
+        return Vec::new();
+    };
     let default = models.iter().find(|model| {
         model.get("is_default").and_then(Value::as_bool) == Some(true)
             || model.get("default").and_then(Value::as_bool) == Some(true)
     });
-    default.into_iter().chain(models.iter()).find_map(model_id)
+    let mut result = Vec::new();
+    for id in default
+        .into_iter()
+        .chain(models.iter())
+        .filter_map(model_id)
+    {
+        if !result.contains(&id) {
+            result.push(id);
+            if result.len() == MAX_MODEL_COUNT {
+                break;
+            }
+        }
+    }
+    result
 }
 
 fn model_id(model: &Value) -> Option<String> {
+    if let Some(model) = model.as_str() {
+        let model = model.trim();
+        return valid_model_id(model).then(|| model.to_owned());
+    }
     ["id", "slug", "model_id", "model"]
         .iter()
         .find_map(|key| model.get(key).and_then(Value::as_str))
         .map(str::trim)
-        .filter(|value| !value.is_empty())
+        .filter(|value| valid_model_id(value))
         .map(str::to_owned)
+}
+
+fn valid_model_id(model: &str) -> bool {
+    !model.is_empty() && model.len() <= MAX_MODEL_ID_BYTES && !model.chars().any(char::is_control)
 }
 
 fn check_status(status: StatusCode) -> Result<(), RequestError> {
@@ -817,11 +874,17 @@ mod tests {
                 { "id": "recommended", "is_default": true }
             ]
         });
-        assert_eq!(first_model_id(&payload).as_deref(), Some("recommended"));
+        assert_eq!(model_ids(&payload), ["recommended", "first"]);
         assert_eq!(
-            first_model_id(&json!([{ "slug": "first" }])).as_deref(),
-            Some("first")
+            model_ids(&json!([{ "slug": "first" }, "second"])),
+            ["first", "second"]
         );
+        assert!(model_ids(&json!([
+            { "id": "" },
+            { "id": "invalid\nmodel" },
+            { "id": "x".repeat(MAX_MODEL_ID_BYTES + 1) }
+        ]))
+        .is_empty());
     }
 
     #[test]

@@ -84,6 +84,24 @@ async function selectText(page: Page, tool: 'Select' | 'Highlight' | 'Underline'
   });
 }
 
+test('shows translation without creating a persistent highlight', async ({ page }, testInfo) => {
+  const fixture = testInfo.outputPath('translation-source.pdf');
+  await createFixture(fixture);
+  await page.setViewportSize({ width: 1280, height: 820 });
+  await page.goto('/reader.html');
+  await page.locator('input[type="file"]').setInputFiles(fixture);
+  await expect(page.locator('.textLayer span').first()).toBeVisible();
+
+  await selectText(page, 'Select');
+  await page.getByRole('button', { name: 'Translate' }).click();
+
+  await expect(page.locator('.annotation-translation')).toContainText(
+    'Connect an AI provider to translate.',
+  );
+  await expect(page.locator('.annotation-highlight')).toHaveCount(0);
+  await expect.poll(async () => (await annotationState(page)).annotations.length).toBe(0);
+});
+
 test('creates persistent annotations and exports a readable PDF copy', async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   const fixture = testInfo.outputPath('annotations-source.pdf');

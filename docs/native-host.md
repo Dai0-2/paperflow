@@ -20,6 +20,7 @@ and compatibility clients:
 status
 codex.auth_status
 codex.login
+codex.models
 codex.chat
 api_key.set
 api_key.delete

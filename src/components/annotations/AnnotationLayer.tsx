@@ -118,6 +118,7 @@ function translationPosition(
 export function AnnotationLayer({
   viewport,
   annotations,
+  translationAnnotations = [],
   tool,
   color,
   selectedId,
@@ -130,6 +131,7 @@ export function AnnotationLayer({
 }: {
   viewport: PdfCoordinateViewport;
   annotations: Annotation[];
+  translationAnnotations?: Annotation[];
   tool: AnnotationTool;
   color: string;
   selectedId?: string;
@@ -301,7 +303,7 @@ export function AnnotationLayer({
         />
         : null
     ))}
-    {annotations.map((annotation) => {
+    {[...annotations, ...translationAnnotations].map((annotation) => {
       const statusVisible = translationStatus?.has(annotation.id) || false;
       if (annotation.id !== selectedId && !statusVisible) return null;
       const translation = annotation.translation || translationStatus?.get(annotation.id);

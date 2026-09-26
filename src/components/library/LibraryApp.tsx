@@ -17,8 +17,9 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { BrandMark } from '../common/BrandMark';
+import { useAppearance } from '../../hooks/useAppearance';
 import { useLibraryQuery } from '../../hooks/useLibraryQuery';
 import { text } from '../../i18n';
 import { useAppStore } from '../../store/useAppStore';
@@ -44,7 +45,7 @@ import { mergeDuplicatePapers } from '../../services/library/duplicateMerge';
 import { refreshPaperMetadata } from '../../services/library/metadata';
 import type { CitationFormat } from '../../services/library/citations';
 import type { AiOrganizeProposal } from '../../services/library/aiOrganize';
-import type { PaperInfo, Theme } from '../../types';
+import type { PaperInfo } from '../../types';
 import { AiOrganizeReview } from './AiOrganizeReview';
 import { DuplicateReview } from './DuplicateReview';
 import { LibrarySidebar, collectionLabel } from './LibrarySidebar';
@@ -69,15 +70,12 @@ function readerUrl(paper: PaperInfo): string {
     : `/reader.html?${parameters}`;
 }
 
-function currentTheme(): Theme {
-  return (localStorage.getItem('paperflow:theme') as Theme) || 'zotero';
-}
-
 export function LibraryApp() {
   const store = useLibraryStore();
   const language = useAppStore((state) => state.uiLanguage);
-  const fontFamily = useAppStore((state) => state.fontFamily);
-  const fontScale = useAppStore((state) => state.fontScale);
+  const theme = useAppStore((state) => state.theme);
+  const setTheme = useAppStore((state) => state.setTheme);
+  const { dark } = useAppearance();
   const {
     snapshot,
     papers,
@@ -87,7 +85,6 @@ export function LibraryApp() {
     rebuildIndex,
     cancelIndexRebuild,
   } = useLibraryQuery();
-  const [theme, setTheme] = useState<Theme>(currentTheme);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 850);
   const [dialog, setDialog] = useState<
     'import' | 'duplicates' | 'ai' | 'tags' | 'cloud' | 'settings' | null
@@ -102,14 +99,6 @@ export function LibraryApp() {
   const activePaper = snapshot.papers.find((paper) => paper.id === store.activePaperId)
     || selected.at(-1)
     || papers[0];
-  const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = dark ? 'dark' : theme === 'zotero' ? 'zotero' : 'light';
-    document.documentElement.dataset.fontFamily = fontFamily;
-    document.documentElement.style.setProperty('--ui-font-scale', String(fontScale / 100));
-  }, [dark, fontFamily, fontScale, theme]);
-
   const mutate = async (action: () => Promise<void>) => {
     try {
       setError('');
@@ -130,10 +119,6 @@ export function LibraryApp() {
     await mutate(async () => {
       for (const paper of selectedOrActive) await action(paper);
     });
-  };
-  const setThemeValue = (value: Theme) => {
-    localStorage.setItem('paperflow:theme', value);
-    setTheme(value);
   };
   const closeSidebarOnNarrowScreen = () => {
     if (window.innerWidth <= 850) setSidebarOpen(false);
@@ -181,7 +166,7 @@ export function LibraryApp() {
           title={text(language, 'Settings', '设置')}
           onClick={() => setDialog('settings')}
         ><Settings2 /><span>{text(language, 'Settings', '设置')}</span></button>
-        <button title={dark ? text(language, 'Use light theme', '使用浅色主题') : text(language, 'Use dark theme', '使用深色主题')} onClick={() => setThemeValue(dark ? 'light' : 'dark')}>{dark ? <Sun /> : <Moon />}</button>
+        <button title={dark ? text(language, 'Use white theme', '使用白色主题') : text(language, 'Use dark theme', '使用深色主题')} onClick={() => setTheme(dark ? 'zotero' : 'dark')}>{dark ? <Sun /> : <Moon />}</button>
         <button
           title={indexStatus.state === 'building'
             ? text(language, `Cancel search indexing (${indexStatus.completed}/${indexStatus.total})`, `取消搜索索引（${indexStatus.completed}/${indexStatus.total}）`)
@@ -305,7 +290,7 @@ export function LibraryApp() {
       language={language}
       theme={theme}
       onClose={() => setDialog(null)}
-      onThemeChange={setThemeValue}
+      onThemeChange={setTheme}
     />}
     {dialog === 'cloud' && <div className="dialog-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget) setDialog(null);

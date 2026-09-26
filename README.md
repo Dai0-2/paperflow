@@ -23,7 +23,7 @@
   <p>
     <a href="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml/badge.svg" alt="Build status"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 license"></a>
-    <img src="https://img.shields.io/badge/version-1.0.11-326bd1" alt="Version 1.0.11">
+    <img src="https://img.shields.io/badge/version-1.0.12-326bd1" alt="Version 1.0.12">
     <img src="https://img.shields.io/badge/Chrome-MV3-347556" alt="Chrome Manifest V3">
     <img src="https://img.shields.io/badge/storage-local--first-606460" alt="Local-first storage">
   </p>
@@ -153,7 +153,7 @@ AI is optional. Choose exactly one setup:
 
 | Connection | What to install |
 | --- | --- |
-| OpenAI-compatible API, including DeepSeek | PaperFlow from the Chrome Web Store only |
+| OpenAI-compatible API, including Gemini, Qwen, Kimi, and DeepSeek | PaperFlow from the Chrome Web Store only |
 | ChatGPT subscription through Codex | PaperFlow, the official Codex CLI, and the PaperFlow Native Host |
 
 You can switch either way at any time under **Settings > AI Provider**.
@@ -163,6 +163,22 @@ PaperFlow remembers the API model and Codex model settings separately.
 
 Install PaperFlow from the Chrome Web Store, open **Settings > AI Provider**,
 choose **OpenAI-compatible API**, and enter the Base URL, API key, and model.
+
+PaperFlow works with services that expose an OpenAI-compatible HTTPS endpoint.
+Select the API format required by the provider and use a model enabled for your
+account:
+
+| Provider | Example Base URL | API format |
+| --- | --- | --- |
+| OpenAI | `https://api.openai.com/v1` | Responses or Chat Completions |
+| [Google Gemini](https://ai.google.dev/gemini-api/docs/openai) | `https://generativelanguage.googleapis.com/v1beta/openai/` | Chat Completions |
+| [Qwen / Alibaba Cloud Model Studio](https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions) | `https://dashscope.aliyuncs.com/compatible-mode/v1` | Chat Completions |
+| [Kimi](https://platform.kimi.ai/docs/api/overview.md) | `https://api.moonshot.ai/v1` | Responses or Chat Completions |
+| DeepSeek | `https://api.deepseek.com` | Chat Completions |
+
+Provider endpoints and model IDs can change. Use the provider's current
+documentation when configuring PaperFlow. The model menu loads `/models` when
+the provider supports discovery and always accepts a manual model ID.
 
 Do not download a Native Host, clone this repository, install Codex CLI, or
 install Rust. The key remains in extension-local storage on this device and is
@@ -223,6 +239,10 @@ Xcode, or a source build.
 7. Fully close and reopen Chrome. In PaperFlow choose
    **ChatGPT subscription > Sign in with ChatGPT**.
 
+After connecting, the model menu reads the models currently available to the
+signed-in Codex account. Keep **Codex default (recommended)** to let Codex
+choose, or select an account model such as a newly released GPT/Codex model.
+
 The prebuilt packages are currently unsigned, so the operating system may show
 a security warning. The Host invokes the official Codex CLI only for sign-in
 and credential refresh. Paper chat goes directly from the Host to the Codex
@@ -278,6 +298,8 @@ Chrome Manifest V3. The native bridge is written in Rust.
 
 ## Contributing
 
+For feature requests, configuration questions, or change suggestions, contact
+the author through [GitHub Issues](https://github.com/Dai0-2/paperflow/issues).
 Issues and pull requests are welcome. Start with
 [CONTRIBUTING.md](CONTRIBUTING.md), then review the
 [release checklist](docs/release-checklist.md) before shipping a build.

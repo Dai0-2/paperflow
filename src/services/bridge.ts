@@ -54,6 +54,7 @@ export const bridgeRequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('status') }).strict(),
   z.object({ action: z.literal('codex.auth_status') }).strict(),
   z.object({ action: z.literal('codex.login') }).strict(),
+  z.object({ action: z.literal('codex.models') }).strict(),
   z.object({
     action: z.literal('codex.chat'),
     ...chatFields,
@@ -267,6 +268,15 @@ export async function loginWithChatGPT(): Promise<BridgeResponse> {
 
   const confirmed = await nativeMessage({ action: 'codex.auth_status' });
   return confirmed.ok && confirmed.authenticated ? confirmed : result;
+}
+
+export async function discoverCodexModels(): Promise<BridgeResponse> {
+  const host = await hostMode();
+  if (host.kind !== 'rust') {
+    return { ok: false, error: 'Update PaperFlow Native Host to load Codex models.' };
+  }
+  if (!host.status.ok) return host.status;
+  return nativeMessage({ action: 'codex.models' });
 }
 
 export async function sendToCodex(
