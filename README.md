@@ -144,94 +144,65 @@ original `arxiv.org/pdf/...` address while PaperFlow runs in the page.
 The Reader, annotations, research library, local storage, and Google Drive sync
 work directly from the extension. They do not require the Native Host.
 
-### Connect a ChatGPT subscription
+### Choose an AI connection
 
-AI providers are optional. ChatGPT subscription mode requires:
+AI is optional. Choose exactly one setup:
 
-1. The official Codex CLI.
-2. The PaperFlow Native Host.
-3. A one-time browser sign-in from PaperFlow.
+| Connection | What to install |
+| --- | --- |
+| OpenAI-compatible API, including DeepSeek | PaperFlow from the Chrome Web Store only |
+| ChatGPT subscription through Codex | PaperFlow, the official Codex CLI, and the PaperFlow Native Host |
 
-If you use an OpenAI-compatible API instead, skip this entire section. API mode
-does not need Codex CLI, Rust, or the Native Host.
+#### Option A: OpenAI-compatible API
 
-Install the official Codex CLI:
+Install PaperFlow from the Chrome Web Store, open **Settings > AI Provider**,
+choose **OpenAI-compatible API**, and enter the Base URL, API key, and model.
 
-```bash
-# macOS / Linux
-npm install -g @openai/codex
+Do not download a Native Host, clone this repository, install Codex CLI, or
+install Rust. The key remains in extension-local storage on this device and is
+not synchronized.
 
-# Windows PowerShell
-npm.cmd install -g @openai/codex
-```
+#### Option B: ChatGPT subscription on Windows
 
-Chrome Web Store extensions cannot install or launch local executables by
-themselves. The Native Host is therefore installed separately. It invokes only
-the official Codex CLI and never exposes Codex authentication data to the
-extension.
+1. Install PaperFlow from the Chrome Web Store.
+2. Install Node.js if `npm.cmd --version` is not recognized:
 
-> [!NOTE]
-> Signed one-click Native Host installers are not publicly available yet.
-> Until they are released, build and install only the host from source.
+   ```powershell
+   winget install --id OpenJS.NodeJS.LTS -e
+   ```
 
-For Windows testing without installing Rust, open the
-[latest successful build](https://github.com/Dai0-2/paperflow/actions/workflows/build.yml),
-download the `paperflow-native-host-windows` artifact, extract it, and run:
+3. Open a new PowerShell window and install the official Codex CLI:
 
-```powershell
-.\install-windows.ps1
-```
+   ```powershell
+   npm.cmd install -g @openai/codex
+   ```
 
-GitHub Actions artifacts are unsigned development builds. The source-build
-steps below remain available when you want to compile the host yourself.
+4. Sign in to GitHub and open the
+   [successful main-branch builds](https://github.com/Dai0-2/paperflow/actions/workflows/build.yml?query=branch%3Amain+is%3Asuccess).
+5. Open the first run with a green check, scroll to **Artifacts**, and download
+   **`paperflow-native-host-windows`**.
+6. Extract the downloaded ZIP. The folder must contain
+   `paperflow-host.exe` and `install-windows.ps1`.
+7. Open PowerShell in that extracted folder and run:
 
-```bash
-# macOS / Linux
-git clone https://github.com/Dai0-2/paperflow.git
-cd paperflow
-cargo build --release --locked --manifest-path native-host/Cargo.toml
-# Then install it:
-# macOS
-bash native-host/install/install-macos.sh
+   ```powershell
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-windows.ps1
+   ```
 
-# Linux
-sh native-host/install/install-linux.sh
-```
+8. Fully close and reopen Chrome. In PaperFlow choose
+   **ChatGPT subscription > Sign in with ChatGPT**.
 
-On Windows, first install **Visual Studio Build Tools 2022** with the
-**Desktop development with C++** workload. Then run:
+Download only `paperflow-native-host-windows`. If PaperFlow is already
+installed from the Chrome Web Store, do not download the
+`paperflow-ai-extension` artifact. This Windows path does not require Git,
+Cargo, Rust, or Visual Studio.
 
-```powershell
-winget install --id Rustlang.Rustup -e
-```
+GitHub Actions artifacts are unsigned development builds. Windows may show a
+security warning. The Host invokes only the official Codex CLI and does not
+expose Codex authentication data to the extension.
 
-Close and reopen PowerShell so `cargo` is added to `PATH`, then:
-
-```powershell
-git clone https://github.com/Dai0-2/paperflow.git
-cd paperflow
-cargo --version
-.\native-host\install\install-windows.ps1
-```
-
-The Windows installer uses a packaged `paperflow-host.exe` when available.
-When run from a source checkout, it builds the host automatically. If
-`cargo --version` is still not recognized, restart PowerShell or Windows before
-retrying.
-
-Open PaperFlow, choose **ChatGPT subscription**, and select
-**Sign in with ChatGPT**. PaperFlow starts the official Codex browser
-authorization flow; running `codex login` separately is not normally required.
-
-OpenAI-compatible API mode does not require the Native Host. PaperFlow requests
-access only to the configured API origin, stores the key in extension-local
-browser storage on that device, and sends requests directly from the extension
-to the selected provider. The key is not synchronized. Browser-profile storage
-is less isolated than an operating-system credential store, so use a scoped,
-revocable API key. Google Drive sync also does not use the Native Host.
-
-See [Native Host setup](docs/native-host.md) for installation and
-troubleshooting.
+For macOS, Linux, source builds, uninstall instructions, and troubleshooting,
+see [Native Host setup](docs/native-host.md).
 
 ### Build the extension from source
 
