@@ -141,7 +141,7 @@ AI 是可选功能，只需选择一种方式：
 
 | 连接方式 | 需要安装 |
 | --- | --- |
-| OpenAI 兼容 API，包括 Gemini、Qwen、Kimi、DeepSeek | 只安装 Chrome Web Store 中的 PaperFlow |
+| OpenAI 兼容 API，包括 Gemini、Qwen、Kimi、DeepSeek 等更多服务 | 只安装 Chrome Web Store 中的 PaperFlow |
 | 通过 Codex 使用 ChatGPT 订阅 | PaperFlow、官方 Codex CLI、PaperFlow Native Host |
 
 两种方式可随时在“设置 > AI 服务”中切换。PaperFlow 会分别记住 API 模型和
@@ -275,7 +275,7 @@ pnpm test:e2e
 ## 参与贡献
 
 如有功能需求、配置问题或修改建议，可通过
-[GitHub Issues](https://github.com/Dai0-2/paperflow/issues) 联系作者。
+[GitHub Issues](https://github.com/Dai0-2/paperflow/issues) 或电子邮箱联系作者。
 欢迎提交 Issue 和 Pull Request。请先阅读
 [CONTRIBUTING.md](CONTRIBUTING.md)，发布构建前请检查
 [发布清单](docs/release-checklist.md)。
