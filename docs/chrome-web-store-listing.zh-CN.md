@@ -7,16 +7,15 @@
 - 商店商品 ID：`dffiahjmpkmellmjijffpcofoahbccoc`
 - 版本：`1.0.12`
 - 价格：免费
-- 初始公开范围：非公开
+- 发布范围：按当前商店发布策略选择
 
-当前草稿暂时不要提交审核。提交前必须完成：
+正式上传包为 `paperflow-ai-v1.0.12-chrome-web-store.zip`。提交审核前确认：
 
-1. 将商店公钥写入 `manifest.base.json`，确保本地版和商店版使用相同 ID。
+1. 发布者联系邮箱已验证，隐私权政策网址可以公开访问。
 2. 使用上述商品 ID 创建“Chrome 扩展程序”类型的 Google OAuth 客户端。
-3. 构建并上传 `paperflow-ai-release.zip`。生产 OAuth Client ID 已内置；只有
+3. 上传 `paperflow-ai-v1.0.12-chrome-web-store.zip`。生产 OAuth Client ID 已内置；只有
    使用其他已注册扩展 ID 时才设置 `PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID`。
-4. 将 `docs/privacy.md` 发布到稳定的公开网址。
-5. 完成真实 Google Drive 同步验证和 Native Host 签名发布。
+4. 完成真实 Google Drive 同步验证和核心 Reader 流程测试。
 
 ## 商品详情
 
@@ -204,14 +203,14 @@ Google Drive 同步是可选功能。用户只需登录一次 Google 账号，Pa
 
 ## 分发
 
-私下测试阶段：
+按发布计划设置：
 
-- 公开范围：非公开。
+- 公开范围：正式发布可选择公开；灰度验证可先选择非公开。
 - 地区：所有地区。
 - 价格：免费。
 
-只有在 OAuth 正式构建、隐私政策、真实 Drive 测试、已签名 Native Host
-下载、支持网址和商店图片全部准备好之后，才能改为公开发布。
+Native Host 下载包已提供 SHA-256，目前未签名，Windows/macOS 可能显示安全提醒；
+面向大范围公开发布时仍建议完成平台代码签名。
 
 ## 最终提交检查
 
@@ -219,11 +218,11 @@ Google Drive 同步是可选功能。用户只需登录一次 Google 账号，Pa
   `dffiahjmpkmellmjijffpcofoahbccoc`。
 - [ ] Google OAuth 客户端类型为 Chrome 扩展程序，并使用相同商品 ID。
 - [ ] Google Drive API 已启用，Drive 权限范围只有 `drive.file`。
-- [ ] 最终上传包是 `paperflow-ai-release.zip`，不是用于占位和获取 ID
-  的无 OAuth 包。
+- [ ] 最终上传包是 `paperflow-ai-v1.0.12-chrome-web-store.zip`，不是源码或
+  Native Host 压缩包。
 - [ ] 隐私政策网址公开、稳定且可以直接访问。
 - [ ] 商店截图中不存在凭据或私人数据。
 - [ ] 双 Chrome 用户配置或双设备加密同步测试通过。
-- [ ] Native Host 下载包已经签名、生成校验值并可公开下载。
+- [ ] Native Host 已提供 SHA-256；公开推广前已评估未签名包的系统安全提醒。
 - [ ] 商品详情、隐私声明、分发设置和测试说明均已保存。
 - [ ] 最终“提请审核”操作由发布者本人手动执行。
