@@ -8,18 +8,17 @@ The default listing language is English.
 - Chrome Web Store item ID: `dffiahjmpkmellmjijffpcofoahbccoc`
 - Version: `1.0.12`
 - Pricing: Free
-- Initial visibility: Unlisted
+- Visibility: Choose according to the current release plan
 
-Do not submit the current draft for review yet. Before submission:
+The final upload is `paperflow-ai-v1.0.12-chrome-web-store.zip`. Before
+submitting it for review:
 
-1. Copy the Web Store public key into `manifest.base.json` so unpacked and
-   published builds use the store item ID above.
+1. Verify the publisher contact email and publish the privacy policy URL.
 2. Create a Chrome Extension OAuth client for the store item ID.
-3. Build and upload `paperflow-ai-release.zip`. The production OAuth client ID
+3. Upload `paperflow-ai-v1.0.12-chrome-web-store.zip`. The production OAuth client ID
    is already configured; use `PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID` only for an
    alternate registered extension ID.
-4. Publish `docs/privacy.md` at a stable public URL.
-5. Complete real Google Drive and signed Native Host release testing.
+4. Complete real Google Drive synchronization and core Reader testing.
 
 ## Store listing
 
@@ -217,15 +216,15 @@ access.
 
 ## Distribution
 
-For private release testing:
+Choose settings according to the release plan:
 
-- Visibility: Unlisted.
+- Visibility: Public for the production launch, or Unlisted for staged validation.
 - Regions: All regions.
 - Pricing: Free.
 
-Change visibility to Public only after the OAuth-enabled package, privacy
-policy, real Drive test, signed Native Host downloads, support URL, and store
-assets are ready.
+Native Host downloads include SHA-256 checksums but are currently unsigned, so
+Windows and macOS may show a security warning. Platform signing is still
+recommended before broad public promotion.
 
 ## Final submission gate
 
@@ -233,12 +232,13 @@ assets are ready.
   `dffiahjmpkmellmjijffpcofoahbccoc`.
 - [ ] Google OAuth client type is Chrome Extension and uses the same item ID.
 - [ ] Google Drive API is enabled and the only Drive scope is `drive.file`.
-- [ ] Final uploaded ZIP is `paperflow-ai-release.zip`, not the
-  credential-free item-ID reservation package.
+- [ ] Final uploaded ZIP is `paperflow-ai-v1.0.12-chrome-web-store.zip`, not
+  the source archive or a Native Host package.
 - [ ] Privacy policy URL is public and stable.
 - [ ] Store screenshots contain no secrets or private data.
 - [ ] Two-profile or two-device encrypted sync test passes.
-- [ ] Native Host downloads are signed, checksummed, and publicly reachable.
+- [ ] Native Host downloads are checksummed; unsigned-package warnings have
+  been evaluated before public promotion.
 - [ ] Product details, privacy declarations, distribution, and test
   instructions are saved.
 - [ ] Review submission is performed manually by the publisher.
