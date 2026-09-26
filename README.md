@@ -153,7 +153,7 @@ AI is optional. Choose exactly one setup:
 
 | Connection | What to install |
 | --- | --- |
-| OpenAI-compatible API, including Gemini, Qwen, Kimi, and DeepSeek | PaperFlow from the Chrome Web Store only |
+| OpenAI-compatible APIs, including Gemini, Qwen, Kimi, DeepSeek, and others | PaperFlow from the Chrome Web Store only |
 | ChatGPT subscription through Codex | PaperFlow, the official Codex CLI, and the PaperFlow Native Host |
 
 You can switch either way at any time under **Settings > AI Provider**.
@@ -299,7 +299,8 @@ Chrome Manifest V3. The native bridge is written in Rust.
 ## Contributing
 
 For feature requests, configuration questions, or change suggestions, contact
-the author through [GitHub Issues](https://github.com/Dai0-2/paperflow/issues).
+the author through [GitHub Issues](https://github.com/Dai0-2/paperflow/issues)
+or by email.
 Issues and pull requests are welcome. Start with
 [CONTRIBUTING.md](CONTRIBUTING.md), then review the
 [release checklist](docs/release-checklist.md) before shipping a build.
