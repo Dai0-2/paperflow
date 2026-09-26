@@ -54,7 +54,7 @@ jobs:
       - run: pnpm prepare:ocr
       - run: pnpm typecheck
       - run: pnpm exec vite build --mode release
-      - run: pnpm audit:release
+      - run: PAPERFLOW_STORE_BUILD=true pnpm audit:release
       - run: cd dist && zip -qr ../paperflow-ai-${GITHUB_REF_NAME}.zip .
       - run: node scripts/write-sha256.mjs "paperflow-ai-${GITHUB_REF_NAME}.zip"
       - uses: actions/upload-artifact@v4
