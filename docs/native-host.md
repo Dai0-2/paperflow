@@ -67,6 +67,10 @@ On Debian or Ubuntu, install `libdbus-1-dev` and `pkg-config` before building.
 
 The checked-in manifest files are templates for inspection. Installers generate a manifest with the actual absolute binary path and register only the fixed production extension ID `dffiahjmpkmellmjijffpcofoahbccoc`.
 
+When run from a source checkout, each installer builds the Native Host
+automatically if no packaged binary or previous release build exists. Install
+stable Rust and the platform build dependencies above before running it.
+
 ### macOS
 
 ```bash
@@ -84,12 +88,8 @@ sh native-host/install/uninstall-linux.sh
 ### Windows PowerShell
 
 API mode does not use this installer. For ChatGPT/Codex subscription mode,
-the latest successful GitHub Actions run provides an unsigned
-`paperflow-native-host-windows` development artifact. Extract it and run
-`.\install-windows.ps1`; no Rust installation is needed for that package.
-
-To build from source instead, install Visual Studio Build Tools 2022 with the
-**Desktop development with C++** workload, then install Rust:
+install Visual Studio Build Tools 2022 with the **Desktop development with C++**
+workload, then install Rust:
 
 ```powershell
 winget install --id Rustlang.Rustup -e
@@ -102,9 +102,9 @@ Close and reopen PowerShell, verify `cargo --version`, then run:
 .\native-host\install\uninstall-windows.ps1
 ```
 
-The installer uses a packaged `paperflow-host.exe` when present and otherwise
-builds it from the source checkout. A "`cargo` is not recognized" error means
-the Rust installation is missing or the terminal has not been restarted.
+The installer builds the Host automatically. A "`cargo` is not recognized"
+error means the Rust installation is missing or the terminal has not been
+restarted.
 
 Pass a binary path as the first shell argument or `-BinaryPath` in PowerShell when installing an externally built or signed release binary.
 

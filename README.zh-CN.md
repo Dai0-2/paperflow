@@ -149,45 +149,70 @@ AI 是可选功能，只需选择一种方式：
 不要下载 Native Host，不要克隆 GitHub 仓库，也不需要安装 Codex CLI、Rust 或
 Visual Studio。API Key 只保存在当前设备的扩展本地存储中，不会同步。
 
-#### 方式 B：Windows 使用 ChatGPT 订阅
+#### 方式 B：使用 ChatGPT 订阅（Windows、macOS、Linux）
+
+三个系统都支持 ChatGPT 订阅。下面是统一的源码安装流程，不需要构建扩展本身。
 
 1. 从 Chrome Web Store 安装 PaperFlow。
-2. 如果执行 `npm.cmd --version` 提示找不到命令，先安装 Node.js：
+2. 安装 Node.js 20 或更高版本，并确认 `node --version` 可以运行。Windows 可执行：
 
    ```powershell
    winget install --id OpenJS.NodeJS.LTS -e
    ```
 
-3. 重新打开 PowerShell，安装官方 Codex CLI：
+3. 安装官方 Codex CLI：
 
-   ```powershell
+   ```bash
+   # macOS / Linux
+   npm install -g @openai/codex
+
+   # Windows PowerShell
    npm.cmd install -g @openai/codex
    ```
 
-4. 登录 GitHub，打开
-   [main 分支成功的构建记录](https://github.com/Dai0-2/paperflow/actions/workflows/build.yml?query=branch%3Amain+is%3Asuccess)。
-5. 点击第一条带绿色对勾的构建记录，滚动到页面底部的 **Artifacts** 区域，只下载
-   **`paperflow-native-host-windows`**。
-6. 解压下载的 ZIP，确认文件夹中包含 `paperflow-host.exe` 和
-   `install-windows.ps1`。
-7. 在这个解压后的文件夹中打开 PowerShell，执行：
+4. 安装 Rust stable：
 
-   ```powershell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-windows.ps1
+   ```bash
+   # macOS / Linux
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+   # Windows PowerShell
+   winget install --id Rustlang.Rustup -e
    ```
 
-8. 完全关闭并重新打开 Chrome，在 PaperFlow 中选择
+   Windows 还需安装 Visual Studio Build Tools 2022，并勾选
+   “使用 C++ 的桌面开发”；macOS 首次编译前运行 `xcode-select --install`；
+   Debian/Ubuntu 运行
+   `sudo apt-get install -y build-essential libdbus-1-dev pkg-config`。
+
+5. 关闭并重新打开终端，确认 `cargo --version` 可以运行，然后克隆项目：
+
+   ```bash
+   git clone https://github.com/Dai0-2/paperflow.git
+   cd paperflow
+   ```
+
+6. 只执行当前系统对应的安装脚本。脚本会自动构建并安装 Native Host：
+
+   ```bash
+   # macOS
+   bash native-host/install/install-macos.sh
+
+   # Linux
+   sh native-host/install/install-linux.sh
+   ```
+
+   ```powershell
+   # Windows PowerShell
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\native-host\install\install-windows.ps1
+   ```
+
+7. 完全关闭并重新打开 Chrome，在 PaperFlow 中选择
    “ChatGPT 订阅 > 登录 ChatGPT”。
 
-只下载 `paperflow-native-host-windows`。如果已经从 Chrome Web Store 安装
-PaperFlow，不要下载 `paperflow-ai-extension`。这条 Windows 安装路线不需要 Git、
-Cargo、Rust 或 Visual Studio。
-
-GitHub Actions 提供的是未签名开发版，Windows 可能显示安全警告。Native Host
-只调用官方 Codex CLI，不会向扩展暴露 Codex 的认证数据。
-
-macOS、Linux、源码编译、卸载和故障排查请查看
-[Native Host 文档](docs/native-host.md)。
+这套流程不需要执行 `pnpm install`、`pnpm build`，也不需要在 Chrome 中加载
+`dist/`。Native Host 只调用官方 Codex CLI，不会向扩展暴露 Codex 的认证数据。
+卸载和故障排查请查看 [Native Host 文档](docs/native-host.md)。
 
 ### 从源码构建扩展
 
