@@ -135,16 +135,22 @@ jobs:
           cp "manifests/com.paperflow.ai.${{ matrix.platform }}.json" package/
           cd package
           shasum -a 256 paperflow-host install-* uninstall-* com.paperflow.ai.*.json > SHA256SUMS
+          zip -qr "../paperflow-native-host-${{ matrix.platform }}.zip" .
+          cd ..
+          shasum -a 256 "paperflow-native-host-${{ matrix.platform }}.zip" \
+            > "paperflow-native-host-${{ matrix.platform }}.zip.sha256"
       - if: matrix.platform == 'windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path package -Force | Out-Null
           Copy-Item target/release/paperflow-host.exe package/
+          Copy-Item install/INSTALL-PAPERFLOW.cmd package/
           Copy-Item install/install-windows.ps1 package/
           Copy-Item install/uninstall-windows.ps1 package/
           Copy-Item manifests/com.paperflow.ai.windows.json package/
           $files = @(
             "paperflow-host.exe",
+            "INSTALL-PAPERFLOW.cmd",
             "install-windows.ps1",
             "uninstall-windows.ps1",
             "com.paperflow.ai.windows.json"
@@ -154,8 +160,34 @@ jobs:
             "$hash  $file"
           }
           $lines | Set-Content package/SHA256SUMS -Encoding ascii
+          Compress-Archive -Path package/* -DestinationPath paperflow-native-host-windows.zip -Force
+          $zipHash = (Get-FileHash paperflow-native-host-windows.zip -Algorithm SHA256).Hash.ToLower()
+          "$zipHash  paperflow-native-host-windows.zip" |
+            Set-Content paperflow-native-host-windows.zip.sha256 -Encoding ascii
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: native-host/package/
+          path: |
+            native-host/paperflow-native-host-${{ matrix.platform }}.zip
+            native-host/paperflow-native-host-${{ matrix.platform }}.zip.sha256
           if-no-files-found: error
+
+  release-native-host:
+    needs: native-host
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: paperflow-native-host-*
+          path: release
+          merge-multiple: true
+      - name: Publish Native Host release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" release/* \
+            --title "PaperFlow Native Host $GITHUB_REF_NAME" \
+            --notes "Precompiled PaperFlow Native Host packages for Windows, macOS, and Linux. These packages are currently unsigned. Download only the archive for your operating system."

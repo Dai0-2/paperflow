@@ -151,7 +151,8 @@ Visual Studio。API Key 只保存在当前设备的扩展本地存储中，不�
 
 #### 方式 B：使用 ChatGPT 订阅（Windows、macOS、Linux）
 
-三个系统都支持 ChatGPT 订阅。下面是统一的源码安装流程，不需要构建扩展本身。
+三个系统都支持 ChatGPT 订阅。普通用户使用预编译 Native Host，不需要 Git、
+Rust、Cargo、Visual Studio、Xcode 或源码编译。
 
 1. 从 Chrome Web Store 安装 PaperFlow。
 2. 安装 Node.js 20 或更高版本，并确认 `node --version` 可以运行。Windows 可执行：
@@ -170,49 +171,24 @@ Visual Studio。API Key 只保存在当前设备的扩展本地存储中，不�
    npm.cmd install -g @openai/codex
    ```
 
-4. 安装 Rust stable：
+4. 直接下载当前系统对应的 Native Host：
 
-   ```bash
-   # macOS / Linux
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   - [Windows](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-windows.zip)
+   - [macOS](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-macos.zip)
+   - [Linux](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-linux.zip)
 
-   # Windows PowerShell
-   winget install --id Rustlang.Rustup -e
-   ```
+5. 解压后安装：
 
-   Windows 还需安装 Visual Studio Build Tools 2022，并勾选
-   “使用 C++ 的桌面开发”；macOS 首次编译前运行 `xcode-select --install`；
-   Debian/Ubuntu 运行
-   `sudo apt-get install -y build-essential libdbus-1-dev pkg-config`。
+   - Windows：双击 `INSTALL-PAPERFLOW.cmd`。
+   - macOS：在解压目录运行 `bash install-macos.sh`。
+   - Linux：在解压目录运行 `sh install-linux.sh`。
 
-5. 关闭并重新打开终端，确认 `cargo --version` 可以运行，然后克隆项目：
-
-   ```bash
-   git clone https://github.com/Dai0-2/paperflow.git
-   cd paperflow
-   ```
-
-6. 只执行当前系统对应的安装脚本。脚本会自动构建并安装 Native Host：
-
-   ```bash
-   # macOS
-   bash native-host/install/install-macos.sh
-
-   # Linux
-   sh native-host/install/install-linux.sh
-   ```
-
-   ```powershell
-   # Windows PowerShell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\native-host\install\install-windows.ps1
-   ```
-
-7. 完全关闭并重新打开 Chrome，在 PaperFlow 中选择
+6. 完全关闭并重新打开 Chrome，在 PaperFlow 中选择
    “ChatGPT 订阅 > 登录 ChatGPT”。
 
-这套流程不需要执行 `pnpm install`、`pnpm build`，也不需要在 Chrome 中加载
-`dist/`。Native Host 只调用官方 Codex CLI，不会向扩展暴露 Codex 的认证数据。
-卸载和故障排查请查看 [Native Host 文档](docs/native-host.md)。
+预编译包目前未签名，系统可能显示安全提醒。Native Host 只调用官方 Codex CLI，
+不会向扩展暴露 Codex 的认证数据。源码编译、卸载和故障排查请查看
+[Native Host 文档](docs/native-host.md)。
 
 ### 从源码构建扩展
 

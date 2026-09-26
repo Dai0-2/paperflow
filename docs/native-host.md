@@ -52,7 +52,19 @@ preserve legacy credentials by default.
 
 If Secret Service is unavailable on Linux, the host reports that persistent credential storage is unavailable. PaperFlow does not fall back to a plaintext file.
 
-## Build
+## Install a prebuilt package
+
+End users should download only the package for their operating system:
+
+- [Windows](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-windows.zip)
+- [macOS](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-macos.zip)
+- [Linux](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-linux.zip)
+
+Extract the archive. On Windows, double-click `INSTALL-PAPERFLOW.cmd`. On macOS,
+run `bash install-macos.sh`; on Linux, run `sh install-linux.sh`. These packages
+include the compiled Host and do not require Rust or platform compiler tools.
+
+## Build from source
 
 ```bash
 cargo fmt --manifest-path native-host/Cargo.toml -- --check

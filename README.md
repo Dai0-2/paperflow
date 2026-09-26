@@ -164,8 +164,9 @@ not synchronized.
 
 #### Option B: ChatGPT subscription (Windows, macOS, and Linux)
 
-All three operating systems support ChatGPT subscription mode. The following
-source setup is the same on each platform and does not build the extension.
+All three operating systems support ChatGPT subscription mode. End users
+install a prebuilt Native Host and do not need Git, Rust, Cargo, Visual Studio,
+Xcode, or a source build.
 
 1. Install PaperFlow from the Chrome Web Store.
 2. Install Node.js 20 or newer and verify that `node --version` works. On
@@ -185,53 +186,26 @@ source setup is the same on each platform and does not build the extension.
    npm.cmd install -g @openai/codex
    ```
 
-4. Install stable Rust:
+4. Download the Native Host for the current operating system:
 
-   ```bash
-   # macOS / Linux
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   - [Windows](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-windows.zip)
+   - [macOS](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-macos.zip)
+   - [Linux](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-linux.zip)
 
-   # Windows PowerShell
-   winget install --id Rustlang.Rustup -e
-   ```
+5. Extract the archive and install:
 
-   Windows also requires Visual Studio Build Tools 2022 with the
-   **Desktop development with C++** workload. On macOS, run
-   `xcode-select --install` before the first build. On Debian or Ubuntu, run
-   `sudo apt-get install -y build-essential libdbus-1-dev pkg-config`.
+   - Windows: double-click `INSTALL-PAPERFLOW.cmd`.
+   - macOS: run `bash install-macos.sh` in the extracted folder.
+   - Linux: run `sh install-linux.sh` in the extracted folder.
 
-5. Close and reopen the terminal, verify that `cargo --version` works, then
-   clone the repository:
-
-   ```bash
-   git clone https://github.com/Dai0-2/paperflow.git
-   cd paperflow
-   ```
-
-6. Run only the installer for the current operating system. It automatically
-   builds and installs the Native Host:
-
-   ```bash
-   # macOS
-   bash native-host/install/install-macos.sh
-
-   # Linux
-   sh native-host/install/install-linux.sh
-   ```
-
-   ```powershell
-   # Windows PowerShell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\native-host\install\install-windows.ps1
-   ```
-
-7. Fully close and reopen Chrome. In PaperFlow choose
+6. Fully close and reopen Chrome. In PaperFlow choose
    **ChatGPT subscription > Sign in with ChatGPT**.
 
-This setup does not require `pnpm install`, `pnpm build`, or loading `dist/`
-into Chrome. The Host invokes only the official Codex CLI and does not expose
-Codex authentication data to the extension. See
-[Native Host setup](docs/native-host.md) for uninstall instructions and
-troubleshooting.
+The prebuilt packages are currently unsigned, so the operating system may show
+a security warning. The Host invokes only the official Codex CLI and does not
+expose Codex authentication data to the extension. See
+[Native Host setup](docs/native-host.md) for source builds, uninstall
+instructions, and troubleshooting.
 
 ### Build the extension from source
 
