@@ -546,6 +546,7 @@ fn parse_macos_proxy(raw: &str) -> Option<String> {
     None
 }
 
+#[cfg(any(target_os = "windows", target_os = "macos", test))]
 fn normalize_proxy_url(address: &str) -> Option<String> {
     let address = address.trim();
     if address.is_empty() || address.chars().any(char::is_whitespace) {
