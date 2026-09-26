@@ -80,6 +80,15 @@ fn handle(request: Request, emit: &mut impl FnMut(Response)) -> Response {
             }
             Err(error) => unavailable(error.to_string()),
         },
+        Request::CodexModels => match codex::models() {
+            Ok(models) => {
+                let mut response = Response::success();
+                response.detail = Some(format!("{} Codex models available.", models.len()));
+                response.models = Some(models);
+                response
+            }
+            Err(error) => Response::error(error.to_string()),
+        },
         Request::CodexChat {
             question,
             context,

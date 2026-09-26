@@ -16,9 +16,27 @@ import type {
   View,
 } from '../types';
 
+const THEMES: readonly Theme[] = ['zotero', 'light', 'dark', 'system'];
+const FONT_FAMILIES: readonly UiFontFamily[] = ['system', 'sans', 'serif'];
+
+function storedTheme(): Theme {
+  const value = localStorage.getItem('paperflow:theme');
+  return THEMES.includes(value as Theme) ? value as Theme : 'zotero';
+}
+
+function storedFontFamily(): UiFontFamily {
+  const value = localStorage.getItem('paperflow:font-family');
+  return FONT_FAMILIES.includes(value as UiFontFamily) ? value as UiFontFamily : 'system';
+}
+
+function normalizedFontScale(value: string | null): number {
+  const parsed = Number(value || '100');
+  return Number.isFinite(parsed) ? Math.max(75, Math.min(160, Math.round(parsed))) : 100;
+}
+
 function storedFontScale(): number {
-  const value = Number(localStorage.getItem('paperflow:font-scale') || '100');
-  return Number.isFinite(value) ? Math.max(75, Math.min(160, Math.round(value))) : 100;
+  const value = localStorage.getItem('paperflow:font-scale');
+  return normalizedFontScale(value);
 }
 
 function storedApiModels(): string[] {
@@ -38,7 +56,7 @@ interface AppState {
   activeThreadId: string | null; selection: PaperSelection | null; defaultOpenReader: boolean;
   bridgeState: BridgeState; bridgeDetail: string;
   providerMode: ProviderMode; apiState: BridgeState; apiDetail: string;
-  uiLanguage: Language; promptLanguage: PromptLanguage; apiBaseUrl: string; apiProtocol: ApiProtocol; apiModels: string[];
+  uiLanguage: Language; promptLanguage: PromptLanguage; apiBaseUrl: string; apiProtocol: ApiProtocol; apiModels: string[]; codexModels: string[];
   messages: Message[]; attachments: Attachment[]; sending: boolean; draft: string;
   setView: (view: View) => void;
   setTheme: (theme: Theme) => void;
@@ -64,6 +82,7 @@ interface AppState {
   setApiBaseUrl: (url: string) => void;
   setApiProtocol: (protocol: ApiProtocol) => void;
   setApiModels: (models: string[]) => void;
+  setCodexModels: (models: string[]) => void;
   addMessage: (message: Message) => void;
   setMessages: (messages: Message[]) => void;
   updateMessage: (id: string, patch: Partial<Message>) => void;
@@ -75,12 +94,12 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  view: 'chat', theme: (localStorage.getItem('paperflow:theme') as Theme) || 'zotero', fontFamily: (localStorage.getItem('paperflow:font-family') as UiFontFamily) || 'system', fontScale: storedFontScale(), chatState: 'empty', model: localStorage.getItem('paperflow:provider') === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini') : (localStorage.getItem('paperflow:codex-model') || 'ChatGPT via Codex'),
+  view: 'chat', theme: storedTheme(), fontFamily: storedFontFamily(), fontScale: storedFontScale(), chatState: 'empty', model: localStorage.getItem('paperflow:provider') === 'api' ? (localStorage.getItem('paperflow:api-model') || 'gpt-4.1-mini') : (localStorage.getItem('paperflow:codex-model') || 'ChatGPT via Codex'),
   initialized: false, detecting: true, paper: null, paperText: '', paperChunks: [], readingPaper: false,
   activeThreadId: null, selection: null, defaultOpenReader: localStorage.getItem('paperflow:default-reader') !== 'false',
   bridgeState: 'checking', bridgeDetail: '', providerMode: (localStorage.getItem('paperflow:provider') as ProviderMode) || 'chatgpt', apiState: 'checking', apiDetail: '',
   uiLanguage: (localStorage.getItem('paperflow:ui-language') as Language) || 'en', promptLanguage: (localStorage.getItem('paperflow:prompt-language') as PromptLanguage) || 'auto',
-  apiBaseUrl: localStorage.getItem('paperflow:api-base-url') || 'https://api.openai.com/v1', apiProtocol: (localStorage.getItem('paperflow:api-protocol') as ApiProtocol) || 'responses', apiModels: storedApiModels(),
+  apiBaseUrl: localStorage.getItem('paperflow:api-base-url') || 'https://api.openai.com/v1', apiProtocol: (localStorage.getItem('paperflow:api-protocol') as ApiProtocol) || 'responses', apiModels: storedApiModels(), codexModels: [],
   messages: [], attachments: [], sending: false, draft: '',
   setView: (view) => set({ view }), setTheme: (theme) => { localStorage.setItem('paperflow:theme', theme); set({ theme }); },
   setFontFamily: (fontFamily) => {
@@ -139,6 +158,10 @@ export const useAppStore = create<AppState>((set) => ({
     localStorage.setItem('paperflow:api-models', JSON.stringify(unique));
     set({ apiModels: unique });
   },
+  setCodexModels: (codexModels) => {
+    const unique = [...new Set(codexModels.map((item) => item.trim()).filter(Boolean))].slice(0, 500);
+    set({ codexModels: unique });
+  },
   addMessage: (message) => set((state) => ({ messages: [...state.messages, message], chatState: 'conversation' })),
   setMessages: (messages) => set({ messages, chatState: messages.length ? 'conversation' : 'empty' }),
   updateMessage: (id, patch) => set((state) => ({ messages: state.messages.map((message) => message.id === id ? { ...message, ...patch } : message) })),
@@ -148,3 +171,29 @@ export const useAppStore = create<AppState>((set) => ({
   setSending: (sending) => set({ sending }),
   setDraft: (draft) => set({ draft }),
 }));
+
+export function syncStoredAppearance(key: string | null, value: string | null): void {
+  if (key === null) {
+    useAppStore.setState({
+      theme: storedTheme(),
+      fontFamily: storedFontFamily(),
+      fontScale: storedFontScale(),
+    });
+    return;
+  }
+  if (key === 'paperflow:theme' && THEMES.includes(value as Theme)) {
+    useAppStore.setState({ theme: value as Theme });
+  }
+  if (key === 'paperflow:font-family' && FONT_FAMILIES.includes(value as UiFontFamily)) {
+    useAppStore.setState({ fontFamily: value as UiFontFamily });
+  }
+  if (key === 'paperflow:font-scale') {
+    useAppStore.setState({ fontScale: normalizedFontScale(value) });
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    syncStoredAppearance(event.key, event.newValue);
+  });
+}

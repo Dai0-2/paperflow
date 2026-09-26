@@ -13,6 +13,7 @@ interface PdfPageProps {
   scale: number;
   searchQuery: string;
   annotations: Annotation[];
+  translationAnnotations?: Annotation[];
   annotationTool: AnnotationTool;
   annotationColor: string;
   selectedAnnotationId?: string;
@@ -54,6 +55,7 @@ export function PdfPage({
   scale,
   searchQuery,
   annotations,
+  translationAnnotations = [],
   annotationTool,
   annotationColor,
   selectedAnnotationId,
@@ -223,6 +225,7 @@ export function PdfPage({
       {viewport && <AnnotationLayer
         viewport={viewport}
         annotations={annotations}
+        translationAnnotations={translationAnnotations}
         tool={annotationTool}
         color={annotationColor}
         selectedId={selectedAnnotationId}

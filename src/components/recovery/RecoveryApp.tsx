@@ -1,5 +1,6 @@
 import { DatabaseBackup, Download, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
+import { useAppearance } from '../../hooks/useAppearance';
 import { downloadRawDatabaseExport, exportRawDatabase } from '../../services/recovery';
 
 function isChinese(): boolean {
@@ -8,6 +9,7 @@ function isChinese(): boolean {
 }
 
 export function RecoveryApp() {
+  useAppearance();
   const chinese = isChinese();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');

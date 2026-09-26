@@ -6,6 +6,7 @@ import { Conversation } from '../../src/components/chat/Conversation';
 import { ModelSelector } from '../../src/components/composer/ModelSelector';
 import { DATABASE_NAME, database } from '../../src/db/PaperFlowDatabase';
 import { getPaperRelations } from '../../src/repositories/libraryRepository';
+import { resetBridgeProbeForTests } from '../../src/services/bridge';
 import { openPaperWorkspace } from '../../src/services/database';
 import { useAppStore } from '../../src/store/useAppStore';
 
@@ -17,12 +18,16 @@ beforeEach(async () => {
     paper: null,
     sending: false,
     apiModels: [],
+    codexModels: [],
+    bridgeState: 'disconnected',
     uiLanguage: 'en',
   });
 });
 
 afterEach(async () => {
   cleanup();
+  resetBridgeProbeForTests();
+  vi.unstubAllGlobals();
   database.close();
   await Dexie.delete(DATABASE_NAME);
 });
@@ -128,5 +133,36 @@ describe('conversation actions', () => {
     expect(screen.getByRole('button', { name: 'deepseek-chat' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'deepseek-reasoner' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'gpt-5.5' })).not.toBeInTheDocument();
+  });
+
+  it('loads the current ChatGPT account model list from the native host', async () => {
+    const actions: string[] = [];
+    vi.stubGlobal('chrome', {
+      runtime: {
+        lastError: undefined,
+        sendNativeMessage: (
+          _host: string,
+          payload: { action: string },
+          callback: (response: unknown) => void,
+        ) => {
+          actions.push(payload.action);
+          callback(payload.action === 'status'
+            ? { ok: true, protocolVersion: 1, codexAvailable: true }
+            : { ok: true, models: ['gpt-5.6-luna', 'gpt-5.5-codex'] });
+        },
+      },
+    });
+    useAppStore.setState({
+      providerMode: 'chatgpt',
+      model: 'ChatGPT via Codex',
+      bridgeState: 'connected',
+      uiLanguage: 'en',
+    });
+
+    render(<ModelSelector close={vi.fn()} />);
+
+    expect(await screen.findByRole('button', { name: 'gpt-5.6-luna' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'gpt-5.5-codex' })).toBeInTheDocument();
+    expect(actions).toEqual(['status', 'codex.models']);
   });
 });

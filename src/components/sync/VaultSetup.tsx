@@ -14,6 +14,10 @@ import { ConflictCenter } from './ConflictCenter';
 import { SyncStatus } from './SyncStatus';
 import { syncEngine } from '../../sync/SyncEngine';
 import { DeviceSetupGuide } from '../setup/DeviceSetupGuide';
+import {
+  googleAuth,
+  type GoogleAccountInfo,
+} from '../../services/google/googleAuth';
 
 type SyncStage = 'unconfigured' | 'disconnected' | 'legacy' | 'connected';
 type LegacyUnlockMethod = 'password' | 'recovery';
@@ -23,26 +27,42 @@ function errorText(error: unknown): string {
 }
 
 export function VaultSetup({ language }: { language: Language }) {
+  const googleIdentityAvailable =
+    typeof chrome !== 'undefined'
+    && Boolean(chrome.runtime?.id && chrome.identity?.getAuthToken);
   const [stage, setStage] = useState<SyncStage>(
     vaultController.isConfigured() ? 'disconnected' : 'unconfigured',
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [account, setAccount] = useState<GoogleAccountInfo | null>(null);
   const [legacyUnlockMethod, setLegacyUnlockMethod] =
     useState<LegacyUnlockMethod>('password');
   const [legacyCredential, setLegacyCredential] = useState('');
 
   useEffect(() => {
     if (!vaultController.isConfigured()) return;
+    let active = true;
     void vaultController.inspect()
-      .then((connection) => setStage(
-        connection.legacyMigrationRequired
+      .then(async (connection) => {
+        const nextStage = connection.legacyMigrationRequired
           ? 'legacy'
           : connection.unlocked
             ? 'connected'
-            : 'disconnected',
-      ))
-      .catch(() => setStage('disconnected'));
+            : 'disconnected';
+        if (!active) return;
+        setStage(nextStage);
+        if (nextStage === 'connected') {
+          const profile = await googleAuth.getAccount().catch(() => null);
+          if (active) setAccount(profile);
+        }
+      })
+      .catch(() => {
+        if (active) setStage('disconnected');
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const run = async (operation: () => Promise<void>) => {
@@ -64,6 +84,7 @@ export function VaultSetup({ language }: { language: Language }) {
       return;
     }
     setStage('connected');
+    setAccount(await googleAuth.getAccount().catch(() => null));
     await syncEngine.run({ force: true });
   });
 
@@ -76,11 +97,13 @@ export function VaultSetup({ language }: { language: Language }) {
     }
     setLegacyCredential('');
     setStage('connected');
+    setAccount(await googleAuth.getAccount().catch(() => null));
     await syncEngine.run({ force: true });
   });
 
   const disconnect = () => run(async () => {
     await vaultController.disconnect();
+    setAccount(null);
     setStage('disconnected');
   });
 
@@ -111,6 +134,11 @@ export function VaultSetup({ language }: { language: Language }) {
           : stage === 'legacy'
             ? text(language, 'Old encrypted data found', '发现旧版加密数据')
             : text(language, 'Connected · automatic sync is active', '已连接 · 自动同步已启用')}</small>
+        {stage === 'connected' && account && <small className="vault-account" title={account.emailAddress}>
+          {account.emailAddress && account.emailAddress !== account.displayName
+            ? `${account.displayName} · ${account.emailAddress}`
+            : account.displayName}
+        </small>}
       </div>
     </div>
 
@@ -122,11 +150,13 @@ export function VaultSetup({ language }: { language: Language }) {
       )}</p>
       <button
         className="vault-primary"
-        disabled={busy}
+        disabled={busy || !googleIdentityAvailable}
         onClick={() => void connect()}
       >
         {busy ? <LoaderCircle className="spin" /> : <Cloud />}
-        {text(language, 'Sign in with Google', '使用 Google 账号登录')}
+        {!googleIdentityAvailable
+          ? text(language, 'Open the Chrome extension to sign in', '请在 Chrome 扩展中登录')
+          : text(language, 'Sign in with Google', '使用 Google 账号登录')}
       </button>
     </div>}
 

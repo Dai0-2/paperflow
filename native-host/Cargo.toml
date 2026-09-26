@@ -1,6 +1,6 @@
 [package]
 name = "paperflow-native-host"
-version = "1.0.11"
+version = "1.0.12"
 edition = "2021"
 license = "MIT"
 description = "Cross-platform Chrome Native Messaging host for PaperFlow AI"

@@ -107,7 +107,7 @@ export function ReaderToolbar(props: ReaderToolbarProps) {
           {!!props.searchPages.length && <div>{props.searchPages.slice(0, 12).map((page) => <button key={page} onClick={() => setPage(page)}>{text(props.language, `Page ${page}`, `第 ${page} 页`)}</button>)}</div>}
         </div>}
       </div>
-      <button title={themeIsDark ? text(props.language, 'Use light theme', '使用浅色主题') : text(props.language, 'Use dark theme', '使用深色主题')} aria-label={text(props.language, 'Toggle theme', '切换主题')} onClick={() => props.onThemeChange(themeIsDark ? 'light' : 'dark')}>{themeIsDark ? <Sun /> : <Moon />}</button>
+      <button title={themeIsDark ? text(props.language, 'Use white theme', '使用白色主题') : text(props.language, 'Use dark theme', '使用深色主题')} aria-label={text(props.language, 'Toggle theme', '切换主题')} onClick={() => props.onThemeChange(themeIsDark ? 'zotero' : 'dark')}>{themeIsDark ? <Sun /> : <Moon />}</button>
       <button
         className="reader-save-library"
         title={libraryTitle}

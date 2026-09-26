@@ -24,6 +24,8 @@ pub enum Request {
     CodexAuthStatus,
     #[serde(rename = "codex.login")]
     CodexLogin,
+    #[serde(rename = "codex.models")]
+    CodexModels,
     #[serde(rename = "codex.chat")]
     CodexChat {
         question: String,
@@ -266,6 +268,8 @@ pub struct Response {
     #[serde(rename = "apiKeyConfigured", skip_serializing_if = "Option::is_none")]
     pub api_key_configured: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub models: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
 
@@ -286,6 +290,7 @@ impl Response {
             codex_available: None,
             credential_store_available: None,
             api_key_configured: None,
+            models: None,
             error: None,
         }
     }
@@ -355,7 +360,9 @@ fn validate_object_shape(value: &Value) -> Result<(), ProtocolError> {
         .and_then(Value::as_str)
         .ok_or(ProtocolError::InvalidJson)?;
     let allowed: &[&str] = match action {
-        "status" | "codex.auth_status" | "codex.login" | "api_key.delete" => &["action"],
+        "status" | "codex.auth_status" | "codex.login" | "codex.models" | "api_key.delete" => {
+            &["action"]
+        }
         "codex.chat" => &[
             "action",
             "question",
@@ -426,6 +433,11 @@ mod tests {
         assert!(matches!(
             read_request(&mut Cursor::new(login)).unwrap(),
             Some(Request::CodexLogin)
+        ));
+        let models = frame(br#"{"action":"codex.models"}"#);
+        assert!(matches!(
+            read_request(&mut Cursor::new(models)).unwrap(),
+            Some(Request::CodexModels)
         ));
     }
 

@@ -21,7 +21,7 @@
   <p>
     <a href="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml/badge.svg" alt="构建状态"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 许可证"></a>
-    <img src="https://img.shields.io/badge/version-1.0.11-326bd1" alt="版本 1.0.11">
+    <img src="https://img.shields.io/badge/version-1.0.12-326bd1" alt="版本 1.0.12">
     <img src="https://img.shields.io/badge/Chrome-MV3-347556" alt="Chrome Manifest V3">
     <img src="https://img.shields.io/badge/storage-local--first-606460" alt="本地优先存储">
   </p>
@@ -141,7 +141,7 @@ AI 是可选功能，只需选择一种方式：
 
 | 连接方式 | 需要安装 |
 | --- | --- |
-| OpenAI 兼容 API，包括 DeepSeek | 只安装 Chrome Web Store 中的 PaperFlow |
+| OpenAI 兼容 API，包括 Gemini、Qwen、Kimi、DeepSeek | 只安装 Chrome Web Store 中的 PaperFlow |
 | 通过 Codex 使用 ChatGPT 订阅 | PaperFlow、官方 Codex CLI、PaperFlow Native Host |
 
 两种方式可随时在“设置 > AI 服务”中切换。PaperFlow 会分别记住 API 模型和
@@ -151,6 +151,20 @@ Codex 模型设置，切换时无需删除另一种连接。
 
 从 Chrome Web Store 安装 PaperFlow，打开“设置 > AI Provider”，选择
 “OpenAI 兼容 API”，填写 Base URL、API Key 和模型即可。
+
+PaperFlow 支持提供 OpenAI 兼容 HTTPS 接口的服务。请根据服务商要求选择 API 格式，
+并填写当前账号已开通的模型：
+
+| 服务商 | Base URL 示例 | API 格式 |
+| --- | --- | --- |
+| OpenAI | `https://api.openai.com/v1` | Responses 或 Chat Completions |
+| [Google Gemini](https://ai.google.dev/gemini-api/docs/openai) | `https://generativelanguage.googleapis.com/v1beta/openai/` | Chat Completions |
+| [Qwen / 阿里云百炼](https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions) | `https://dashscope.aliyuncs.com/compatible-mode/v1` | Chat Completions |
+| [Kimi](https://platform.kimi.ai/docs/api/overview.md) | `https://api.moonshot.ai/v1` | Responses 或 Chat Completions |
+| DeepSeek | `https://api.deepseek.com` | Chat Completions |
+
+服务商可能调整接口和模型 ID，配置时请以其最新文档为准。若服务商支持 `/models`，
+模型菜单会自动读取可用模型；也可以始终手动填写模型 ID。
 
 不要下载 Native Host，不要克隆 GitHub 仓库，也不需要安装 Codex CLI、Rust 或
 Visual Studio。API Key 只保存在当前设备的扩展本地存储中，不会同步。
@@ -209,6 +223,9 @@ Rust、Cargo、Visual Studio、Xcode 或源码编译。
 7. 完全关闭并重新打开 Chrome，在 PaperFlow 中选择
    “ChatGPT 订阅 > 登录 ChatGPT”。
 
+连接后，模型菜单会读取当前 Codex 账号实际可用的模型。保留“Codex 默认（推荐）”
+可由 Codex 自动选择，也可以切换到账号中新开放的 GPT/Codex 模型。
+
 预编译包目前未签名，系统可能显示安全提醒。Native Host 只在登录和凭据刷新时
 调用官方 Codex CLI；论文问答由 Host 直接连接 Codex Responses 服务，因此不会
 加载用户配置的 MCP、插件或工具。Host 会从 Codex CLI 的本机凭据文件读取 OAuth
@@ -257,6 +274,8 @@ pnpm test:e2e
 
 ## 参与贡献
 
+如有功能需求、配置问题或修改建议，可通过
+[GitHub Issues](https://github.com/Dai0-2/paperflow/issues) 联系作者。
 欢迎提交 Issue 和 Pull Request。请先阅读
 [CONTRIBUTING.md](CONTRIBUTING.md)，发布构建前请检查
 [发布清单](docs/release-checklist.md)。
