@@ -21,7 +21,7 @@
   <p>
     <a href="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml"><img src="https://github.com/Dai0-2/paperflow/actions/workflows/build.yml/badge.svg" alt="构建状态"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-202020" alt="Apache 2.0 许可证"></a>
-    <img src="https://img.shields.io/badge/version-1.0.10-326bd1" alt="版本 1.0.10">
+    <img src="https://img.shields.io/badge/version-1.0.11-326bd1" alt="版本 1.0.11">
     <img src="https://img.shields.io/badge/Chrome-MV3-347556" alt="Chrome Manifest V3">
     <img src="https://img.shields.io/badge/storage-local--first-606460" alt="本地优先存储">
   </p>
@@ -57,7 +57,7 @@ Paper
 
 - 页码感知上下文，而不是脱离原文的聊天上传
 - 支持 Markdown、表格与科研快捷提示的流式回答
-- 通过官方 Codex CLI 使用 ChatGPT 订阅
+- 通过本机 Codex 登录使用 ChatGPT 订阅，不受用户 MCP 配置影响
 - 支持自定义 Base URL 与模型 ID 的 OpenAI 兼容 API
 - 扩展直连 API，API Key 仅保存在当前设备的浏览器配置中
 
@@ -105,7 +105,8 @@ flowchart LR
     B["Chrome + PaperFlow"] --> L["本地存储<br/>IndexedDB + OPFS"]
     L -. "可选 · 上传前加密" .-> D["你的 Google Drive"]
     B --> H["本地 Native Host"]
-    H --> C["ChatGPT 订阅<br/>官方 Codex CLI"]
+    H --> C["ChatGPT Codex<br/>Responses 服务"]
+    X["官方 Codex CLI"] -. "登录与凭据刷新" .-> H
     B --> A["OpenAI 兼容 API"]
 ```
 
@@ -113,7 +114,9 @@ flowchart LR
 - 可选 Google Drive 同步仅申请最小 `drive.file` 权限，加密对象存放在用户自己的
   `PaperFlow` 文件夹中。
 - 离线 PDF 备份独立控制，默认关闭。
-- PaperFlow 不读取 ChatGPT Cookie，也不调用 ChatGPT 私有网页接口。
+- PaperFlow 不读取 ChatGPT Cookie。订阅模式仅由开源 Native Host 在内存中读取
+  Codex CLI 创建的本机 OAuth 凭据，并直接请求 ChatGPT Codex 服务；访问令牌不会
+  进入 Chrome 扩展、日志或 PaperFlow 存储。
 - 本地 OCR 不依赖运行时 CDN 或远程代码。
 
 请阅读[隐私说明](docs/privacy.md)、[安全策略](SECURITY.md)和
@@ -141,6 +144,9 @@ AI 是可选功能，只需选择一种方式：
 | OpenAI 兼容 API，包括 DeepSeek | 只安装 Chrome Web Store 中的 PaperFlow |
 | 通过 Codex 使用 ChatGPT 订阅 | PaperFlow、官方 Codex CLI、PaperFlow Native Host |
 
+两种方式可随时在“设置 > AI 服务”中切换。PaperFlow 会分别记住 API 模型和
+Codex 模型设置，切换时无需删除另一种连接。
+
 #### 方式 A：OpenAI 兼容 API
 
 从 Chrome Web Store 安装 PaperFlow，打开“设置 > AI Provider”，选择
@@ -155,39 +161,58 @@ Visual Studio。API Key 只保存在当前设备的扩展本地存储中，不�
 Rust、Cargo、Visual Studio、Xcode 或源码编译。
 
 1. 从 Chrome Web Store 安装 PaperFlow。
-2. 安装 Node.js 20 或更高版本，并确认 `node --version` 可以运行。Windows 可执行：
+2. 打开 PowerShell（Windows）或终端（macOS/Linux），先检查：
+
+   ```bash
+   codex --version
+   ```
+
+   如果命令可运行（例如已经安装官方 Codex 应用或 CLI），直接进入第 4 步，无需
+   另外安装 Node.js。
+
+3. 如果没有 `codex` 命令，安装 Node.js 20 或更高版本，再安装官方 Codex CLI。
+   Windows 可执行：
 
    ```powershell
    winget install --id OpenJS.NodeJS.LTS -e
-   ```
-
-3. 安装官方 Codex CLI：
-
-   ```bash
-   # macOS / Linux
-   npm install -g @openai/codex
-
-   # Windows PowerShell
    npm.cmd install -g @openai/codex
    ```
 
-4. 直接下载当前系统对应的 Native Host：
+   macOS / Linux 可执行：
+
+   ```bash
+   npm install -g @openai/codex
+   ```
+
+4. 完成官方登录并确认状态：
+
+   ```bash
+   codex login
+   codex login status
+   ```
+
+   第二条命令应显示已使用 ChatGPT 登录。无需运行 `codex exec`，也无需关闭
+   Notion、Zotero 或其他 MCP 服务。
+
+5. 直接下载当前系统对应的 Native Host：
 
    - [Windows](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-windows.zip)
    - [macOS](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-macos.zip)
    - [Linux](https://github.com/Dai0-2/paperflow/releases/latest/download/paperflow-native-host-linux.zip)
 
-5. 解压后安装：
+6. 解压后安装：
 
    - Windows：双击 `INSTALL-PAPERFLOW.cmd`。
    - macOS：在解压目录运行 `bash install-macos.sh`。
    - Linux：在解压目录运行 `sh install-linux.sh`。
 
-6. 完全关闭并重新打开 Chrome，在 PaperFlow 中选择
+7. 完全关闭并重新打开 Chrome，在 PaperFlow 中选择
    “ChatGPT 订阅 > 登录 ChatGPT”。
 
-预编译包目前未签名，系统可能显示安全提醒。Native Host 只调用官方 Codex CLI，
-不会向扩展暴露 Codex 的认证数据。源码编译、卸载和故障排查请查看
+预编译包目前未签名，系统可能显示安全提醒。Native Host 只在登录和凭据刷新时
+调用官方 Codex CLI；论文问答由 Host 直接连接 Codex Responses 服务，因此不会
+加载用户配置的 MCP、插件或工具。Host 会从 Codex CLI 的本机凭据文件读取 OAuth
+令牌，但不会向扩展暴露、记录或另行保存该令牌。源码编译、卸载和故障排查请查看
 [Native Host 文档](docs/native-host.md)。
 
 ### 从源码构建扩展

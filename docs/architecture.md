@@ -160,12 +160,16 @@ A Chrome extension cannot safely launch arbitrary local executables. It also mus
 
 1. The extension connects to the Rust PaperFlow Native Host using Chrome Native Messaging.
 2. The extension probes protocol version 1 and validates requests and responses with Zod; the host validates them again with Serde.
-3. The host checks authentication with `codex login status`; the explicit PaperFlow sign-in button can run only the fixed `codex login` command and waits for official browser authorization.
-4. Codex CLI manages its own credentials.
+3. The host checks whether the local Codex credential file is available; the explicit PaperFlow sign-in button can run only the fixed `codex login` command and waits for official browser authorization.
+4. Codex CLI creates, owns, and refreshes its own credentials.
 5. PaperFlow sends bounded paper context to the host.
-6. The host invokes `codex exec --json --ephemeral --sandbox read-only` with a fixed argument list and forwards sanitized JSONL events.
+6. The host reads the Codex access token into zeroizing memory, resolves the current default model, and sends a tool-free streaming request directly to the ChatGPT Codex Responses endpoint.
+7. The host forwards only progress, answer deltas, and the completed answer. It does not start the Codex app server, MCP servers, plugins, tools, or a shell.
 
-The extension never receives or persists the Codex access token. The bridge must never read or return `~/.codex/auth.json`.
+The extension never receives or persists the Codex access token. Only the
+native process may read `CODEX_HOME/auth.json` or `~/.codex/auth.json`; it must
+never return the file, token, refresh token, or account claims through Native
+Messaging or logs.
 
 ## OpenAI-compatible API transport
 
@@ -186,8 +190,10 @@ credential store, so scoped and revocable provider keys are recommended.
 - Allow only the published PaperFlow extension ID.
 - Use Native Messaging; do not expose an unauthenticated localhost HTTP port.
 - Validate message schemas and enforce maximum payload sizes.
-- Use a fixed allowlist of Codex arguments; never accept raw CLI arguments or shell strings from the extension.
-- Run Codex with read-only sandboxing and ephemeral sessions for paper chat.
+- Use a fixed allowlist for the login and credential-refresh CLI actions; never
+  accept raw CLI arguments or shell strings from the extension.
+- Send paper chat only to the fixed HTTPS Codex models and Responses endpoints,
+  with `store: false`, streaming enabled, and no tools.
 - Redact secrets and local paths from logs.
 - Show the exact paper context before transmission.
 - Support cancellation and timeouts.

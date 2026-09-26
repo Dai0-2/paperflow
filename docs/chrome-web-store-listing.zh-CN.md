@@ -98,7 +98,7 @@ PaperFlow 提供一个本地优先的学术研究工作台，帮助用户阅读�
 #### nativeMessaging
 
 ```text
-与用户可选安装的 PaperFlow Native Host 通信，仅用于访问用户已安装并完成认证的官方 Codex CLI。
+与用户可选安装的 PaperFlow Native Host 通信，用于访问 ChatGPT 订阅。Host 会读取由用户安装的官方 Codex CLI 管理的本机 OAuth 凭据，并向固定的 ChatGPT Codex 端点发送不含工具的请求；凭据不会返回给扩展。
 ```
 
 #### contextMenus

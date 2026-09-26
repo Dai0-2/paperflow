@@ -81,3 +81,27 @@ test('configures an OpenAI-compatible relay during onboarding', async ({ page },
   });
   await page.screenshot({ path: testInfo.outputPath('provider-relay-settings.png'), fullPage: true });
 });
+
+test('switches between API and subscription modes without losing either model', async ({ page }) => {
+  await page.setViewportSize({ width: 420, height: 900 });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /OpenAI-compatible API/ }).click();
+  await page.getByLabel('Model ID').selectOption('__custom__');
+  await page.getByLabel('Custom model ID').fill('relay/model-v2');
+  await expect(page.getByLabel('Base URL')).toBeVisible();
+
+  await page.getByRole('button', { name: /ChatGPT subscription/ }).click();
+  await expect(page.getByLabel('Base URL')).toBeHidden();
+  await expect(page.getByText('Device login guide')).toBeVisible();
+
+  await page.getByRole('button', { name: /OpenAI-compatible API/ }).click();
+  await expect(page.getByLabel('Custom model ID')).toHaveValue('relay/model-v2');
+  await expect.poll(() => page.evaluate(() => ({
+    provider: localStorage.getItem('paperflow:provider'),
+    apiModel: localStorage.getItem('paperflow:api-model'),
+  }))).toEqual({
+    provider: 'api',
+    apiModel: 'relay/model-v2',
+  });
+});

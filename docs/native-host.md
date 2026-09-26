@@ -1,8 +1,9 @@
 # PaperFlow Native Host
 
 PaperFlow uses the separately installed `com.paperflow.ai` Native Messaging
-host only for ChatGPT subscription access through an installed and authenticated
-official Codex CLI.
+host only for ChatGPT subscription access. The official Codex CLI owns sign-in
+and credential refresh; the Host sends paper-chat requests directly to the
+ChatGPT Codex Responses service.
 
 OpenAI-compatible API mode and Google Drive sync work without the host. API
 requests run in the extension service worker and the API key remains in
@@ -31,9 +32,35 @@ vault.delete_device_key
 
 Messages are length-prefixed JSON with a 1 MiB limit. Unknown actions, unknown fields, malformed JSON, invalid UUIDs, oversized prompts, and invalid key encodings are rejected. The protocol does not accept shell commands, executable paths, file paths, CLI argument arrays, environment variables, or log payloads.
 
-Codex is discovered using fixed platform locations or the `codex` executable on the host `PATH`. The login action runs only the fixed official `codex login` command and waits up to five minutes for browser authorization. Paper chat always runs with a fixed argument list, an ephemeral session, a read-only sandbox, and a temporary working directory. Temporary image files are decoded only from allow-listed image data URLs and are removed automatically.
+Codex is discovered using fixed platform locations or the `codex` executable on
+the host `PATH`. The login action runs only the fixed official `codex login`
+command and waits up to five minutes for browser authorization.
 
-The host does not log prompts, responses, paper text, API keys, vault keys, OAuth tokens, or local paths.
+For paper chat, the Host:
+
+1. Reads `auth.json` from `CODEX_HOME`, or from the default `.codex` directory
+   in the current user's home folder.
+2. Keeps the access token in zeroizing process memory and derives the account
+   ID from the signed token only when the file does not provide one.
+3. Retrieves the current default model from
+   `https://chatgpt.com/backend-api/codex/models` unless the user selected an
+   explicit model override.
+4. Sends a bounded, tool-free Responses request to
+   `https://chatgpt.com/backend-api/codex/responses` and forwards only progress,
+   text deltas, and the final answer to the extension.
+5. On HTTP 401 or 403, runs the fixed `codex login status` command once, reloads
+   the credential file, and retries once.
+
+This direct transport does not start `codex app-server` or `codex exec`, so it
+does not load user MCP servers, plugins, tools, shell access, or repository
+configuration. Images remain allow-listed data URLs and are never written to
+temporary files. Environment proxy variables are honored; the Host also reads
+the active Windows user proxy and macOS system HTTPS/HTTP proxy when no proxy
+environment variable is set.
+
+The Host never returns the access token to Chrome and does not copy it into a
+PaperFlow credential store. It does not log prompts, responses, paper text, API
+keys, vault keys, OAuth tokens, or local paths.
 
 ## Legacy credential stores
 
@@ -124,7 +151,10 @@ Pass a binary path as the first shell argument or `-BinaryPath` in PowerShell wh
 
 `bridge/paperflow_bridge.py` and `bridge/install.sh` remain available for one compatibility release. The extension probes `status`; a response with `protocolVersion: 1` enables the Rust action names, while a response without a protocol version uses the legacy Python action names. New installations should use the Rust host.
 
-Install the official Codex CLI first. PaperFlow can then launch its official browser sign-in through the fixed `codex login` action; it never receives or stores the resulting token.
+Install the official Codex CLI first and run `codex login`. PaperFlow can also
+launch the same official browser sign-in through the fixed `codex login`
+action. The Host reads the resulting local token only inside its own process;
+the extension never receives or stores it.
 
 ## Release signing
 

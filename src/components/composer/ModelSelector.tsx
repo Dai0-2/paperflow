@@ -15,9 +15,8 @@ export function ModelSelector({ close }: { close: () => void }) {
   const codexModels = [...new Set([
     model,
     'ChatGPT via Codex',
-    'gpt-5.6-sol',
-    'gpt-5.6-luna',
-  ])].filter(Boolean);
+  ])].filter((item) => item && item !== 'ChatGPT via Codex')
+    .concat('ChatGPT via Codex');
   const selectCustomModel = () => {
     const value = customModel.trim();
     if (!value) return;
@@ -35,8 +34,8 @@ export function ModelSelector({ close }: { close: () => void }) {
     <div className="model-custom">
       <label htmlFor="paperflow-custom-model">{text(
         uiLanguage,
-        providerMode === 'api' ? 'Custom API model ID' : 'Custom Codex model ID',
-        providerMode === 'api' ? '自定义 API 模型 ID' : '自定义 Codex 模型 ID',
+        providerMode === 'api' ? 'Custom API model ID' : 'Optional Codex model override',
+        providerMode === 'api' ? '自定义 API 模型 ID' : '可选的 Codex 模型覆盖',
       )}</label>
       <div>
         <input

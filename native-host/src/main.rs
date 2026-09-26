@@ -40,7 +40,7 @@ fn handle(request: Request, emit: &mut impl FnMut(Response)) -> Response {
             response.protocol_version = Some(PROTOCOL_VERSION);
             response.host_version = Some(env!("CARGO_PKG_VERSION"));
             response.platform = Some(std::env::consts::OS);
-            response.codex_available = Some(codex::find_executable().is_some());
+            response.codex_available = Some(codex::is_available());
             response.credential_store_available = Some(secrets::credential_store_available());
             response.api_key_configured = Some(secrets::api_key_configured());
             response.detail = Some("PaperFlow native host is available.".to_owned());

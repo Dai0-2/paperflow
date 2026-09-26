@@ -108,7 +108,7 @@ Identifies the active PDF or research-paper tab and opens the Reader or Library 
 #### nativeMessaging
 
 ```text
-Communicates with the optional local PaperFlow Native Host only to access a user-installed and authenticated official Codex CLI.
+Communicates with the optional local PaperFlow Native Host for ChatGPT subscription access. The Host reads the local OAuth credential managed by the user-installed official Codex CLI and sends tool-free requests directly to the fixed ChatGPT Codex endpoint; credentials are never returned to the extension.
 ```
 
 #### contextMenus

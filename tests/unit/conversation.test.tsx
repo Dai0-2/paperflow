@@ -16,6 +16,7 @@ beforeEach(async () => {
     messages: [],
     paper: null,
     sending: false,
+    apiModels: [],
     uiLanguage: 'en',
   });
 });
@@ -95,7 +96,7 @@ describe('conversation actions', () => {
     });
   });
 
-  it('selects and persists a concrete Codex subscription model', async () => {
+  it('uses the Codex default without stale hardcoded models and persists an override', async () => {
     const close = vi.fn();
     useAppStore.setState({
       providerMode: 'chatgpt',
@@ -104,10 +105,28 @@ describe('conversation actions', () => {
     });
 
     render(<ModelSelector close={close} />);
-    await userEvent.click(screen.getByRole('button', { name: 'gpt-5.6-sol' }));
+    expect(screen.getByRole('button', { name: 'Codex default (recommended)' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'gpt-5.6-sol' })).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Custom model ID'), 'gpt-current-custom');
+    await userEvent.click(screen.getByRole('button', { name: 'Use' }));
 
-    expect(useAppStore.getState().model).toBe('gpt-5.6-sol');
-    expect(localStorage.getItem('paperflow:codex-model')).toBe('gpt-5.6-sol');
+    expect(useAppStore.getState().model).toBe('gpt-current-custom');
+    expect(localStorage.getItem('paperflow:codex-model')).toBe('gpt-current-custom');
     expect(close).toHaveBeenCalledOnce();
+  });
+
+  it('uses provider-discovered models in the API model menu', () => {
+    useAppStore.setState({
+      providerMode: 'api',
+      model: 'deepseek-chat',
+      apiModels: ['deepseek-chat', 'deepseek-reasoner'],
+      uiLanguage: 'en',
+    });
+
+    render(<ModelSelector close={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'deepseek-chat' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'deepseek-reasoner' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'gpt-5.5' })).not.toBeInTheDocument();
   });
 });

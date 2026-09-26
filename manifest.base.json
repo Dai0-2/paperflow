@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PaperFlow AI",
   "description": "A persistent AI research companion beside every paper.",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "minimum_chrome_version": "114",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4lIjjkH3NsgBr2tsJ2bx2Beuv8b10KfdgWS/CHO8uanZ6huf9ld3NW9bmwkwFruWj5CZDnKTWkCufK0iQp9BFj+fvceRC+LdWIpt/kOyKAeQBrXGQkSSm+7WGA00j2GC8LW6LxA5X9PxWYRsShitf7rRDNoM2RE+HZBzRZfGL0SKPC5X8yiWmIaNobJ1U5KsHzmAhmWZh2988RmZb3JJzYYQQepIaRnlfzna2UKq70Mkg1e66xvh4LTGAiSmUF5CNJVvxvlJlvk5xxxSva+Cjj1nFDyERsxc0HhN0GE/GEHatYZYKTCm1AVgQvN6HyAgDiw9L4tzqwJuwt16lrQv2wIDAQAB",
   "permissions": [

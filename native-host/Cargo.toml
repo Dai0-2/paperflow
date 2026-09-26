@@ -1,6 +1,6 @@
 [package]
 name = "paperflow-native-host"
-version = "1.0.2"
+version = "1.0.11"
 edition = "2021"
 license = "MIT"
 description = "Cross-platform Chrome Native Messaging host for PaperFlow AI"
@@ -16,12 +16,14 @@ keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls-native-roots"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tempfile = "3"
 thiserror = "2"
 url = "2"
 uuid = { version = "1", features = ["serde"] }
 which = "8"
-zeroize = "1"
+zeroize = { version = "1", features = ["serde"] }
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.56"
 
 [dev-dependencies]
 proptest = "1"

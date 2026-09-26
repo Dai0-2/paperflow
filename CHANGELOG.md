@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.11 - 2026-09-26
+
+- Replaced the Codex app-server chat path with a direct, tool-free streaming
+  transport that uses the OAuth credentials managed by the official Codex CLI.
+- Isolated ChatGPT subscription requests from user MCP servers, plugins, tools,
+  shell access, and repository configuration.
+- Added current default-model discovery, one-time authentication refresh,
+  Windows and macOS system proxy support, and zeroizing credential handling.
+- Made API and ChatGPT subscription switching explicit while preserving each
+  mode's model selection independently.
+- Rewrote subscription setup, privacy, architecture, and store disclosures for
+  the new Native Host boundary.
+
 ## 1.0.10 - 2026-09-24
 
 - Added an in-product device login guide for ChatGPT and Google Drive setup.

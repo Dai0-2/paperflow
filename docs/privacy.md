@@ -1,6 +1,6 @@
 # PaperFlow AI Privacy Notice
 
-Last updated: 2026-09-25
+Last updated: 2026-09-26
 
 PaperFlow AI is a local-first Chrome extension. It does not operate a PaperFlow
 account service, analytics service, advertising service, or telemetry backend.
@@ -17,8 +17,12 @@ OpenAI-compatible API keys are stored in extension-local Chrome storage on the
 current device, are restricted to trusted extension contexts when supported by
 Chrome, and are never synchronized. This is less isolated than an
 operating-system credential store; users should prefer scoped, revocable keys.
-Codex CLI owns its own authentication data. PaperFlow does not read ChatGPT
-cookies or Codex credential files.
+Codex CLI owns its authentication data. PaperFlow does not read ChatGPT
+cookies. In subscription mode, the separately installed open-source Native
+Host reads the local Codex credential file into process memory so it can
+authenticate a request without exposing the token to Chrome. PaperFlow does not
+copy that token into extension storage, IndexedDB, OPFS, Drive, or an
+operating-system credential store.
 
 ## Google Drive synchronization
 
@@ -52,8 +56,10 @@ organization action.
   attachments to the configured provider.
 - AI organization sends title, author, abstract, and existing labels. It does
   not send PDF full text, private notes, or annotations.
-- ChatGPT subscription mode sends the request to the locally authenticated
-  official Codex CLI through Native Messaging.
+- ChatGPT subscription mode sends the request through Native Messaging to the
+  local PaperFlow Native Host. The Host uses the local Codex OAuth credential
+  and sends a tool-free request directly to the fixed ChatGPT Codex Responses
+  endpoint. It does not load user MCP servers, plugins, tools, or shell access.
 - API mode sends it directly from the extension to the user-configured
   OpenAI-compatible HTTPS endpoint. PaperFlow requests access only to that API
   origin when the user saves or tests the configuration.

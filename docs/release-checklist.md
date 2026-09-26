@@ -6,7 +6,7 @@ account, device, or signing service.
 
 ## Repository gate
 
-- [x] `package.json` and generated manifest use `1.0.10`.
+- [x] `package.json` and generated manifest use `1.0.11`.
 - [x] TypeScript strict check passes.
 - [x] Unit and integration tests pass.
 - [x] Chromium E2E suite passes for Side Panel-sized UI, Reader, Library,

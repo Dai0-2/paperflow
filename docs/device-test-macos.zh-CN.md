@@ -25,6 +25,9 @@ bash native-host-macos/install-macos.sh
 ## 3. 登录
 
 - Google 同步：打开 PaperFlow 设置，点击“使用 Google 账号登录”。
-- ChatGPT：先安装官方 ChatGPT/Codex CLI，再点击 PaperFlow 中的“登录 ChatGPT”。PaperFlow 会运行固定的 `codex login` 并打开官方浏览器授权。
+- ChatGPT：先确认 `codex --version` 可运行，再执行 `codex login` 并完成官方浏览器授权。PaperFlow Native Host 会使用该本机凭据直连 Codex Responses 服务，不会启动用户的 MCP、插件或工具，也不会将访问令牌发送给扩展。
+
+可随时在 PaperFlow 的“设置 > AI 服务”中切换 ChatGPT 订阅与 OpenAI 兼容 API；
+两种模式会分别保留自己的模型设置。
 
 完成安装或更新后，在 `chrome://extensions` 中重新加载 PaperFlow。
