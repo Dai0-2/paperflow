@@ -6,7 +6,7 @@ The default listing language is English.
 ## Current release identifiers
 
 - Chrome Web Store item ID: `dffiahjmpkmellmjijffpcofoahbccoc`
-- Version: `1.0.1`
+- Version: `1.0.11`
 - Pricing: Free
 - Initial visibility: Unlisted
 
@@ -15,8 +15,9 @@ Do not submit the current draft for review yet. Before submission:
 1. Copy the Web Store public key into `manifest.base.json` so unpacked and
    published builds use the store item ID above.
 2. Create a Chrome Extension OAuth client for the store item ID.
-3. Build and upload `paperflow-ai-release.zip` with
-   `PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID` configured.
+3. Build and upload `paperflow-ai-release.zip`. The production OAuth client ID
+   is already configured; use `PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID` only for an
+   alternate registered extension ID.
 4. Publish `docs/privacy.md` at a stable public URL.
 5. Complete real Google Drive and signed Native Host release testing.
 

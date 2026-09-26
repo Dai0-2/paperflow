@@ -5,7 +5,7 @@
 ## 一、当前发布信息
 
 - 商店商品 ID：`dffiahjmpkmellmjijffpcofoahbccoc`
-- 版本：`1.0.1`
+- 版本：`1.0.11`
 - 价格：免费
 - 初始公开范围：非公开
 
@@ -15,7 +15,8 @@
 
 1. 从商店“文件包”页面复制公钥，并写入 `manifest.base.json`。
 2. 使用上述商品 ID 创建 Chrome 扩展程序类型的 Google OAuth 客户端。
-3. 配置 `PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID`。
+3. 确认已内置生产 OAuth Client ID；只有使用其他已注册扩展 ID 时才配置
+   `PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID`。
 4. 构建并上传 `paperflow-ai-release.zip`。
 5. 发布公开隐私政策，并完成真实 Google Drive 同步测试。
 

@@ -99,11 +99,12 @@ automatically downgraded.
 ## Google Drive synchronization
 
 `manifest.base.json` is the checked-in source of extension permissions. A Vite
-plugin generates `dist/manifest.json` and injects the non-secret Chrome Extension
-OAuth client ID only when `PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID` is set. The only
-Google scope is `https://www.googleapis.com/auth/drive.file`. Chrome Identity
-owns access-token persistence; PaperFlow requests a token per Drive operation
-and never writes it to application storage.
+plugin generates `dist/manifest.json` and injects the checked-in, non-secret
+production Chrome Extension OAuth client ID. Developers can override it with
+`PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID` for another registered extension ID. The
+only Google scope is `https://www.googleapis.com/auth/drive.file`. Chrome
+Identity owns access-token persistence; PaperFlow requests a token per Drive
+operation and never writes it to application storage.
 
 The Drive adapter creates a user-visible `PaperFlow` folder. `vault.json` is the
 only readable protocol file and contains no paper data. For new connections it

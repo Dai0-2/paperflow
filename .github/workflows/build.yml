@@ -41,8 +41,6 @@ jobs:
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    env:
-      PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -52,7 +50,6 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: test -n "$PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID"
       - run: pnpm install --frozen-lockfile
       - run: pnpm prepare:ocr
       - run: pnpm typecheck

@@ -84,14 +84,14 @@ cargo clippy --all-targets --locked --manifest-path native-host/Cargo.toml -- -D
 cargo build --release --locked --manifest-path native-host/Cargo.toml
 ```
 
-Release builds additionally require:
+The checked-in production OAuth client ID is used by default. To build for a
+different registered extension ID, override it explicitly:
 
 ```bash
 PAPERFLOW_GOOGLE_OAUTH_CLIENT_ID="<production client id>" \
   pnpm package:release
 ```
 
-`package:release` rejects missing or malformed Google OAuth client IDs, audits
-the resulting extension, and writes `paperflow-ai-release.zip` with its SHA-256
-file. Never publish the credential-free `paperflow-ai.zip` as a Google Drive
-enabled build.
+`package:release` rejects malformed Google OAuth client IDs, audits the
+resulting extension, and writes `paperflow-ai-release.zip` with its SHA-256
+file.
